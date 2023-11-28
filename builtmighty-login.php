@@ -91,7 +91,7 @@ function builtmighty_login_endpoint() {
         }
 
         // Check if allowed.
-        if( ( is_array( BML_ALLOWED ) && ! in_array( $_SERVER['REMOTE_ADDR'], BML_ALLOWED ) ) && ! isset( $_COOKIE['bml'] ) ) {
+        if( ( is_array( BML_ALLOWED ) && ! in_array( $_SERVER['REMOTE_ADDR'], BML_ALLOWED ) ) || ! isset( $_COOKIE['bml'] ) ) {
 
             // Redirect to home page.
             wp_redirect( 'https://builtmighty.com' );
