@@ -1,4 +1,4 @@
-<p align="center" style="font-size:42px !important;">🚀 Built Mighty Login</p>
+<p align="center" style="font-size:42px !important;">🚀 Built Mighty Kit</p>
 
 # Installation
 On initial plugin installation and activation, nothing will happen until constants are defined within wp-config, except for the email/action scheduler settings on builtmighty.com or mightyrhino.net development sites.
