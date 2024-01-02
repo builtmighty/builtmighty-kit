@@ -31,6 +31,15 @@ define( 'BUILT_DOMAIN', 'builtmighty-kit' );
 register_activation_hook( __FILE__, 'bml_activation' );
 function bml_activation() {
 
+    // Load setup class.
+    require_once BUILT_PATH . 'classes/class-setup.php';
+
+    // Initiate setup class.
+    $setup = new builtSetup();
+
+    // Update wp-config.php.
+    $setup->update_config();
+
     // Flush rewrite rules.
     flush_rewrite_rules();
 
