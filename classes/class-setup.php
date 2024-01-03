@@ -29,16 +29,13 @@ class builtSetup {
     }
 
     /**
-     * Update wp-config.php.
+     * Run setup..
      * 
-     * Updates wp-config.php with custom values.
+     * Runs setup process for plugin.
      * 
      * @since   1.0.0
      */
-    public function update_config() {
-
-        // Config.
-        $config = $this->get_config();
+    public function run() {
 
         // Disable external connections.
         $this->disable_external();
@@ -48,17 +45,6 @@ class builtSetup {
 
         // Disable plugins.
         $this->disable_plugins();
-
-        // If the updates aren't in the config, add them after the opening PHP tag.
-        if( strpos( $config, $updates ) === false ) {
-
-            // Add updates.
-            $config = str_replace( '<?php', '<?php' . $updates, $config );
-
-            // Write the updates to the wp-config.php file.
-            file_put_contents( ABSPATH . 'wp-config.php', $config );
-
-        }
 
     }
 
@@ -182,6 +168,29 @@ class builtSetup {
 
         // Return plugins.
         return $plugins;
+
+    }
+
+    /**
+     * Update wp-config.php.
+     * 
+     * @since   1.0.0
+     */
+    public function update_config() {
+
+        // Config.
+        $config = $this->get_config();
+
+        // If the updates aren't in the config, add them after the opening PHP tag.
+        if( strpos( $config, $this->updates ) === false ) {
+
+            // Add updates.
+            $config = str_replace( '<?php', '<?php' . $this->updates, $config );
+
+            // Write the updates to the wp-config.php file.
+            file_put_contents( ABSPATH . 'wp-config.php', $config );
+
+        }
 
     }
 
