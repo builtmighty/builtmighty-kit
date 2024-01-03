@@ -28,8 +28,8 @@ define( 'BUILT_DOMAIN', 'builtmighty-kit' );
 /** 
  * On activation.
  */
-register_activation_hook( __FILE__, 'bml_activation' );
-function bml_activation() {
+register_activation_hook( __FILE__, 'built_activation' );
+function built_activation() {
 
     // Load setup class.
     require_once BUILT_PATH . 'classes/class-setup.php';
@@ -48,8 +48,8 @@ function bml_activation() {
 /**
  * On deactivation.
  */
-register_deactivation_hook( __FILE__, 'bml_deactivation' );
-function bml_deactivation() {
+register_deactivation_hook( __FILE__, 'built_deactivation' );
+function built_deactivation() {
 
     // Flush rewrite rules.
     flush_rewrite_rules();
@@ -92,6 +92,38 @@ function is_built_mighty() {
 }
 
 /**
+ * Check site.
+ * 
+ * @since   1.0.0
+ */
+add_action( 'init', 'built_check_site' );
+function built_check_site() {
+
+    // Check if site URL is stored.
+    if( ! get_option( 'built_siteurl' ) ) {
+
+        // Store site URL.
+        update_option( 'built_siteurl', site_url() );
+
+    } else {
+
+        // Check if site URL has changed.
+        if( get_option( 'built_siteurl' ) !== site_url() ) {
+
+            // Update site URL.
+            update_option( 'built_siteurl', site_url() );
+
+            // Update wp-config.php.
+            $setup = new builtSetup();
+            $setup->run();
+
+        }
+
+    }
+
+}
+
+/**
  * Plugin Updates. 
  * 
  * @since   1.0.0
@@ -103,4 +135,4 @@ $updates = PucFactory::buildUpdateChecker(
 	__FILE__,
 	'builtmighty-kit'
 );
-$updates->setBranch('main');
+$updates->setBranch( 'main' );
