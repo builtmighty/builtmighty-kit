@@ -10,6 +10,25 @@
 class builtSetup {
 
     /**
+     * Variables.
+     * 
+     * @since   1.0.0
+     */
+    private $updates;
+
+    /**
+     * Construct.
+     * 
+     * @since   1.0.0
+     */
+    public function __construct() {
+
+        // Set updates.
+        $this->updates = [];
+
+    }
+
+    /**
      * Update wp-config.php.
      * 
      * Updates wp-config.php with custom values.
@@ -20,6 +39,9 @@ class builtSetup {
 
         // Config.
         $config = $this->get_config();
+
+        // Disable external connections.
+        $this->disable_external();
 
         // Set updates.
         $updates = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
@@ -35,6 +57,23 @@ class builtSetup {
 
         }
 
+    }
+
+    /**
+     * Disable external connections.
+     * 
+     * @since   1.0.0
+     */
+    public function disable_external() {
+
+        // Check if this is a dev site.
+        if( is_built_mighty() ) {
+
+            // Add to updates.
+            $this->updates['external'] = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+
+        }
+        
     }
 
     /**
