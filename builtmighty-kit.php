@@ -18,6 +18,8 @@ if( ! defined( 'WPINC' ) ) { die; }
 
 /**
  * Constants.
+ * 
+ * @since   1.0.0
  */
 define( 'BUILT_VERSION', '1.0.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
@@ -27,6 +29,8 @@ define( 'BUILT_DOMAIN', 'builtmighty-kit' );
 
 /** 
  * On activation.
+ * 
+ * @since   1.0.0
  */
 register_activation_hook( __FILE__, 'built_activation' );
 function built_activation() {
@@ -47,6 +51,8 @@ function built_activation() {
 
 /**
  * On deactivation.
+ * 
+ * @since   1.0.0
  */
 register_deactivation_hook( __FILE__, 'built_deactivation' );
 function built_deactivation() {
@@ -65,6 +71,8 @@ require_once BUILT_PATH . 'classes/class-login.php';
 require_once BUILT_PATH . 'classes/class-access.php';
 require_once BUILT_PATH . 'classes/class-woo.php';
 require_once BUILT_PATH . 'classes/class-mail.php';
+require_once BUILT_PATH . 'classes/class-security.php';
+require_once BUILT_PATH . 'classes/class-setup.php';
 
 /**
  * Initiate classes.
@@ -75,6 +83,7 @@ new builtLogin();
 new builtAccess();
 new builtWoo();
 new builtMail();
+new builtSecurity();
 
 /**
  * Check if site is mightyrhino.net or builtmighty.com.
