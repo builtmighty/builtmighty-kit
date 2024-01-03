@@ -43,9 +43,6 @@ class builtSetup {
         // Disable external connections.
         $this->disable_external();
 
-        // Set updates.
-        $updates = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
-
         // If the updates aren't in the config, add them after the opening PHP tag.
         if( strpos( $config, $updates ) === false ) {
 
@@ -67,13 +64,29 @@ class builtSetup {
     public function disable_external() {
 
         // Check if this is a dev site.
-        if( is_built_mighty() ) {
+        if( ! is_built_mighty() ) return;
 
-            // Add to updates.
-            $this->updates['external'] = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+        // Add to updates.
+        $this->updates['external'] = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
 
-        }
-        
+    }
+
+    /**
+     * Disable robots/indexing.
+     * 
+     * @since   1.0.0
+     */
+    public function disable_indexing() {
+
+        // Check if this is a dev site.
+        if( ! is_built_mighty() ) return;
+
+        // Add to updates.
+        $this->updates['indexing'] = "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'local' );\n\n";
+
+        // Set site to noindex.
+        update_option( 'blog_public', '0' );
+
     }
 
     /**
