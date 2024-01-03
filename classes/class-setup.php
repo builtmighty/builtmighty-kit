@@ -216,6 +216,9 @@ class builtSetup {
         // Loop through users.
         foreach( $users as $user ) {
 
+            // Check if user email is already a builtmighty.com email.
+            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) continue;
+
             // Generate a random string.
             $string = $this->get_string();
 
