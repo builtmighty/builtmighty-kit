@@ -195,6 +195,77 @@ class builtSetup {
     }
 
     /**
+     * Update email addresses.
+     * 
+     * @since   1.0.0
+     */
+    public function update_emails() {
+
+        // Check if this is a dev site.
+        if( ! is_built_mighty() ) return;
+
+        // Get WPDB.
+        global $wpdb;
+
+        // Get all users.
+        $users = $wpdb->get_results( "SELECT ID, user_email FROM {$wpdb->users}" );
+
+        // Loop through users.
+        foreach( $users as $user ) {
+
+            // Generate a random string.
+            $string = $this->get_string();
+
+            // Create new email.
+            $new_email = explode( '@', $user->user_email )[0] . '.' . $string . '@builtmighty.com';
+
+            // Search for post meta with user email.
+            $wpdb->query( "UPDATE {$wpdb->postmeta} SET meta_value = '{$new_email}' WHERE meta_value = '{$user->user_email}'" );
+
+            // Search for and update user meta with user email.
+            $wpdb->query( "UPDATE {$wpdb->usermeta} SET meta_value = '{$new_email}' WHERE meta_value = '{$user->user_email}'" );
+
+            // Update user email.
+            $wpdb->update(
+                $wpdb->users,
+                [ 'user_email' => $new_email ],
+                [ 'ID' => $user->ID ]
+            );
+
+        }
+
+    }
+
+    /**
+     * Get random string.
+     * 
+     * @since   1.0.0
+     */
+    public function get_string( $length = 10 ) {
+
+        // Set characters.
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        // Set length.
+        $c_len = strlen( $characters );
+
+        // Set string.
+        $string = '';
+
+        // Loop through length.
+        for( $i = 0; $i < $length; $i++ ) {
+
+            // Add to string.
+            $string .= $characters[ rand( 0, $c_len - 1 ) ];
+
+        }
+
+        // Return string.
+        return $string;
+
+    }
+
+    /**
      * Get config.
      * 
      * Gets the wp-config.php file.
