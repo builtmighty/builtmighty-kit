@@ -46,6 +46,9 @@ class builtSetup {
         // Disable plugins.
         $this->disable_plugins();
 
+        // Update emails.
+        $this->update_emails();
+
     }
 
     /**
