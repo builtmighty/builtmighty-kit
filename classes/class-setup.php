@@ -185,7 +185,7 @@ class builtSetup {
         $config = $this->get_config();
 
         // If the updates aren't in the config, add them after the opening PHP tag.
-        if( strpos( $config, $this->updates ) === false ) {
+        if( strpos( $config, $this->updates['external'] ) === false ) {
 
             // Add updates.
             $config = str_replace( '<?php', '<?php' . $this->updates, $config );

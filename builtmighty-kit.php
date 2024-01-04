@@ -38,11 +38,9 @@ function built_activation() {
     // Load setup class.
     require_once BUILT_PATH . 'classes/class-setup.php';
 
-    // Initiate setup class.
+    // Initiate and run setup class.
     $setup = new builtSetup();
-
-    // Update wp-config.php.
-    $setup->update_config();
+    $setup->run();
 
     // Flush rewrite rules.
     flush_rewrite_rules();
@@ -73,6 +71,7 @@ require_once BUILT_PATH . 'classes/class-woo.php';
 require_once BUILT_PATH . 'classes/class-mail.php';
 require_once BUILT_PATH . 'classes/class-security.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
+require_once BUILT_PATH . 'classes/class-dev.php';
 
 /**
  * Initiate classes.
@@ -84,6 +83,7 @@ new builtAccess();
 new builtWoo();
 new builtMail();
 new builtSecurity();
+new builtDev();
 
 /**
  * Check if site is mightyrhino.net or builtmighty.com.
@@ -105,7 +105,7 @@ function is_built_mighty() {
  * 
  * @since   1.0.0
  */
-add_action( 'init', 'built_check_site' );
+add_action( 'wp', 'built_check_site' );
 function built_check_site() {
 
     // Check if site URL is stored.
