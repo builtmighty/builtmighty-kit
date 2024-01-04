@@ -24,7 +24,7 @@ class builtSetup {
     public function __construct() {
 
         // Set updates.
-        $this->updates = [];
+        $this->updates = '';
 
     }
 
@@ -62,7 +62,7 @@ class builtSetup {
         if( ! is_built_mighty() ) return;
 
         // Add to updates.
-        $this->updates['external'] = "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\n// define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+        $this->updates .= "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
 
     }
 
@@ -77,7 +77,7 @@ class builtSetup {
         if( ! is_built_mighty() ) return;
 
         // Add to updates.
-        $this->updates['indexing'] = "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'local' );\n\n";
+        $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'local' );\n\n";
 
         // Set site to noindex.
         update_option( 'blog_public', '0' );
@@ -185,7 +185,7 @@ class builtSetup {
         $config = $this->get_config();
 
         // If the updates aren't in the config, add them after the opening PHP tag.
-        if( strpos( $config, $this->updates['external'] ) === false ) {
+        if( strpos( $config, $this->updates['config'] ) === false ) {
 
             // Add updates.
             $config = str_replace( '<?php', '<?php' . $this->updates, $config );
