@@ -70,8 +70,6 @@ class builtLogin {
         // If user is logged in, adios.
         if( is_user_logged_in() ) return;
 
-        error_log( __FUNCTION__ . ' requested at ' . $_SERVER['REQUEST_URI'] . '.' );
-
         // Check request.
         if( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT ) {
 
