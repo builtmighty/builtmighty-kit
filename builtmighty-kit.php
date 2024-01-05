@@ -76,7 +76,7 @@ require_once BUILT_PATH . 'classes/class-security.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
 require_once BUILT_PATH . 'classes/class-dev.php';
 require_once BUILT_PATH . 'classes/class-admin.php';
-require_once BUILT_PATH . 'classes/class-jira.php';
+require_once BUILT_PATH . 'inc/class-jira.php';
 
 /**
  * Initiate classes.
