@@ -94,6 +94,9 @@ class builtSetup {
         // Check if this is a dev site.
         if( ! is_built_mighty() ) return;
 
+        // Check if is_plugin_active function exists.
+        if( ! function_exists( 'is_plugin_active' ) ) require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
         // Get plugins.
         $plugins = $this->get_plugins();
 
