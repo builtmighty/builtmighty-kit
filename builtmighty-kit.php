@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '0.0.106' );
+define( 'BUILT_VERSION', '0.0.112' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -76,6 +76,7 @@ require_once BUILT_PATH . 'classes/class-security.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
 require_once BUILT_PATH . 'classes/class-dev.php';
 require_once BUILT_PATH . 'classes/class-admin.php';
+require_once BUILT_PATH . 'classes/class-jira.php';
 
 /**
  * Initiate classes.

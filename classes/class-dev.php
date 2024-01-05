@@ -62,15 +62,28 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( is_built_mighty() ) {
+        if( ! is_built_mighty() ) {
 
             // Display developer content.
             echo $this->developer_content();
 
         } else {
 
-            // Display production content.
-            echo 'Welcome! Thanks for being a Built Mighty client. If you need us, please reach out to your project manager or open a ticket here.';
+            // Get current user.
+            $user = wp_get_current_user();
+
+            // Check if user email is @builtmighty.
+            if( ! strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
+
+                // Display developer content.
+                echo $this->developer_content();
+
+            } else {
+
+                // Display client content.
+                echo $this->client_content();
+
+            }
 
         }
 
@@ -84,6 +97,72 @@ class builtDev {
     public function developer_content() {
 
         // Start output buffering.
+        ob_start();
+
+        // Get site info.
+        echo $this->get_site_info();
+
+        // Get disabled plugins.
+        echo $this->get_disabled();
+
+        // Get plugin readme.
+        echo $this->get_readme();
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Client content.
+     * 
+     * @since   1.0.0
+     */
+    public function client_content() { 
+
+        // Output. ?>
+        <div class="built-dash-head">
+            <div class="built-dash-logo">
+                <a href="https://builtmighty.com" target="_blank">
+                    <img src="<?php echo BUILT_URI; ?>assets/block-builtmighty.png" alt="Built Mighty">
+                </a>
+            </div>
+            <div class="built-dash-message">
+                <p>Welcome! Thanks for being a Built Mighty client. We're here to help with any of your WordPress or WooCommerce needs.</p>
+            </div>
+        </div><?php
+
+        // Check for Jira project or project manager.
+        if( ! empty( get_option( 'jira-project' ) ) && ! empty( get_option( 'jira-pm' ) ) ) {
+
+            // Create menu. ?>
+            <div class="built-dash-body built-panel">
+                <div class="built-dash-nav">
+                    <span class="built-nav-button active" id="built-issue">Create Issue</span>
+                    <span class="built-nav-button" id="built-pm">Contact Us</span>
+                </div>
+                <div class="built-dash-forms">
+                    <div id="built-issue-form" class="active">
+                        Create an issue.
+                    </div>
+                    <div id="built-pm-form">
+                        Contact PM.
+                    </div>
+                </div>
+            </div><?php
+
+        }
+        
+    }
+
+    /**
+     * Get site info.
+     * 
+     * @since   1.0.0
+     */
+    public function get_site_info() {
+
+        // Start.
         ob_start();
 
         // Global.
@@ -103,6 +182,21 @@ class builtDev {
                 <li>WordPress <code><?php echo $wp; ?></code></li>
             </ul>
         </div><?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Get disabled plugins.
+     * 
+     * @since   1.0.0
+     */
+    public function get_disabled() {
+
+        // Start.
+        ob_start();
 
         // Check for disabled plugins.
         if( get_option( 'built_disabled_plugins' ) ) {
@@ -128,6 +222,21 @@ class builtDev {
 
         }
 
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Get plugin readme.
+     * 
+     * @since   1.0.0
+     */
+    public function get_readme() {
+
+        // Start.
+        ob_start();
+
         // Display information for plugin readme. ?>
         <div class="built-message">
             <strong><p>Information</p></strong>
@@ -135,17 +244,9 @@ class builtDev {
             <p><a href="https://github.com/builtmighty/builtmighty-kit/blob/master/README.md" target="_blank" class="built-button">View Readme</a></p>
         </div><?php
 
-    }
+        // Return.
+        return ob_get_clean();
 
-    /**
-     * Client content.
-     * 
-     * @since   1.0.0
-     */
-    public function client_content() {
-
-
-        
     }
 
     /**
