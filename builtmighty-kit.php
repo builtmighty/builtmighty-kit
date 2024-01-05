@@ -111,11 +111,11 @@ function is_built_mighty() {
  * 
  * @since   1.0.0
  */
-add_action( 'wp', 'built_check_site' );
+add_action( 'admin_head', 'built_check_site' );
 function built_check_site() {
 
     // Check if site URL is stored.
-    if( ! get_option( 'built_siteurl' ) ) {
+    if( empty( get_option( 'built_siteurl' ) ) ) {
 
         // Store site URL.
         update_option( 'built_siteurl', site_url() );
@@ -125,12 +125,12 @@ function built_check_site() {
         // Check if site URL has changed.
         if( get_option( 'built_siteurl' ) !== site_url() ) {
 
-            // Update site URL.
-            update_option( 'built_siteurl', site_url() );
+            // // Update site URL.
+            // update_option( 'built_siteurl', site_url() );
 
-            // Update wp-config.php.
-            $setup = new builtSetup();
-            $setup->run();
+            // // Update wp-config.php.
+            // $setup = new builtSetup();
+            // $setup->run();
 
         }
 
