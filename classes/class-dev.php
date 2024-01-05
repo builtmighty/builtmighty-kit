@@ -24,6 +24,9 @@ class builtDev {
 
         // Add admin notification for dev sites.
         add_action( 'admin_notices', [ $this, 'admin_notice' ] );
+
+        // Load admin styles.
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
         
     }
 
@@ -59,28 +62,10 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( ! is_built_mighty() ) {
+        if( is_built_mighty() ) {
 
-            // Check for disabled plugins.
-            if( get_option( 'built_disabled_plugins' ) ) {
-
-                // Get disabled plugins.
-                $disabled_plugins = get_option( 'built_disabled_plugins' );
-
-                // Display disabled plugins.
-                echo '<p><strong>Disabled Plugins:</strong></p>';
-                echo '<ul>';
-                foreach( $disabled_plugins as $plugin ) {
-                    echo '<li>' . $plugin . '</li>';
-                }
-                echo '</ul>';
-
-            } else {
-
-                // Display dev content.
-                echo 'This is a Built Mighty development site. No plugins have been disabled, at this time.';
-
-            }
+            // Display developer content.
+            echo $this->developer_content();
 
         } else {
 
@@ -89,6 +74,78 @@ class builtDev {
 
         }
 
+    }
+
+    /**
+     * Developer content.
+     * 
+     * @since   1.0.0
+     */
+    public function developer_content() {
+
+        // Start output buffering.
+        ob_start();
+
+        // Global.
+        global $wpdb;
+
+        // Get information for developers.
+        $php    = phpversion();
+        $mysql  = $wpdb->db_version();
+        $wp     = get_bloginfo( 'version' );
+
+        // Output. ?>
+        <div class="built-panel">
+            <p style="margin-top:0;"><strong>Developer Info</strong></p>
+            <ul style="margin:0;">
+                <li>PHP <code><?php echo $php; ?></code></li>
+                <li>MySQL <code><?php echo $mysql; ?></code></li>
+                <li>WordPress <code><?php echo $wp; ?></code></li>
+            </ul>
+        </div><?php
+
+        // Check for disabled plugins.
+        if( get_option( 'built_disabled_plugins' ) ) {
+
+            // Get disabled plugins.
+            $disabled_plugins = get_option( 'built_disabled_plugins' );
+
+            // Display disabled plugins. ?>
+            <div class="built-panel">
+                <p style="margin-top:0;"><strong>Disabled Plugins</strong></p>
+                <ul style="margin:0;"><?php
+
+                    // Loop.
+                    foreach( $disabled_plugins as $plugin ) {
+
+                        // Output item. ?>
+                        <li><?php echo $plugin; ?> &mdash; <code class="built-flag">Inactive</code></li><?php
+
+                    } ?>
+
+                </ul>
+            </div><?php
+
+        }
+
+        // Display information for plugin readme. ?>
+        <div class="built-message">
+            <strong><p>Information</p></strong>
+            <p>New to the <i>Built Mighty Kit</i>? Check out the <a href="https://github.com/builtmighty/builtmighty-kit/blob/master/README.md" target="_blank">plugin readme</a> for more information.</p>
+            <p><a href="https://github.com/builtmighty/builtmighty-kit/blob/master/README.md" target="_blank" class="built-button">View Readme</a></p>
+        </div><?php
+
+    }
+
+    /**
+     * Client content.
+     * 
+     * @since   1.0.0
+     */
+    public function client_content() {
+
+
+        
     }
 
     /**
@@ -103,6 +160,28 @@ class builtDev {
 
             // Display dev content.
             echo '<div class="notice notice-warning is-dismissible"><p>NOTICE &mdash; This is a Built Mighty development site.</p></div>';
+
+        }
+
+    }
+
+    /**
+     * Enqueue admin styles.
+     * 
+     * @since   1.0.0
+     */
+    public function enqueue() {
+
+        // Check if we're on a dev site.
+        if( is_built_mighty() ) {
+
+            // Enqueue admin styles.
+            wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dev-admin.css', [], BUILT_VERSION );
+
+        } else {
+
+            // Enqueue admin styles.
+            wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/admin.css', [], BUILT_VERSION );
 
         }
 

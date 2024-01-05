@@ -77,7 +77,7 @@ class builtSetup {
         if( ! is_built_mighty() ) return;
 
         // Add to updates.
-        $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'local' );\n\n";
+        $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n";
 
         // Set site to noindex.
         update_option( 'blog_public', '0' );
@@ -188,7 +188,7 @@ class builtSetup {
         if( strpos( $config, $this->updates['config'] ) === false ) {
 
             // Add updates.
-            $config = str_replace( '<?php', '<?php' . $this->updates, $config );
+            $config = str_replace( '<?php', '<?php' . $this->updates['config'], $config );
 
             // Write the updates to the wp-config.php file.
             file_put_contents( ABSPATH . 'wp-config.php', $config );
