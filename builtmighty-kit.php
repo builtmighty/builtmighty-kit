@@ -42,6 +42,9 @@ function built_activation() {
     $setup = new builtSetup();
     $setup->run();
 
+    // Store site URL.
+    update_option( 'built_siteurl', site_url() );
+
     // Flush rewrite rules.
     flush_rewrite_rules();
 
@@ -72,6 +75,7 @@ require_once BUILT_PATH . 'classes/class-mail.php';
 require_once BUILT_PATH . 'classes/class-security.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
 require_once BUILT_PATH . 'classes/class-dev.php';
+require_once BUILT_PATH . 'classes/class-admin.php';
 
 /**
  * Initiate classes.
@@ -84,6 +88,7 @@ new builtWoo();
 new builtMail();
 new builtSecurity();
 new builtDev();
+new builtAdmin();
 
 /**
  * Check if site is mightyrhino.net or builtmighty.com.
