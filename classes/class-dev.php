@@ -73,7 +73,7 @@ class builtDev {
             $user = wp_get_current_user();
 
             // Check if user email is @builtmighty.
-            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
+            if( ! strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
 
                 // Display developer content.
                 echo $this->developer_content();
@@ -105,6 +105,9 @@ class builtDev {
         // Get disabled plugins.
         echo $this->get_disabled();
 
+        // Get Git.
+        echo $this->get_git();
+
         // Get plugin readme.
         echo $this->get_readme();
 
@@ -135,6 +138,14 @@ class builtDev {
         // Check for Jira project or project manager.
         if( ! empty( get_option( 'jira-project' ) ) && ! empty( get_option( 'jira-pm' ) ) ) {
 
+            // Get project and project manager.
+            $project = get_option( 'jira-project' );
+            $pm = explode( '|', base64_decode( get_option( 'jira-pm' ) ) );
+
+            // Set.
+            $pm_name = $pm[1];
+            $pm_id   = $pm[0];
+
             // Create menu. ?>
             <div class="built-dash-body built-panel">
                 <div class="built-dash-nav">
@@ -146,12 +157,15 @@ class builtDev {
                         Create an issue.
                     </div>
                     <div id="built-pm-form">
-                        Contact PM.
+                        Contact <?php echo $pm[1]; ?>
                     </div>
                 </div>
             </div><?php
 
         }
+
+        // Get Git.
+        echo $this->get_git();
         
     }
 
@@ -175,7 +189,7 @@ class builtDev {
 
         // Output. ?>
         <div class="built-panel">
-            <p style="margin-top:0;"><strong>Developer Info</strong></p>
+            <p style="margin-top:0;"><strong>❔Developer Info</strong></p>
             <ul style="margin:0;">
                 <li>PHP <code><?php echo $php; ?></code></li>
                 <li>MySQL <code><?php echo $mysql; ?></code></li>
@@ -206,7 +220,7 @@ class builtDev {
 
             // Display disabled plugins. ?>
             <div class="built-panel">
-                <p style="margin-top:0;"><strong>Disabled Plugins</strong></p>
+                <p style="margin-top:0;"><strong>❗Disabled Plugins</strong></p>
                 <ul style="margin:0;"><?php
 
                     // Loop.
@@ -243,6 +257,78 @@ class builtDev {
             <p>New to the <i>Built Mighty Kit</i>? Check out the <a href="https://github.com/builtmighty/builtmighty-kit/blob/master/README.md" target="_blank">plugin readme</a> for more information.</p>
             <p><a href="https://github.com/builtmighty/builtmighty-kit/blob/master/README.md" target="_blank" class="built-button">View Readme</a></p>
         </div><?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Get Git.
+     * 
+     * @since   1.0.0
+     */
+    public function get_git() {
+
+        // Check if shell_exec is enabled.
+        if( ! shell_exec( 'echo EXEC' ) ) return;
+
+        // Start.
+        ob_start();
+
+        // Get Git information.
+        $git = shell_exec( 'cd ' . ABSPATH . ' && git status' );
+
+        // Check if Git is installed.
+        if( strpos( $git, 'fatal: Not a git repository' ) !== false || empty( $git ) ) {
+
+            // Display message. ?>
+            <div class="built-panel">
+                <p style="margin:0;"><strong>Git is not installed.</strong> Install Git to use this feature.</p>
+            </div><?php
+
+        } else {
+
+            // Get repo, branch, and uncommited code.
+            $repo = shell_exec( 'cd ' . ABSPATH . ' && git config --get remote.origin.url' );
+            $branch = shell_exec( 'cd ' . ABSPATH . ' && git rev-parse --abbrev-ref HEAD' );
+            $uncommitted = shell_exec( 'cd ' . ABSPATH . ' && git diff --name-only' );
+
+            // Display Git information. ?>
+            <div class="built-panel">
+                <p style="margin-top:0;">
+                    <strong>💻 GitHub</strong>
+                </p>
+                <ul style="margin:0;"><?php
+
+                    // Check for branch.
+                    if( $branch ) {
+
+                        // Output. ?>
+                        <li>Branch: <code><?php echo $branch; ?></code></li><?php
+
+                    }
+
+                    // Check for uncommitted changes.
+                    if( $uncommitted ) {
+
+                        // Output. ?>
+                        <li><span class="built-flag" style="margin-top:5px;">Uncommitted Code</a></span><code class="built-code"><?php echo $uncommitted; ?></code></li><?php
+
+                    } else {
+
+                        // Output. ?>
+                        <li>Status: <code class="built-flag">In Sync</code></li><?php
+
+                    } ?>
+
+                </ul>
+                <p style="margin:0;">
+                    <a href="<?php echo $repo; ?>" target="_blank" class="built-button" style="margin-top:10px;">View Repo</a>
+                </p>
+            </div><?php
+
+        }
 
         // Return.
         return ob_get_clean();

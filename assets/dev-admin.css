@@ -29,8 +29,18 @@
     margin-left: 5px;
 }
 
-.built-panel ul li code.built-flag {
+.built-flag {
     background: #D4121F;
+    border-radius: 4px;
+    padding: 3.5px 7px;
+    display: inline-block;
+}
+
+.built-code {
+    display: block;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 5px 0 0 0 !important;
 }
 
 #builtmighty_dashboard_widget a.built-button {

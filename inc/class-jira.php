@@ -27,7 +27,7 @@ class builtJira {
 
         // Set.
         $this->user_email = 'tyler@builtmighty.com';
-        $this->api_token = 'ATATT3xFfGF02Ym4QAjg6bypOHn6O1AKteWZPqnb2GxRL5ABE_dqlVEthXgi1uWmrk880nQlpbRH8uitA27Y47QE_KwKRX-Qq2AuSTM4sYVRRRv7xKx6vnUn9KZMZLUtXAq43Qf0-eWEmnNhggnYF8SR_3TDN7HDitXakB3llXvTpRVGeHaMrUQ=7DB6D76D';
+        $this->api_token = 'ATATT3xFfGF0meGR62NdSseH4C6FXqPYzlvMOYoDMDGvVFZStVdnMnb3osSPGe-urLdcbhk-RRU0VaKOf-ZMcTjG-Gc0nCMC8zFcN3DjTDq6qb8Fa3rZspWycnHZ7bTvobsQR4uQPyWAzdR84yPucMAG3H37YzN_yUZSQ6hczBhMzpZrhSf3jx0=FB7329AD';
         $this->api_url = 'https://builtmighty.atlassian.net/rest/api/3/';
 
     }
@@ -119,7 +119,7 @@ class builtJira {
         foreach( $response as $user ) {
 
             // Set account ID and display name.
-            $user_value = base64_encode( $user['accountId'] . ':' . $user['displayName'] );
+            $user_value = base64_encode( $user['accountId'] . '|' . $user['displayName'] );
 
             // Add to users.
             $users[$user_value] = $user['displayName'];
