@@ -62,7 +62,7 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( is_built_mighty() ) {
+        if( ! is_built_mighty() ) {
 
             // Display developer content.
             echo $this->developer_content();
@@ -152,13 +152,14 @@ class builtDev {
                     <span class="built-nav-button active" id="built-issue">Create Issue</span>
                     <span class="built-nav-button" id="built-pm">Contact Us</span>
                 </div>
-                <div class="built-dash-forms">
-                    <div id="built-issue-form" class="active">
-                        Create an issue.
-                    </div>
-                    <div id="built-pm-form">
-                        Contact <?php echo $pm[1]; ?>
-                    </div>
+                <div class="built-dash-forms"><?php
+
+                    // Issue form.
+                    echo $this->issue_form();
+                    
+                    // Contact form.
+                    echo $this->contact_form(); ?>
+
                 </div>
             </div><?php
 
@@ -329,6 +330,68 @@ class builtDev {
             </div><?php
 
         }
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Issue form.
+     * 
+     * @since   1.0.0
+     */
+    public function issue_form() {
+
+        // Start output buffering.
+        ob_start();
+
+        // Output. ?>
+        <form id="built-issue-form" method="POST" class="built-form active">
+            <p>Report an issue and create a new ticket in Jira.</p>
+            <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
+            <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
+            <div class="built-issue-field">
+                <input type="text" name="built-issue-subject" placeholder="Subject">
+            </div>
+            <div class="built-issue-field">
+                <textarea name="built-issue-description" placeholder="Description"></textarea>
+            </div>
+            <div class="built-issue-save">
+                <input type="submit" class="button button-primary button-built" name="built-issue-save" value="Send">
+            </div>
+        </form><?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
+     * Contact form.
+     * 
+     * @since   1.0.0
+     */
+    public function contact_form() {
+
+        // Start output buffering.
+        ob_start();
+
+        // Output. ?>
+        <form id="built-contact-form" class="built-form" method="POST">
+            <p>Contact your project manager.</p>
+            <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
+            <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
+            <div class="built-issue-field">
+                <input type="text" name="built-project-subject" placeholder="Subject">
+            </div>
+            <div class="built-issue-field">
+                <textarea name="built-project-message" placeholder="Message"></textarea>
+            </div>
+            <div class="built-issue-save">
+                <input type="submit" class="button button-primary button-built" name="built-project-save" value="Send">
+            </div>
+        </form><?php
 
         // Return.
         return ob_get_clean();

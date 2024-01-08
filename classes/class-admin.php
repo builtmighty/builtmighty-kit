@@ -94,7 +94,17 @@ class builtAdmin {
                     echo $this->field( 'jira-pm', 'Project Manager', [
                         'type'      => 'select',
                         'options'   => $users
-                    ] );?>
+                    ] ); 
+                    
+                    // Jira User field.
+                    echo $this->field( 'jira-user', 'Jira User', [
+                        'type'      => 'text'
+                    ] );
+                    
+                    // Jira API Token.
+                    echo $this->field( 'jira-token', 'Jira Token', [
+                        'type'      => 'password'
+                    ] ); ?>
 
                     <div class="built-save">
                         <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
@@ -142,6 +152,11 @@ class builtAdmin {
                         } ?>
 
                     </select><?php
+
+                } elseif( $field['type'] == 'password' ) {
+
+                    // Output password. ?>
+                    <input type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
                 } else {
 

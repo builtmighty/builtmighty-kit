@@ -26,9 +26,9 @@ class builtJira {
     public function __construct() {
 
         // Set.
-        $this->user_email = 'tyler@builtmighty.com';
-        $this->api_token = 'ATATT3xFfGF0meGR62NdSseH4C6FXqPYzlvMOYoDMDGvVFZStVdnMnb3osSPGe-urLdcbhk-RRU0VaKOf-ZMcTjG-Gc0nCMC8zFcN3DjTDq6qb8Fa3rZspWycnHZ7bTvobsQR4uQPyWAzdR84yPucMAG3H37YzN_yUZSQ6hczBhMzpZrhSf3jx0=FB7329AD';
-        $this->api_url = 'https://builtmighty.atlassian.net/rest/api/3/';
+        $this->user_email   = ( ! empty( get_option( 'jira-user' ) ) ) ? get_option( 'jira-user' ) : false;
+        $this->api_token    = ( ! empty( get_option( 'jira-token' ) ) ) ? get_option( 'jira-token' ) : false;
+        $this->api_url      = 'https://builtmighty.atlassian.net/rest/api/3/';
 
     }
 
@@ -38,6 +38,9 @@ class builtJira {
      * @since   1.0.0
      */
     public function get_projects() {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
 
         // Set params.
         $params = [
@@ -64,6 +67,9 @@ class builtJira {
      * @since   1.0.0
      */
     public function get_users() {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
 
         // Set params.
         $params = [

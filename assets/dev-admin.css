@@ -60,3 +60,41 @@
     background: #D4121F;
     color: #fff;
 }
+
+.built-issue-field input, 
+.built-issue-field textarea {
+    background: #2c3338;
+    border: 1px solid #2c3338;
+    color: #fff;
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.built-issue-field {
+    margin: 0 0 10px 0;
+}
+
+.built-issue-field input:focus, .built-issue-field textarea:focus {
+    box-shadow: none;
+    border: 1px solid rgb(255 255 255 / 10%);
+}
+
+input.button.button-built {
+    background: #e42029;
+    border-color: #e42029;
+    box-shadow: none;
+}
+
+input.button.button-built:hover {
+    background: #951b20;
+    border-color: #e42029;
+}
+
+form.built-form {
+    display: none;
+}
+
+form.built-form.active {
+    display: block;
+}
