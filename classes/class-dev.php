@@ -27,6 +27,9 @@ class builtDev {
 
         // Load admin styles.
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
+
+        // Process form.
+        add_action( 'wp_ajax_built_process_form', [ $this, 'process_form' ] );
         
     }
 
@@ -149,10 +152,11 @@ class builtDev {
             // Create menu. ?>
             <div class="built-dash-body built-panel">
                 <div class="built-dash-nav">
-                    <span class="built-nav-button active" id="built-issue">Create Issue</span>
-                    <span class="built-nav-button" id="built-pm">Contact Us</span>
+                    <span class="built-nav-button active" id="built-issue" data-id="built-issue-form">Create Issue</span>
+                    <span class="built-nav-button" id="built-pm" data-id="built-contact-form">Contact Us</span>
                 </div>
-                <div class="built-dash-forms"><?php
+                <div class="built-dash-forms">
+                    <div class="built-form-status" style="display:none"><p></p></div><?php
 
                     // Issue form.
                     echo $this->issue_form();
@@ -347,8 +351,8 @@ class builtDev {
         ob_start();
 
         // Output. ?>
-        <form id="built-issue-form" method="POST" class="built-form active">
-            <p>Report an issue and create a new ticket in Jira.</p>
+        <div id="built-issue-form" class="built-form active">
+            <p>Report an issue and create a new ticket.</p>
             <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
             <div class="built-issue-field">
@@ -360,7 +364,7 @@ class builtDev {
             <div class="built-issue-save">
                 <input type="submit" class="button button-primary button-built" name="built-issue-save" value="Send">
             </div>
-        </form><?php
+        </div><?php
 
         // Return.
         return ob_get_clean();
@@ -378,10 +382,10 @@ class builtDev {
         ob_start();
 
         // Output. ?>
-        <form id="built-contact-form" class="built-form" method="POST">
+        <div id="built-contact-form" class="built-form">
             <p>Contact your project manager.</p>
-            <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
-            <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
+            <input type="hidden" name="built-project-project" value="<?php echo get_option( 'jira-project' ); ?>">
+            <input type="hidden" name="built-project-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
             <div class="built-issue-field">
                 <input type="text" name="built-project-subject" placeholder="Subject">
             </div>
@@ -391,10 +395,64 @@ class builtDev {
             <div class="built-issue-save">
                 <input type="submit" class="button button-primary button-built" name="built-project-save" value="Send">
             </div>
-        </form><?php
+        </div><?php
 
         // Return.
         return ob_get_clean();
+
+    }
+
+    /**
+     * Process form.
+     * 
+     * @since   1.0.0
+     */
+    public function process_form() {
+
+        // Set status.
+        $status = [
+            'status'    => 'error',
+            'message'   => 'There was an error processing your request.',
+        ];
+
+        // Check for missing data.
+        if( empty( $_POST['project'] ) || empty( $_POST['pm'] ) || empty( $_POST['title'] ) || empty( $_POST['desc'] ) ) {
+
+            // Respond.
+            echo json_encode( $status );
+
+            // Execute Order 66.
+            wp_die();
+
+        }
+
+        // Check type.
+        if( $_POST['type'] === 'built-issue-save' ) {
+
+            // Jira.
+            $jira = new builtJira();
+
+            // Create issue.
+            $jira->create_issue( $_POST );
+
+            // Set status.
+            $status = [
+                'status'    => 'success',
+                'message'   => 'Your issue has been created.',
+            ];
+
+        } else if( $_POST['type'] === 'built-project-save' ) {
+
+            // Contact project manager.
+            $this->contact_pm();
+
+        }
+
+        // Respond.
+        echo json_encode( $status );
+
+        // Execute Order 66.
+        wp_die();
 
     }
 
@@ -425,15 +483,24 @@ class builtDev {
         // Check if we're on a dev site.
         if( is_built_mighty() ) {
 
-            // Enqueue admin styles.
+            // CSS.
             wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dev-admin.css', [], BUILT_VERSION );
 
         } else {
 
-            // Enqueue admin styles.
+            // CSS.
             wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/admin.css', [], BUILT_VERSION );
 
         }
+
+        // JS.
+        wp_enqueue_script( 'builtmighty-admin', BUILT_URI . 'assets/dash.js', [ 'jquery' ], BUILT_VERSION, true );
+
+        // Localize.
+        wp_localize_script( 'builtmighty-admin', 'built', [
+            'ajax' => admin_url( 'admin-ajax.php' ),
+            'nonce' => wp_create_nonce( 'builtmighty' ),
+        ] );
 
     }
 

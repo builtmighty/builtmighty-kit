@@ -89,6 +89,58 @@ class builtJira {
     }
 
     /**
+     * Create issue. 
+     * 
+     * @since   1.0.0
+     */
+    public function create_issue( $data ) {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
+
+        // Get PM account ID.
+        $pm = explode( '|', base64_decode( $data['pm'] ) );
+
+        // Set body.
+        $body = [
+            'fields' => [
+                'project'   => [
+                    'key'   => $data['project'],
+                ],
+                'summary'   => $data['title'],
+                'description'   => [
+                    'type'  => 'doc',
+                    'version'   => 1,
+                    'content'   => [
+                        [
+                            'type'  => 'paragraph',
+                            'content'   => [
+                                [
+                                    'type'  => 'text',
+                                    'text'  => $data['desc'],
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'issuetype' => [
+                    'name'  => 'Task',
+                ],
+                'assignee'  => [
+                    'accountId' => $pm[0],
+                ],
+            ]
+        ];
+
+        // Request.
+        $response = $this->request( 'issue', $this->get_args( $body ) );
+
+        // Return.
+        return true;
+
+    }
+
+    /**
      * Organize projects.
      * 
      * @since   1.0.0
@@ -176,6 +228,9 @@ class builtJira {
             // Add content length.
             $args['headers']['Content-Length'] = strlen( $args['body'] );
 
+            // Add content type.
+            $args['headers']['Content-Type'] = 'application/json';
+
         }
 
         // Return.
@@ -194,7 +249,13 @@ class builtJira {
     public function request( $endpoint, $args ) {
 
         // Request.
-        $response = json_decode( wp_remote_retrieve_body( wp_remote_request( $this->api_url . $endpoint, $args ) ), true );
+        $request = wp_remote_request( $this->api_url . $endpoint, $args );
+
+        // Request.
+        $response = json_decode( wp_remote_retrieve_body( $request ), true );
+
+        // Log.
+        error_log( 'REQUEST: ' . print_r( $request, true ) );
 
         // Return.
         return $response;

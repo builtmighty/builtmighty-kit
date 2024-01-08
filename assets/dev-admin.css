@@ -86,15 +86,34 @@ input.button.button-built {
     box-shadow: none;
 }
 
-input.button.button-built:hover {
+input.button.button-built:hover,
+input.button.button-built:focus {
     background: #951b20;
     border-color: #e42029;
+    box-shadow: none;
 }
 
-form.built-form {
+.built-form {
     display: none;
 }
 
-form.built-form.active {
+.built-form.active {
     display: block;
+}
+
+.built-form-status {
+    border-radius: 4px;
+    padding: 5px 10px;
+}
+
+.built-form-status p {
+    margin: 0;
+}
+
+.built-form-status.success {
+    background: green;
+}
+
+.built-form-status.error {
+    background: #951b20;
 }
