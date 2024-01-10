@@ -27,8 +27,14 @@ class builtJira {
 
         // Set.
         $this->user_email   = ( ! empty( get_option( 'jira-user' ) ) ) ? get_option( 'jira-user' ) : false;
-        $this->api_token    = ( ! empty( get_option( 'jira-token' ) ) ) ? get_option( 'jira-token' ) : false;
+        $this->api_token    = ( ! empty( get_option( 'jira-token' ) ) ) ? unserialize( get_option( 'jira-token' ) ) : false;
         $this->api_url      = 'https://builtmighty.atlassian.net/rest/api/3/';
+
+        // Get keys.
+        $keys = new builtKeys();
+
+        // Decrypt token.
+        $this->api_token = $keys->decrypt( $this->api_token );
 
     }
 
@@ -85,6 +91,27 @@ class builtJira {
 
         // Return.
         return $this->sort_users( $response );
+
+    }
+
+    /**
+     * Get user.
+     * 
+     * @since   1.0.0
+     */
+    public function get_user( $id ) {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
+
+        // Set endpoint.
+        $endpoint = 'user?accountId=' . $id;
+
+        // Request.
+        $response = $this->request( $endpoint, $this->get_args( [], 'GET' ) );
+
+        // Return.
+        return $response;
 
     }
 
@@ -253,9 +280,6 @@ class builtJira {
 
         // Request.
         $response = json_decode( wp_remote_retrieve_body( $request ), true );
-
-        // Log.
-        error_log( 'REQUEST: ' . print_r( $request, true ) );
 
         // Return.
         return $response;

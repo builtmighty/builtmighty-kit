@@ -134,7 +134,7 @@ class builtAdmin {
             <div class="built-input"><?php
 
                 // Check type.
-                if( $field['type'] == 'select' ) {
+                if( $field['type'] == 'select' && ! empty( $field['options'] ) ) {
 
                     // Output select. ?>
                     <select name="<?php echo $id; ?>">
@@ -155,13 +155,25 @@ class builtAdmin {
 
                 } elseif( $field['type'] == 'password' ) {
 
+                    // Check value.
+                    if( ! empty( $value ) ) {
+
+                        // Obfuscate value.
+                        $value = '***********************';
+
+                    }
+
                     // Output password. ?>
                     <input type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
-                } else {
+                } elseif( $field['type'] == 'text' ) {
 
                     // Output text. ?>
                     <input type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+
+                } else {
+
+                    // Don't output a field.
 
                 } ?>
 
@@ -184,8 +196,27 @@ class builtAdmin {
             // Sanitize.
             $value = sanitize_text_field( $value );
 
-            // Update option.
-            update_option( $key, $value );
+            // Check key.
+            if( $key == 'jira-token' ) {
+
+                // Check value.
+                if( $value === '***********************' ) continue;
+
+                // Get keys.
+                $keys = new builtKeys();
+
+                // Encrypt.
+                $value = $keys->encrypt( $value );
+
+                // Update option.
+                update_option( $key, serialize( $value ) );
+
+            } else {
+
+                // Update option.
+                update_option( $key, $value );
+
+            }
 
         }
 

@@ -289,7 +289,7 @@ class builtDev {
 
             // Display message. ?>
             <div class="built-panel">
-                <p style="margin:0;"><strong>Git is not installed.</strong> Install Git to use this feature.</p>
+                <p style="margin:0;"><strong>A Git repo is not setup.</strong> Create a Git repo to use this feature.</p>
             </div><?php
 
         } else {
@@ -426,11 +426,11 @@ class builtDev {
 
         }
 
+        // Jira.
+        $jira = new builtJira();
+
         // Check type.
         if( $_POST['type'] === 'built-issue-save' ) {
-
-            // Jira.
-            $jira = new builtJira();
 
             // Create issue.
             $jira->create_issue( $_POST );
@@ -443,8 +443,25 @@ class builtDev {
 
         } else if( $_POST['type'] === 'built-project-save' ) {
 
-            // Contact project manager.
-            $this->contact_pm();
+            // Get project manager ID.
+            $pm = explode( '|', base64_decode( $_POST['pm'] ) );
+
+            // Get user.
+            $user = $jira->get_user( $pm[0] );
+
+            // Check for email.
+            if( isset( $user['emailAddress'] ) ) {
+
+                // Send email.
+                wp_mail( $user['emailAddress'], sanitize_text_field( $_POST['subject'] ), sanitize_text_field( $_POST['message'] ) );
+
+                // Set status.
+                $status = [
+                    'status'    => 'success',
+                    'message'   => 'Your message has been sent.',
+                ];
+
+            }
 
         }
 
