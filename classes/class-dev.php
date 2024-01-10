@@ -76,7 +76,7 @@ class builtDev {
             $user = wp_get_current_user();
 
             // Check if user email is @builtmighty.
-            if(\ strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
+            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
 
                 // Display developer content.
                 echo $this->developer_content();
