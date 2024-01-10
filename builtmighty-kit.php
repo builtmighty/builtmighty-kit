@@ -73,6 +73,7 @@ require_once BUILT_PATH . 'classes/class-access.php';
 require_once BUILT_PATH . 'classes/class-woo.php';
 require_once BUILT_PATH . 'classes/class-mail.php';
 require_once BUILT_PATH . 'classes/class-security.php';
+require_once BUILT_PATH . 'classes/class-speed.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
 require_once BUILT_PATH . 'classes/class-dev.php';
 require_once BUILT_PATH . 'classes/class-admin.php';
@@ -89,6 +90,7 @@ new builtAccess();
 new builtWoo();
 new builtMail();
 new builtSecurity();
+new builtSpeed();
 new builtDev();
 new builtAdmin();
 
