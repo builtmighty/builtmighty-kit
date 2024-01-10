@@ -65,7 +65,7 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( ! is_built_mighty() ) {
+        if( is_built_mighty() ) {
 
             // Display developer content.
             echo $this->developer_content();
@@ -76,7 +76,7 @@ class builtDev {
             $user = wp_get_current_user();
 
             // Check if user email is @builtmighty.
-            if( ! strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
+            if(\ strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
 
                 // Display developer content.
                 echo $this->developer_content();
