@@ -124,16 +124,14 @@ function built_check_site() {
     } else {
 
         // Check if site URL has changed.
-        if( get_option( 'built_siteurl' ) !== site_url() ) {
+        if( get_option( 'built_siteurl') === site_url() ) return;
 
-            // // Update site URL.
-            // update_option( 'built_siteurl', site_url() );
+        // Update site URL.
+        update_option( 'built_siteurl', site_url() );
 
-            // // Update wp-config.php.
-            // $setup = new builtSetup();
-            // $setup->run();
-
-        }
+        // Update wp-config.php.
+        $setup = new builtSetup();
+        $setup->run();
 
     }
 
