@@ -3,7 +3,7 @@
 Plugin Name: Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A custom kit for Built Mighty developers.
-Version: 1.0.0
+Version: 1.2.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '0.0.147' );
+define( 'BUILT_VERSION', '1.2.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -101,8 +101,8 @@ new builtAdmin();
  */
 function is_built_mighty() {
 
-    // Check if site is mightyrhino.net or builtmighty.com.
-    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false || strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
+    // Check if site is mightyrhino.net or builtmighty.com, or if site is local.
+    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false || strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false || ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) ) return true;
 
     // Return false.
     return false;

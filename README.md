@@ -1,57 +1,57 @@
 <p align="center" style="font-size:42px !important;">🚀 Built Mighty Kit</p>
 
-# Installation
-On initial plugin installation and activation, nothing will happen until constants are defined within wp-config, except for the email/action scheduler settings on builtmighty.com or mightyrhino.net development sites.
-
-## Note
-In order for the login portion of the plugin to work, the WordPress site must be using some form of "pretty" permalinks.
-
 ## About
-This plugin allows you to define a new login endpoint within wp-config to protect wp-login from bot attacks. It can also be used on development sites to stop bots from visiting. Additionally, it disables email sends by settings the "to" email address to developers@builtmighty.com, on Built Mighty development sites. It also disables the Action Scheduler queue, if WooCommerce is active.
+This plugin is the all around kit for both development sites and production sites. From defining a new login endpoint within wp-config, to protect wp-login from bot attacks, to disabling emails from development sites. This plugin should provide you with the tools for a happy, healthy environment. If you have additional tools you'd like to see add, please either open an issue or contact one of the lead devs by taggin '@lead-dev-team' within Slack.
 
-### Login Endpoint
+<details>
+  <summary>Installation on a Development Site</summary>
+  
+  ### What is a development site?
+  Development sites are detected automatically by the plugin, by parsing whether or not the URL is a builtmighty.com or mightyrhino.net URL. Development sites can also be defined by setting WP_ENVIRONMENT_TYPE to either: local, development, or staging.
 
-To define a new login endpoint, and conversely redirect users back to the home URL, if they visit wp-login.php, set the following within wp-config.
+  If a development site is detected, the following takes place:
 
-```PHP
-define( 'BUILT_ENDPOINT', 'your-endpoint' );
-```
+  1. On activation:
+     * Disables external connections via WP_HTTP_BLOCK_EXTERNAL.
+     * Disables indexing for SEO purposes.
+     * Disables bad plugins within development environments.
+     * Updates customer emails from user@email.com to user.RANDOMSTRING@builtmighty.com.
+  2. While running, the plugin does the following:
+     * Adds a dashboard development widget with: server data, GitHub repo data, as well as a list of any disabled plugins.
+     * Disables the Action Scheduler.
+     * Disables emails by setting the 'to' address to developers@builtmighty.com.
+     * Disables access to the default WordPress admin when `BUILT_ENDPOINT` is set. Example: `define( 'BUILT_ENDPOINT', 'access' );`.
+     * Disables access to WordPress, for non-logged in users when `BUILT_ACCESS` is set to true. Example: `define( 'BUILT_ACCESS', true );`.
 
-### Access
+  The plugin also does some other items, which it also does on production sites as well.
 
-If you want to block access to the site for non-logged in users, which will redirect them to builtmighty.com, you can set the following within wp-config.
+</details>
 
-```PHP
-define( 'BUILT_ACCESS', true );
-```
+<details>
+  <summary>Installation on a Production Site</summary>
+  
+  ### What is a production site?
+  Production sites are any live, on the web, available sites for customers. For production sites, the plugin does the following:
 
-### Emails
+  1. Access:
+     * Disables access to the default WordPress admin when `BUILT_ENDPOINT` is set. Example: `define( 'BUILT_ENDPOINT', 'access' );`.
+  2. While running, the plugin does the following:
+     * Adds a dashboard development widget for Built Mighty developers with: server data, GitHub repo data, as well as a list of any disabled plugins.
+     * Adds a dashboard widget for Built Mighty clients with: a welcome message, a Jira issue creation form, project manager contact form, and GitHub repo data. 
+     * Adds some security enhancements like: diables XML-RPC, removes WordPress version numbers, removes specific login errors, and removes user enumeration.
+     * Adds some speed enhancements like: dequeues emojis, updates heartbeat timing, updates post revisions, changes action scheduler retention period, and removes junk dashboard widgets.
+  
+</details>
 
-By default, if this plugin is active on a site that's either on a builtmighty.com or mightyrhino.net URL, emails will automatically be set to the developers email account. If you would like to enable email on these sites, set the following within wp-config.
+## 1.2.0
 
-```PHP
-define( 'BUILT_ENABLE_EMAIL', true );
-```
+* Added an admin panel for Jira settings.
+* Added a dashboard widget for Built Mighty developers.
+* Added a dashboard widget for Built Mighty clients.
+* Added a setup class for development environments.
+* Added a speed class for production sites.
+* Added a security class for production sites.
 
-If you would like to disable email on a site that isn't builtmighty.com or mightyrhino.net, you can also define that within wp-config.
-
-```PHP
-define( 'BUILT_DISABLE_EMAIL', true );
-```
-
-### Action Scheduler
-
-Like email disabling, by default, the Action Scheduler queue is disabled on a site that's either on a builtmighty.com or mightyrhino.net URL. If you would like to enable the Action Scheduler on these sites, set the following within wp-config.
-
-```PHP
-define( 'BUILT_ENABLE_AS', true );
-```
-
-And if you would like to disable the Action Scheduler on a site that isn't builtmighty.com or mightyrhino.net, you can also define that within wp-config.
-
-```PHP
-define( 'BUILT_DIABLE_AS', true );
-```
 
 ## 1.1.0
 
