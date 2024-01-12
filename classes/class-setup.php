@@ -225,6 +225,9 @@ class builtSetup {
             // Generate a random string.
             $string = $this->get_string();
 
+            // Save original email.
+            update_user_meta( $user->ID, 'built_original_email', $user->user_email );
+
             // Create new email.
             $new_email = explode( '@', $user->user_email )[0] . '.' . $string . '@builtmighty.com';
 
@@ -238,6 +241,48 @@ class builtSetup {
             $wpdb->update(
                 $wpdb->users,
                 [ 'user_email' => $new_email ],
+                [ 'ID' => $user->ID ]
+            );
+
+        }
+
+    }
+
+    /**
+     * Reset email addresses.
+     * 
+     * @since   1.0.0
+     */
+    public function reset_emails() {
+
+        // Check if this is a dev site.
+        if( ! is_built_mighty() ) return;
+
+        // Get WPDB.
+        global $wpdb;
+
+        // Get all users with the meta key built_original_email.
+        $users = $wpdb->get_results( "SELECT ID, user_email, meta_value FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id WHERE {$wpdb->usermeta}.meta_key = 'built_original_email'" );
+
+        // Loop through users.
+        foreach( $users as $user ) {
+
+            // Check if user email is already a builtmighty.com email.
+            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) continue;
+
+            // Set original email.
+            $original_email = $user->meta_value;
+
+            // Search for post meta with user email.
+            $wpdb->query( "UPDATE {$wpdb->postmeta} SET meta_value = '{$original_email}' WHERE meta_value = '{$user->user_email}'" );
+
+            // Search for and update user meta with user email.
+            $wpdb->query( "UPDATE {$wpdb->usermeta} SET meta_value = '{$original_email}' WHERE meta_value = '{$user->user_email}'" );
+
+            // Update user email.
+            $wpdb->update(
+                $wpdb->users,
+                [ 'user_email' => $original_email ],
                 [ 'ID' => $user->ID ]
             );
 
