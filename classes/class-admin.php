@@ -22,6 +22,9 @@ class builtAdmin {
         // Enqueue.
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 
+        // Ajax.
+        add_action( 'wp_ajax_built_email_replace', [ $this, 'replace_emails' ] );
+
     }
 
     /**
@@ -110,6 +113,20 @@ class builtAdmin {
                         <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
                     </div>
                 </form>
+            </div>
+            <div class="built-panel built-admin-panel">
+                <p>Customer email implmentation tools. Run this tool to re-implement real user emails, instead of the replacements.</p>
+                <div class="built-email-tool">
+                    <div class="built-email-progress">
+                        <div class="built-email-bar-outer">
+                            <div class="built-email-bar-inner"></div>
+                        </div>
+                        <div class="built-email-bar-status">
+                            25%
+                        </div>
+                    </div>
+                    <input type="submit" id="built-email" class="button button-primary button-built" data-count="0" data-offset="0" data-total="0" data-action="built_email_replace" name="built-tool" value="Run">
+                </div>
             </div>
         </div><?php
 
@@ -231,6 +248,39 @@ class builtAdmin {
 
         // CSS.
         wp_enqueue_style( 'built-admin-settings', BUILT_URI . 'assets/admin-settings.css', [], BUILT_VERSION );
+
+        // JS.
+        wp_enqueue_script( 'built-admin-settings', BUILT_URI . 'assets/admin-settings.js', [ 'jquery' ], BUILT_VERSION, true );
+
+        // Localize.
+        wp_localize_script( 'built-admin-settings', 'built', [
+            'ajax'  => admin_url( 'admin-ajax.php' ),
+            'nonce' => wp_create_nonce( 'built' )
+        ] );
+
+    }
+
+    /**
+     * Replace emails.
+     * 
+     * @since   1.0.0
+     */
+    public function replace_emails() {
+
+        // Check nonce.
+        if( ! wp_verify_nonce( $_POST['nonce'], 'built' ) ) wp_die( 'Nonce failed.' );
+
+        // Get setup.
+        $setup = new builtSetup();
+
+        // Reset.
+        $data = $setup->reset_emails( $_POST['count'], $_POST['offset'], $_POST['total'] );
+
+        // Send JSON.
+        echo json_encode( $data );
+
+        // Execute Order 66.
+        wp_die();
 
     }
 

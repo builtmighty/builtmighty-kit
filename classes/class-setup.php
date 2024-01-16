@@ -222,11 +222,11 @@ class builtSetup {
             // Check if user email is already a builtmighty.com email.
             if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) continue;
 
+            // Set original.
+            $original = $user->user_email;
+
             // Generate a random string.
             $string = $this->get_string();
-
-            // Save original email.
-            update_user_meta( $user->ID, 'built_original_email', $user->user_email );
 
             // Create new email.
             $new_email = explode( '@', $user->user_email )[0] . '.' . $string . '@builtmighty.com';
@@ -236,6 +236,9 @@ class builtSetup {
 
             // Search for and update user meta with user email.
             $wpdb->query( "UPDATE {$wpdb->usermeta} SET meta_value = '{$new_email}' WHERE meta_value = '{$user->user_email}'" );
+
+            // Save original email.
+            update_user_meta( $user->ID, 'built_original_email', $original );
 
             // Update user email.
             $wpdb->update(
@@ -253,22 +256,37 @@ class builtSetup {
      * 
      * @since   1.0.0
      */
-    public function reset_emails() {
+    public function reset_emails( $count, $offset, $total = NULL ) {
 
-        // Check if this is a dev site.
-        if( ! is_built_mighty() ) return;
+        // Set limit.
+        $limit = 500;
+
+        // Set offset.
+        $offset = ( $count == 0 ) ? 0 : $offset + $limit;
 
         // Get WPDB.
         global $wpdb;
 
-        // Get all users with the meta key built_original_email.
-        $users = $wpdb->get_results( "SELECT ID, user_email, meta_value FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id WHERE {$wpdb->usermeta}.meta_key = 'built_original_email'" );
+        // Set SQL. 
+        $SQL = "SELECT u.ID, u.user_email, m.meta_value 
+        FROM {$wpdb->users} u
+        LEFT JOIN {$wpdb->usermeta} m ON (u.ID = m.user_id AND m.meta_key = 'built_original_email')
+        WHERE m.meta_key = 'built_original_email'
+        LIMIT {$limit} OFFSET {$offset}";
+
+        // Get users.
+        $users = $wpdb->get_results( $SQL );
+
+        // Get total users, if not set.
+        if( $total == NULL || $total == 0 ) {
+
+            // Get total users.
+            $total = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id WHERE {$wpdb->usermeta}.meta_key = 'built_original_email'" );
+
+        }
 
         // Loop through users.
         foreach( $users as $user ) {
-
-            // Check if user email is already a builtmighty.com email.
-            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) continue;
 
             // Set original email.
             $original_email = $user->meta_value;
@@ -287,6 +305,13 @@ class builtSetup {
             );
 
         }
+
+        // Return.
+        return [ 
+            'count'     => $count++, 
+            'offset'    => $offset,
+            'total'     => $total,
+        ];
 
     }
 

@@ -64,3 +64,24 @@
 .built-dash-nav span.built-nav-button:hover {
     background: #d5111f;
 }
+
+.built-email-bar-outer {
+    background: #2c3338;
+    height: 5px;
+    border-radius: 4px;
+}
+
+.built-email-progress {
+    margin: 0 0 15px;
+}
+
+.built-email-bar-inner {
+    height: 5px;
+    background: #e42029;
+    border-radius: 4px;
+    width: 0;
+}
+
+.built-email-bar-status {
+    opacity: 0;
+}
