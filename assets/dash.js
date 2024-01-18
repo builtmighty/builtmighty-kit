@@ -51,6 +51,7 @@ jQuery(document).ready(function($) {
         let type = $(this).attr('name');
         let project;
         let pm;
+        let user;
         let title;
         let desc;
         let url;
@@ -60,6 +61,7 @@ jQuery(document).ready(function($) {
             // Create issue.
             project = $('input[name="built-issue-project"]').val();
             pm = $('input[name="built-issue-pm"]').val();
+            user = $('input[name="built-issue-user"]').val();
             title = $('input[name="built-issue-subject"]').val();
             desc = $('textarea[name="built-issue-description"]').val();
             url = $('input[name="built-issue-url"]').val();
@@ -68,6 +70,7 @@ jQuery(document).ready(function($) {
             // Send contact.
             project = $('input[name="built-project-project"]').val();
             pm = $('input[name="built-project-pm"]').val();
+            user = $('input[name="built-project-user"]').val();
             title = $('input[name="built-project-subject"]').val();
             desc = $('textarea[name="built-project-message"]').val();
             url = '';
@@ -82,6 +85,7 @@ jQuery(document).ready(function($) {
                 type: type,
                 project: project,
                 pm: pm,
+                user: user,
                 title: title,
                 desc: desc,
                 url: url,

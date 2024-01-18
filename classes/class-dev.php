@@ -350,11 +350,15 @@ class builtDev {
         // Start output buffering.
         ob_start();
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Output. ?>
         <div id="built-issue-form" class="built-form active">
             <p>Report an issue and create a new ticket.</p>
             <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
+            <input type="hidden" name="built-issue-user" value="<?php echo $user->display_name; ?>">
             <div class="built-issue-field">
                 <input type="text" name="built-issue-subject" placeholder="Subject *">
             </div>
@@ -388,11 +392,15 @@ class builtDev {
         // Start output buffering.
         ob_start();
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Output. ?>
         <div id="built-contact-form" class="built-form">
             <p>Contact your project manager.</p>
             <input type="hidden" name="built-project-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-project-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
+            <input type="hidden" name="built-project-user" value="<?php echo $user->display_name; ?>">
             <div class="built-issue-field">
                 <input type="text" name="built-project-subject" placeholder="Subject *">
             </div>
@@ -460,7 +468,10 @@ class builtDev {
             if( isset( $user['emailAddress'] ) ) {
 
                 // Append site URL to message.
-                $_POST['desc'] .= "\n\n — Submitted on " . site_url( '/' );
+                $_POST['desc'] .= "\n\n — Submitted on: " . site_url( '/' );
+
+                // Append user.
+                $_POST['desc'] .= "\n — Submitted by: " . $_POST['user'];
 
                 // Send email.
                 wp_mail( $user['emailAddress'], stripslashes( sanitize_text_field( $_POST['title'] ) ), stripslashes( sanitize_text_field( $_POST['desc'] ) ) );

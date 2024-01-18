@@ -131,16 +131,27 @@ class builtJira {
         // Get PM account ID.
         $pm = explode( '|', base64_decode( $data['pm'] ) );
 
+        // Add some additional lines to the description.
+        $data['desc'] .= "\n";
+
+        // If there's a user.
+        if( ! empty( $data['user'] ) ) {
+
+            // Add user to description.
+            $data['desc'] .= "\n — Submitted by: " . $data['user'];
+
+        }
+
         // If there's a URL, add it to the description.
         if( ! empty( $data['url'] ) ) {
 
             // Append the URL to the description.
-            $data['desc'] .= "\n\n — Relevant URL: " . $data['url'];
+            $data['desc'] .= "\n — Relevant URL: " . $data['url'];
 
         }
 
         // Append the site URL to the description.
-        $data['desc'] .= "\n\n — Submitted on " . site_url( '/' );
+        $data['desc'] .= "\n — Submitted on: " . site_url( '/' );
 
         // Set body.
         $body = [
@@ -247,14 +258,6 @@ class builtJira {
 
         // Execute.
         $response = curl_exec( $ch );
-
-        if (curl_errno($ch)) {
-            // Handle error, log details for debugging
-            $error_message = curl_error($ch);
-            error_log( __FUNCTION__ . ' - ' . $error_message );
-        } else {
-            error_log( __FUNCTION__ . ' - ' . print_r( $response, true ) );
-        }
 
         // Close.
         curl_close($ch);
