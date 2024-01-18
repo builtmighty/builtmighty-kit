@@ -22,9 +22,6 @@ class builtAdmin {
         // Enqueue.
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 
-        // Ajax.
-        add_action( 'wp_ajax_built_email_replace', [ $this, 'replace_emails' ] );
-
     }
 
     /**
@@ -82,52 +79,79 @@ class builtAdmin {
         <div class="built-admin">
             <div class="built-logo">
                 <img src="<?php echo BUILT_URI . 'assets/logo-builtmighty.png'; ?>" alt="Built Mighty">
-            </div>
-            <div class="built-panel built-admin-panel">
-                <p>Welcome to the client configuration panel for this client. Here, you can connect both the client's project on Jira, as well as their project manager.</p>
-                <form method="POST" class="built-fields"><?php
+            </div><?php
 
-                    // Project select field.
-                    echo $this->field( 'jira-project', 'Project', [
-                        'type'      => 'select',
-                        'options'   => $projects
-                    ] );
-                    
-                    // User select field.
-                    echo $this->field( 'jira-pm', 'Project Manager', [
-                        'type'      => 'select',
-                        'options'   => $users
-                    ] ); 
-                    
-                    // Jira User field.
-                    echo $this->field( 'jira-user', 'Jira User', [
-                        'type'      => 'text'
-                    ] );
-                    
-                    // Jira API Token.
-                    echo $this->field( 'jira-token', 'Jira Token', [
-                        'type'      => 'password'
-                    ] ); ?>
+            // Check for activation.
+            if( $_GET['activation'] !== 'true' ) { ?>
 
-                    <div class="built-save">
-                        <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
-                    </div>
-                </form>
-            </div>
-            <div class="built-panel built-admin-panel">
-                <p>Customer email implmentation tools. Run this tool to re-implement real user emails, instead of the replacements.</p>
-                <div class="built-email-tool">
-                    <div class="built-email-progress">
-                        <div class="built-email-bar-outer">
-                            <div class="built-email-bar-inner"></div>
+                <div class="built-panel built-admin-panel">
+                    <p>Welcome to the client configuration panel for this client. Here, you can connect both the client's project on Jira, as well as their project manager.</p>
+                    <form method="POST" class="built-fields"><?php
+
+                        // Project select field.
+                        echo $this->field( 'jira-project', 'Project', [
+                            'type'      => 'select',
+                            'options'   => $projects
+                        ] );
+                        
+                        // User select field.
+                        echo $this->field( 'jira-pm', 'Project Manager', [
+                            'type'      => 'select',
+                            'options'   => $users
+                        ] ); 
+                        
+                        // Jira User field.
+                        echo $this->field( 'jira-user', 'Jira User', [
+                            'type'      => 'text'
+                        ] );
+                        
+                        // Jira API Token.
+                        echo $this->field( 'jira-token', 'Jira Token', [
+                            'type'      => 'password'
+                        ] ); ?>
+
+                        <div class="built-save">
+                            <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
                         </div>
-                        <div class="built-email-bar-status">
-                            25%
-                        </div>
-                    </div>
-                    <input type="submit" id="built-email" class="button button-primary button-built" data-count="0" data-offset="0" data-total="0" data-action="built_email_replace" name="built-tool" value="Run">
+                    </form>
                 </div>
-            </div>
+                <div class="built-panel built-admin-panel">
+                    <p>Customer email implmentation tools. Run this tool to re-implement real user emails, instead of the replacements.</p>
+                    <div id="built-email-tool" class="built-tool">
+                        <div class="built-progress">
+                            <div class="built-bar-outer">
+                                <div class="built-bar-inner"></div>
+                            </div>
+                            <div class="built-bar-status"></div>
+                        </div>
+                        <div class="built-submit">
+                            <input type="submit" class="button built-action button-primary button-built" data-set='<?php echo json_encode( [ 'id' => 'built-email-tool', 'action' => 'built_email_replace', 'count' => 0, 'offset' => 0, 'total' => 0 ] ); ?>' name="built-tool" value="Run">
+                            <div class="built-loading"><?php include BUILT_PATH . 'assets/loading-icon.svg'; ?></div>
+                        </div>
+                    </div>
+                </div><?php
+
+            } else { ?>
+
+                <div class="built-panel built-admin-panel">
+                    <h3 style="color:#fff;">Customer Email Protection</h3>
+                    <p>Run the following tool to replace email addresses in the database with custom generated, protected email addresses. Original addresses are stored and a tool is available to re-implement, if needed.</p>
+                    <div id="built-email-protect" class="built-tool">
+                        <div class="built-progress">
+                            <div class="built-bar-outer">
+                                <div class="built-bar-inner"></div>
+                            </div>
+                            <div class="built-bar-status"></div>
+                        </div>
+                        <div class="built-submit">
+                            <input type="submit" class="button built-action button-primary button-built" data-set='<?php echo json_encode( [ 'id' => 'built-email-protect', 'action' => 'built_email_protect', 'count' => 0, 'offset' => 0, 'total' => 0 ] ); ?>' name="built-tool" value="Run">
+                            <div class="built-loading"><?php include BUILT_PATH . 'assets/loading-icon.svg'; ?></div>
+                        </div>
+                    </div>
+                </div><?php
+
+            } ?>
+
         </div><?php
 
     }
@@ -257,30 +281,6 @@ class builtAdmin {
             'ajax'  => admin_url( 'admin-ajax.php' ),
             'nonce' => wp_create_nonce( 'built' )
         ] );
-
-    }
-
-    /**
-     * Replace emails.
-     * 
-     * @since   1.0.0
-     */
-    public function replace_emails() {
-
-        // Check nonce.
-        if( ! wp_verify_nonce( $_POST['nonce'], 'built' ) ) wp_die( 'Nonce failed.' );
-
-        // Get setup.
-        $setup = new builtSetup();
-
-        // Reset.
-        $data = $setup->reset_emails( $_POST['count'], $_POST['offset'], $_POST['total'] );
-
-        // Send JSON.
-        echo json_encode( $data );
-
-        // Execute Order 66.
-        wp_die();
 
     }
 

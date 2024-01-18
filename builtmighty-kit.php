@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.2.010' );
+define( 'BUILT_VERSION', '1.2.030' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -44,6 +44,9 @@ function built_activation() {
 
     // Store site URL.
     update_option( 'built_siteurl', site_url() );
+
+    // Set transient.
+    set_transient( 'built_activation', true, 60 );
 
     // Flush rewrite rules.
     flush_rewrite_rules();
@@ -77,6 +80,7 @@ require_once BUILT_PATH . 'classes/class-speed.php';
 require_once BUILT_PATH . 'classes/class-setup.php';
 require_once BUILT_PATH . 'classes/class-dev.php';
 require_once BUILT_PATH . 'classes/class-admin.php';
+require_once BUILT_PATH . 'classes/class-ajax.php';
 require_once BUILT_PATH . 'classes/class-keys.php';
 require_once BUILT_PATH . 'inc/class-jira.php';
 
@@ -93,6 +97,7 @@ new builtSecurity();
 new builtSpeed();
 new builtDev();
 new builtAdmin();
+new builtAJAX();
 
 /**
  * Check if site is mightyrhino.net or builtmighty.com.
@@ -114,8 +119,19 @@ function is_built_mighty() {
  * 
  * @since   1.0.0
  */
-add_action( 'admin_head', 'built_check_site' );
+add_action( 'admin_init', 'built_check_site' );
 function built_check_site() {
+
+    // Check for transient.
+    if( get_transient( 'built_activation' ) ) {
+
+        // Delete transient.
+        delete_transient( 'built_activation' );
+
+        // Redirect to settings page.
+        wp_safe_redirect( admin_url( 'admin.php?page=builtmighty&activation=true' ) );
+
+    }
 
     // Check if site URL is stored.
     if( empty( get_option( 'built_siteurl' ) ) ) {

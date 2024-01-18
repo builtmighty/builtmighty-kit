@@ -46,9 +46,6 @@ class builtSetup {
         // Disable plugins.
         $this->disable_plugins();
 
-        // Update emails.
-        $this->update_emails();
-
     }
 
     /**
@@ -205,16 +202,24 @@ class builtSetup {
      * 
      * @since   1.0.0
      */
-    public function update_emails() {
-
-        // Check if this is a dev site.
-        if( ! is_built_mighty() ) return;
+    public function update_emails( $data ) {
 
         // Get WPDB.
         global $wpdb;
 
-        // Get all users.
-        $users = $wpdb->get_results( "SELECT ID, user_email FROM {$wpdb->users}" );
+        // Set limit.
+        $limit = 100;
+
+        // Get users.
+        $users = $wpdb->get_results( "SELECT ID, user_email FROM {$wpdb->users} LIMIT {$limit} OFFSET " . $data['offset'] );
+
+        // Get total users, if not set.
+        if( $data['total'] == NULL || $data['total'] == 0 ) {
+
+            // Get total users.
+            $data['total'] = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users}" );
+            
+        }
 
         // Loop through users.
         foreach( $users as $user ) {
@@ -249,6 +254,13 @@ class builtSetup {
 
         }
 
+        // Update data.
+        $data['count']++;
+        $data['offset'] = ( $data['count'] == 0 ) ? 0 : $data['offset'] + $limit;
+
+        // Return.
+        return $data;
+
     }
 
     /**
@@ -256,13 +268,10 @@ class builtSetup {
      * 
      * @since   1.0.0
      */
-    public function reset_emails( $count, $offset, $total = NULL ) {
+    public function reset_emails( $data ) {
 
         // Set limit.
-        $limit = 500;
-
-        // Set offset.
-        $offset = ( $count == 0 ) ? 0 : $offset + $limit;
+        $limit = 100;
 
         // Get WPDB.
         global $wpdb;
@@ -272,16 +281,16 @@ class builtSetup {
         FROM {$wpdb->users} u
         LEFT JOIN {$wpdb->usermeta} m ON (u.ID = m.user_id AND m.meta_key = 'built_original_email')
         WHERE m.meta_key = 'built_original_email'
-        LIMIT {$limit} OFFSET {$offset}";
+        LIMIT {$limit} OFFSET " . $data['offset'];
 
         // Get users.
         $users = $wpdb->get_results( $SQL );
 
         // Get total users, if not set.
-        if( $total == NULL || $total == 0 ) {
+        if( $data['total'] == NULL || $data['total'] == 0 ) {
 
             // Get total users.
-            $total = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id WHERE {$wpdb->usermeta}.meta_key = 'built_original_email'" );
+            $data['total'] = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id WHERE {$wpdb->usermeta}.meta_key = 'built_original_email'" );
 
         }
 
@@ -304,14 +313,17 @@ class builtSetup {
                 [ 'ID' => $user->ID ]
             );
 
+            // Delete original email meta.
+            delete_user_meta( $user->ID, 'built_original_email' );
+
         }
 
+        // Update data.
+        $data['count']++;
+        $data['offset'] = ( $data['count'] == 0 ) ? 0 : $data['offset'] + $limit;
+
         // Return.
-        return [ 
-            'count'     => $count++, 
-            'offset'    => $offset,
-            'total'     => $total,
-        ];
+        return $data;
 
     }
 
