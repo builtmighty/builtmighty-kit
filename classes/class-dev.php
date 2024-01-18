@@ -65,7 +65,7 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( is_built_mighty() ) {
+        if( ! is_built_mighty() ) {
 
             // Display developer content.
             echo $this->developer_content();
@@ -76,7 +76,7 @@ class builtDev {
             $user = wp_get_current_user();
 
             // Check if user email is @builtmighty.
-            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
+            if( ! strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
 
                 // Display developer content.
                 echo $this->developer_content();
@@ -356,11 +356,18 @@ class builtDev {
             <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
             <div class="built-issue-field">
-                <input type="text" name="built-issue-subject" placeholder="Subject">
+                <input type="text" name="built-issue-subject" placeholder="Subject *">
             </div>
             <div class="built-issue-field">
-                <textarea name="built-issue-description" placeholder="Description"></textarea>
+                <textarea name="built-issue-description" placeholder="Description *"></textarea>
             </div>
+            <div class="built-issue-field">
+                <input type="url" name="built-issue-url" placeholder="Relevant Link">
+            </div>
+            <div class="built-issue-field built-issue-screenshot" contenteditable="true">
+                Paste Screenshot Here
+            </div>
+            <input type="hidden" name="built-issue-screenshot" value="">
             <div class="built-issue-save">
                 <input type="submit" class="button button-primary button-built" name="built-issue-save" value="Send">
             </div>
@@ -387,10 +394,10 @@ class builtDev {
             <input type="hidden" name="built-project-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-project-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
             <div class="built-issue-field">
-                <input type="text" name="built-project-subject" placeholder="Subject">
+                <input type="text" name="built-project-subject" placeholder="Subject *">
             </div>
             <div class="built-issue-field">
-                <textarea name="built-project-message" placeholder="Message"></textarea>
+                <textarea name="built-project-message" placeholder="Message *"></textarea>
             </div>
             <div class="built-issue-save">
                 <input type="submit" class="button button-primary button-built" name="built-project-save" value="Send">
@@ -412,7 +419,7 @@ class builtDev {
         // Set status.
         $status = [
             'status'    => 'error',
-            'message'   => 'There was an error processing your request.',
+            'message'   => 'There was an error processing your request. Please make sure all required fields are filled.',
         ];
 
         // Check for missing data.
@@ -452,8 +459,11 @@ class builtDev {
             // Check for email.
             if( isset( $user['emailAddress'] ) ) {
 
+                // Append site URL to message.
+                $_POST['desc'] .= "\n\n — Submitted on " . site_url( '/' );
+
                 // Send email.
-                wp_mail( $user['emailAddress'], sanitize_text_field( $_POST['subject'] ), sanitize_text_field( $_POST['message'] ) );
+                wp_mail( $user['emailAddress'], stripslashes( sanitize_text_field( $_POST['title'] ) ), stripslashes( sanitize_text_field( $_POST['desc'] ) ) );
 
                 // Set status.
                 $status = [

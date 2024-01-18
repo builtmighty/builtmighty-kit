@@ -62,13 +62,21 @@
 }
 
 .built-issue-field input, 
-.built-issue-field textarea {
+.built-issue-field textarea,
+.built-issue-screenshot {
     background: #2c3338;
     border: 1px solid #2c3338;
     color: #fff;
     display: block;
     width: 100%;
     border-radius: 4px;
+}
+
+.built-issue-screenshot {
+    text-align: center;
+    color: rgb(255 255 255 / 35%);
+    padding: 10px 0;
+    cursor: pointer;
 }
 
 .built-issue-field {
@@ -78,6 +86,12 @@
 .built-issue-field input:focus, .built-issue-field textarea:focus {
     box-shadow: none;
     border: 1px solid rgb(255 255 255 / 10%);
+}
+
+.built-issue-field.built-issue-screenshot img {
+    max-width: 90%;
+    max-height: 275px;
+    border-radius: 4px;
 }
 
 input.button.button-built {

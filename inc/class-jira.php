@@ -125,8 +125,22 @@ class builtJira {
         // Check for user email and API token.
         if( ! $this->user_email || ! $this->api_token ) return false;
 
+        // Sanitize.
+        $data = $this->sanitize( $data );
+
         // Get PM account ID.
         $pm = explode( '|', base64_decode( $data['pm'] ) );
+
+        // If there's a URL, add it to the description.
+        if( ! empty( $data['url'] ) ) {
+
+            // Append the URL to the description.
+            $data['desc'] .= "\n\n — Relevant URL: " . $data['url'];
+
+        }
+
+        // Append the site URL to the description.
+        $data['desc'] .= "\n\n — Submitted on " . site_url( '/' );
 
         // Set body.
         $body = [
@@ -134,7 +148,7 @@ class builtJira {
                 'project'   => [
                     'key'   => $data['project'],
                 ],
-                'summary'   => $data['title'],
+                'summary'   => stripslashes( $data['title'] ),
                 'description'   => [
                     'type'  => 'doc',
                     'version'   => 1,
@@ -144,7 +158,7 @@ class builtJira {
                             'content'   => [
                                 [
                                     'type'  => 'text',
-                                    'text'  => $data['desc'],
+                                    'text'  => stripslashes( $data['desc'] ),
                                 ]
                             ]
                         ]
@@ -162,10 +176,93 @@ class builtJira {
         // Request.
         $response = $this->request( 'issue', $this->get_args( $body ) );
 
+        // Check if there's an attachment.
+        if( ! empty( $response['key'] ) && ! empty( $data['screenshot'] ) ) {
+
+            // Create attachment.
+            $this->create_attachment( $response['key'], $data['screenshot'] );
+
+        }
+
         // Return.
         return true;
 
     }
+
+    /**
+     * Create attachment.
+     * 
+     * @since   1.3.0
+     */
+    public function create_attachment( $key, $screenshot ) {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
+
+        // Decode the image.
+        $image = str_replace( 'data:image/png;base64,', '', $screenshot );
+        $image = str_replace( ' ', '+', $image );
+        $image = base64_decode( $image );
+
+        // Create a tmp directory, within the uploads dir.
+        $upload_dir = wp_upload_dir();
+        $tmp_dir = $upload_dir['basedir'] . '/built_tmp';
+
+        // Check if the tmp dir exists.
+        if( ! file_exists( $tmp_dir ) ) {
+
+            // Create the tmp dir, with 755 permissions.
+            mkdir( $tmp_dir, 0755 );
+
+        }
+
+        // Set filename.
+        $filename = 'screenshot_' . date( 'Y-m-d-H-i-s' ) . '.png';
+
+        // Save the decoded image to the tmp dir.
+        file_put_contents( $tmp_dir . '/' . $filename, $image );
+
+        // Set the API URL.
+        $api_url = $this->api_url . 'issue/' . $key . '/attachments';        
+
+        // Set headers.
+        $headers = [
+            'Authorization: ' . $this->get_auth(),
+            'X-Atlassian-Token: no-check' 
+        ];
+
+        // Create a cURL file.
+        $cfile = new CURLFile( $tmp_dir . '/' . $filename, 'image/png', $filename );
+
+        // Set up POST fields.
+        $post_fields = [ 'file' => $cfile ];
+
+        // Start cURL.
+        $ch = curl_init();
+        curl_setopt( $ch, CURLOPT_URL, $api_url );
+        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+        curl_setopt( $ch, CURLOPT_POST, true );
+        curl_setopt( $ch, CURLOPT_POSTFIELDS, $post_fields );
+        curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+
+        // Execute.
+        $response = curl_exec( $ch );
+
+        if (curl_errno($ch)) {
+            // Handle error, log details for debugging
+            $error_message = curl_error($ch);
+            error_log( __FUNCTION__ . ' - ' . $error_message );
+        } else {
+            error_log( __FUNCTION__ . ' - ' . print_r( $response, true ) );
+        }
+
+        // Close.
+        curl_close($ch);
+
+        // Delete the tmp file.
+        unlink( $tmp_dir . '/' . $filename );
+
+    } 
 
     /**
      * Organize projects.
@@ -284,6 +381,41 @@ class builtJira {
         // Return.
         return $response;
 
+    }
+
+    /**
+     * Sanitize.
+     * 
+     * @since   1.0.0
+     */
+    public function sanitize( $data ) {
+
+        // Loop through data array.
+        foreach( $data as $key => $value ) {
+
+            // Check if value is an array.
+            if( is_array( $value ) ) {
+
+                // Loop through array.
+                foreach( $value as $k => $v ) {
+
+                    // Sanitize.
+                    $data[$key][$k] = sanitize_text_field( $v );
+
+                }
+
+            } else {
+
+                // Sanitize.
+                $data[$key] = sanitize_text_field( $value );
+
+            }
+
+        }
+
+        // Return.
+        return $data;
+        
     }
 
 }
