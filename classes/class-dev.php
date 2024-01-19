@@ -152,7 +152,7 @@ class builtDev {
             // Create menu. ?>
             <div class="built-dash-body built-panel">
                 <div class="built-dash-nav">
-                    <span class="built-nav-button active" id="built-issue" data-id="built-issue-form">Create Issue</span>
+                    <span class="built-nav-button active" id="built-issue" data-id="built-issue-form">Create Task</span>
                     <span class="built-nav-button" id="built-pm" data-id="built-contact-form">Contact Us</span>
                 </div>
                 <div class="built-dash-forms">
@@ -355,15 +355,18 @@ class builtDev {
 
         // Output. ?>
         <div id="built-issue-form" class="built-form active">
-            <p>Report an issue and create a new ticket.</p>
+            <p>Have a feature request or an issue? Create a new task here and your project manager will review it shortly.</p>
             <input type="hidden" name="built-issue-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-issue-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
-            <input type="hidden" name="built-issue-user" value="<?php echo $user->display_name; ?>">
             <div class="built-issue-field">
                 <input type="text" name="built-issue-subject" placeholder="Subject *">
             </div>
             <div class="built-issue-field">
                 <textarea name="built-issue-description" placeholder="Description *"></textarea>
+            </div>
+            <div class="built-issue-field">
+                <label>Reported by</label>
+                <input type="text" name="built-issue-user" value="<?php echo $user->display_name; ?> (<?php echo $user->user_email; ?>)">
             </div>
             <div class="built-issue-field">
                 <input type="url" name="built-issue-url" placeholder="Relevant Link">
@@ -400,7 +403,7 @@ class builtDev {
             <p>Contact your project manager.</p>
             <input type="hidden" name="built-project-project" value="<?php echo get_option( 'jira-project' ); ?>">
             <input type="hidden" name="built-project-pm" value="<?php echo get_option( 'jira-pm' ); ?>">
-            <input type="hidden" name="built-project-user" value="<?php echo $user->display_name; ?>">
+            <input type="hidden" name="built-project-user" value="<?php echo $user->display_name; ?> (<?php echo $user->user_email; ?>)">
             <div class="built-issue-field">
                 <input type="text" name="built-project-subject" placeholder="Subject *">
             </div>

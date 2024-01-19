@@ -77,10 +77,13 @@
     color: rgb(255 255 255 / 35%);
     padding: 10px 0;
     cursor: pointer;
+    justify-content: center;
 }
 
 .built-issue-field {
     margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
 }
 
 .built-issue-field input:focus, .built-issue-field textarea:focus {
@@ -130,4 +133,12 @@ input.button.button-built:focus {
 
 .built-form-status.error {
     background: #951b20;
+}
+
+.built-issue-field label, .built-issue-field input {
+    flex: 1;
+}
+
+.built-issue-field label {
+    max-width: 80px;
 }
