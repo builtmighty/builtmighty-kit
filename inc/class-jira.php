@@ -116,6 +116,34 @@ class builtJira {
     }
 
     /**
+     * Get issues.
+     * 
+     * @since   1.0.0
+     */
+    public function get_issues() {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
+
+        // Check if Jira project is set.
+        if( ! get_option( 'jira-project' ) ) return false;
+
+        // Set params with project key.
+        $params = [
+            'jql'           => 'project = ' . get_option( 'jira-project' ),
+            'maxResults'    => '5',
+            'startAt'       => '0',
+        ];
+
+        // Request.
+        $response = $this->request( 'search?' . http_build_query( $params ), $this->get_args( [], 'GET' ) );
+
+        // Return.
+        return $response;
+
+    }
+
+    /**
      * Create issue. 
      * 
      * @since   1.0.0
