@@ -260,7 +260,7 @@ class builtJira {
         $response = curl_exec( $ch );
 
         // Close.
-        curl_close($ch);
+        curl_close( $ch );
 
         // Delete the tmp file.
         unlink( $tmp_dir . '/' . $filename );
