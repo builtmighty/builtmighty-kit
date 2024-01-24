@@ -70,10 +70,11 @@ class builtAdmin {
 
         // New Jira API.
         $jira = new builtJira();
+        $help = new builtJiraHelper();
 
         // Get Jira objects.
-        $projects   = $jira->get_projects();
-        $users      = $jira->get_users();
+        $projects   = $help->sort_projects( $jira->get_projects() );
+        $users      = $help->sort_users( $jira->get_users() );
 
         // Panel. ?>
         <div class="built-admin">
@@ -107,17 +108,27 @@ class builtAdmin {
                     <p>Welcome to the client configuration panel for this client. Here, you can connect both the client's project on Jira, as well as their project manager.</p>
                     <form method="POST" class="built-fields"><?php
 
-                        // Project select field.
-                        echo $this->field( 'jira-project', 'Project', [
-                            'type'      => 'select',
-                            'options'   => $projects
-                        ] );
+                        // Check for projects.
+                        if( ! empty( $projects ) && is_array( $projects ) ) {
+
+                            // Project select field.
+                            echo $this->field( 'jira-project', 'Project', [
+                                'type'      => 'select',
+                                'options'   => $projects
+                            ] );
+
+                        }
+
+                        // Check for users.
+                        if( ! empty( $users ) && is_array( $users ) ) {
                         
-                        // User select field.
-                        echo $this->field( 'jira-pm', 'Project Manager', [
-                            'type'      => 'select',
-                            'options'   => $users
-                        ] ); 
+                            // User select field.
+                            echo $this->field( 'jira-pm', 'Project Manager', [
+                                'type'      => 'select',
+                                'options'   => $users
+                            ] ); 
+
+                        }
                         
                         // Jira User field.
                         echo $this->field( 'jira-user', 'Jira User', [
