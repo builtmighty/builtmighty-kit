@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Built Mighty Kit
+Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A custom kit for Built Mighty developers.
 Version: 1.2.0
