@@ -188,3 +188,7 @@ span.jira-issue-status.is-dev {
 span.jira-issue-status.is-done {
     background: #1c3329;
 }
+
+li.built-jira-issue:last-child {
+    border-bottom: none;
+}
