@@ -73,6 +73,11 @@ class builtLogin {
         // Check request.
         if( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT ) {
 
+
+            // Set the necessary variables.
+            $user_login = isset( $user_login ) ? $user_login : '';
+            $error      = isset( $error ) ? $error : '';
+
             // Include the necessary WordPress files.
             require_once ABSPATH . WPINC . '/load.php';
             require_once ABSPATH . WPINC . '/default-constants.php';
