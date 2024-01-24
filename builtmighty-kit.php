@@ -83,6 +83,7 @@ require_once BUILT_PATH . 'classes/class-admin.php';
 require_once BUILT_PATH . 'classes/class-ajax.php';
 require_once BUILT_PATH . 'classes/class-keys.php';
 require_once BUILT_PATH . 'inc/class-jira.php';
+require_once BUILT_PATH . 'inc/class-jira-helper.php';
 
 /**
  * Initiate classes.
