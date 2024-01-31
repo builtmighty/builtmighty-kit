@@ -158,11 +158,20 @@ span.jira-issue-assignee {
 span.jira-issue-assignee img {
     border-radius: 100%;
     margin: 0 5px 0 0;
+    max-width: 20px;
 }
 
-li.built-jira-issue a, li.built-jira-issue span {
+#builtmighty_dashboard_widget li.built-jira-issue a, 
+#builtmighty_dashboard_widget li.built-jira-issue span {
     flex: 1;
     color: #fff !important;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+}
+
+#builtmighty_dashboard_widget li.built-jira-issue a:hover {
+    transform: translate(3px, 0px);
 }
 
 span.jira-issue-status {
