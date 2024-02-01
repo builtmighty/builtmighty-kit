@@ -328,6 +328,9 @@ class builtDev {
      */
     public function get_git() {
 
+        // Check if shell_exec exists.
+        if( ! is_function( 'shell_exec' ) ) return;
+
         // Check if shell_exec is enabled.
         if( ! shell_exec( 'echo EXEC' ) ) return;
 
