@@ -45,8 +45,13 @@ function built_activation() {
     // Store site URL.
     update_option( 'built_siteurl', site_url() );
 
-    // Set transient.
-    set_transient( 'built_activation', true, 60 );
+    // Only redirect on Built Mighty sites.
+    if( is_built_mighty() ) {
+
+        // Set transient.
+        set_transient( 'built_activation', true, 60 );
+
+    }
 
     // Flush rewrite rules.
     flush_rewrite_rules();
