@@ -111,18 +111,8 @@ class builtDev {
         // Get Jira issues.
         echo $this->get_jira_issues();
 
-        // Check for Git.
-        if( ! empty( $this->get_git_shell() ) ) {
-
-            // Get Git via shell.
-            echo $this->get_git_shell();
-
-        } else {
-
-            // Get basic Git.
-            echo $this->get_git();
-
-        }
+        // Get basic Git.
+        echo $this->get_git();
 
         // Get plugin readme.
         echo $this->get_readme();
@@ -657,18 +647,9 @@ class builtDev {
      */
     public function enqueue() {
 
-        // Check if we're on a dev site.
-        if( is_built_mighty() ) {
-
-            // CSS.
-            wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dev-admin.css', [], BUILT_VERSION );
-
-        } else {
-
-            // CSS.
-            wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/admin.css', [], BUILT_VERSION );
-
-        }
+        // CSS.
+        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dev-admin.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/admin.css', [], BUILT_VERSION );
 
         // JS.
         wp_enqueue_script( 'builtmighty-admin', BUILT_URI . 'assets/dash.js', [ 'jquery' ], BUILT_VERSION, true );
