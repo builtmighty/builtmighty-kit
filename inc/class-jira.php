@@ -39,21 +39,134 @@ class builtJira {
     }
 
     /**
-     * Get projects.
+     * Store projects.
      * 
      * @since   1.0.0
      */
-    public function get_projects() {
+    public function store_projects( $refresh = false ) {
 
         // Check for user email and API token.
         if( ! $this->user_email || ! $this->api_token ) return false;
 
+        // Check if set or refreshing.
+        if( $refresh == false && get_option( 'jira_api_projects' ) ) return;
+
+        // Delete.
+        delete_option( 'jira_api_projects' );
+
+        // Get Jira Helper.
+        $help = new builtJiraHelper();
+
+        // Set range.
+        $range = range( 0, 10 );
+
+        // Set projects.
+        $projects = [];
+
+        // Loop. 
+        foreach( $range as $count ) {
+
+            // Set offset.
+            $offset = $count * 50;
+
+            // Get current.
+            $current = $this->get_projects( $offset );
+
+            // If current is empty, break.
+            if( empty( $current['values'] ) ) break;
+
+            // Sort.
+            $current = $help->sort_projects( $current );
+
+            // Get and store projects.
+            $projects = array_merge( $projects, $current );
+
+        }
+
+        // Sort.
+        $help = new builtJiraHelper();
+
+        // Save.
+        update_option( 'jira_api_projects', $projects );
+
+        // Return.
+        return $projects;
+
+    }
+
+    /**
+     * Store users.
+     * 
+     * @since   1.0.0
+     */
+    public function store_users( $refresh = false ) {
+
+            // Check for user email and API token.
+            if( ! $this->user_email || ! $this->api_token ) return false;
+
+            // Check if set.
+            if( $refresh == false && get_option( 'jira_api_users' ) ) return;
+
+            // Delete.
+            delete_option( 'jira_api_users' );
+
+            // Get Jira Helper.
+            $help = new builtJiraHelper();
+    
+            // Set range.
+            $range = range( 0, 20 );
+    
+            // Set users.
+            $users = [];
+    
+            // Loop. 
+            foreach( $range as $count ) {
+    
+                // Set offset.
+                $offset = $count * 50;
+    
+                // Get current.
+                $current = $this->get_users( $offset );
+    
+                // If current is empty, break.
+                if( empty( $current ) ) break;
+   
+                // Sort users.
+                $current = $help->sort_users( $current );
+
+                // Get and store projects.
+                $users = array_merge( $users, $current );
+    
+            }
+    
+            // Save.
+            update_option( 'jira_api_users', $users );
+
+            // Return.
+            return $users;
+
+    }
+
+    /**
+     * Get projects.
+     * 
+     * @since   1.0.0
+     */
+    public function get_projects( $offset = 0 ) {
+
+        // Check for user email and API token.
+        if( ! $this->user_email || ! $this->api_token ) return false;
+
+        // Check if already saved.
+        if( get_option( 'jira_api_projects' ) ) return get_option( 'jira_api_projects' );
+
         // Set params.
         $params = [
             'maxResults'    => '50',
-            'orderBy'       => 'lastIssueUpdatedTime',
-            'startAt'       => '0',
+            'orderBy'       => 'name',
+            'startAt'       => $offset,
             'status'        => 'live',
+            'properties'    => 'key,name',
         ];
 
         // Set endpoint.
@@ -72,15 +185,18 @@ class builtJira {
      * 
      * @since   1.0.0
      */
-    public function get_users() {
+    public function get_users( $offset = 0 ) {
 
         // Check for user email and API token.
         if( ! $this->user_email || ! $this->api_token ) return false;
 
+        // Check if already saved.
+        if( get_option( 'jira_api_users' ) ) return get_option( 'jira_api_users' );
+
         // Set params.
         $params = [
             'maxResults'    => '50',
-            'startAt'       => '0',
+            'startAt'       => $offset,
         ];
 
         // Set endpoint.
