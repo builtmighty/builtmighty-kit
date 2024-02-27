@@ -72,10 +72,24 @@ class builtAdmin {
         $jira = new builtJira();
         $help = new builtJiraHelper();
 
-        // Get Jira objects.
-        $projects   = $help->sort_projects( $jira->get_projects() );
-        $users      = $help->sort_users( $jira->get_users() );
+        // Set refresh.
+        $refresh = ( isset( $_GET['refresh'] ) ) ? true : false;
 
+        // Check for refresh.
+        if( $refresh ) {
+
+            // Store data.
+            $projects = $jira->store_projects( $refresh );
+            $users    = $jira->store_users( $refresh );
+
+        } else {
+
+            // Get saved Jira objects.
+            $projects = $jira->get_projects();
+            $users    = $jira->get_users();
+
+        }
+        
         // Panel. ?>
         <div class="built-admin">
             <div class="built-logo">
@@ -114,7 +128,8 @@ class builtAdmin {
                             // Project select field.
                             echo $this->field( 'jira-project', 'Project', [
                                 'type'      => 'select',
-                                'options'   => $projects
+                                'options'   => $projects,
+                                'id'        => 'jira-project'
                             ] );
 
                         }
@@ -141,7 +156,15 @@ class builtAdmin {
                         ] ); ?>
 
                         <div class="built-save">
-                            <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
+                            <input type="submit" class="button button-primary button-built" name="built-save" value="Save"><?php
+
+                            // Check for data.
+                            if( $projects && $users ) { ?>
+
+                                <a href="<?php echo admin_url( 'admin.php?page=builtmighty&refresh=true' ); ?>" class="button button-built" style="color:#fff;">Refresh</a><?php 
+
+                            } ?>
+
                         </div>
                     </form>
                 </div>
@@ -177,6 +200,9 @@ class builtAdmin {
         // Set value.
         $value = ( ! empty( get_option( $id ) ) ) ? get_option( $id ) : '';
         $value = ( ! empty( $_POST[ $id ] ) ) ? $_POST[ $id ] : $value;
+
+        // Set ID.
+        $field_id = ( ! empty( $field['id'] ) ) ? ' id="' . $field['id'] . '"' : '';
         
         // Output. ?>
         <div class="built-field">
@@ -189,7 +215,7 @@ class builtAdmin {
                 if( $field['type'] == 'select' && ! empty( $field['options'] ) ) {
 
                     // Output select. ?>
-                    <select name="<?php echo $id; ?>">
+                    <select <?php echo $field_id; ?>name="<?php echo $id; ?>">
                         <option value="">Select...</option><?php
 
                         // Loop through options.
@@ -216,12 +242,12 @@ class builtAdmin {
                     }
 
                     // Output password. ?>
-                    <input type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
                 } elseif( $field['type'] == 'text' ) {
 
                     // Output text. ?>
-                    <input type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
                 } else {
 
