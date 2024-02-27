@@ -55,6 +55,14 @@ class builtDev {
         // Add dashboard widget.
         wp_add_dashboard_widget( 'builtmighty_dashboard_widget', 'Built Mighty', [ $this, 'dashboard_content' ] );
 
+        // Add dashboard widget, if dev.
+        if( is_built_mighty() ) {
+
+            // Add dashboard widget.
+            wp_add_dashboard_widget( 'builtmighty_checklist_widget', 'Dev Site Checklist', [ $this, 'checklist_content' ] );
+
+        }
+
     }
 
     /**
@@ -89,6 +97,36 @@ class builtDev {
             }
 
         }
+
+    }
+
+    /**
+     * Checklist content.
+     * 
+     * @since   1.0.0
+     */
+    public function checklist_content() {
+
+        // Start output buffering.
+        ob_start();
+
+        // Get site info.
+        echo $this->get_site_info();
+
+        // Get disabled plugins.
+        echo $this->get_disabled();
+
+        // Get Jira issues.
+        echo $this->get_jira_issues();
+
+        // Get basic Git.
+        echo $this->get_git();
+
+        // Get plugin readme.
+        echo $this->get_readme();
+
+        // Return.
+        return ob_get_clean();
 
     }
 
