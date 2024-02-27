@@ -107,26 +107,11 @@ class builtDev {
      */
     public function checklist_content() {
 
-        // Start output buffering.
-        ob_start();
+        // Generate checklist.
+        $this->set_checklist();
 
-        // Get site info.
-        echo $this->get_site_info();
-
-        // Get disabled plugins.
-        echo $this->get_disabled();
-
-        // Get Jira issues.
-        echo $this->get_jira_issues();
-
-        // Get basic Git.
-        echo $this->get_git();
-
-        // Get plugin readme.
-        echo $this->get_readme();
-
-        // Return.
-        return ob_get_clean();
+        // Checklist.
+        echo $this->get_checklist();
 
     }
 
@@ -583,6 +568,156 @@ class builtDev {
 
         // Execute Order 66.
         wp_die();
+
+    }
+
+    /**
+     * Generate checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function set_checklist() {
+
+        // Check if already generated.
+        if( get_option( 'built_checklist' ) ) return get_option( 'built_checklist' );
+
+        // Set data.
+        $data = [
+            'todo'  => [
+                'email'         => [
+                    'title'     => 'Emails',
+                    'desc'      => 'Ensure that emails, especially subscription renewal notices, welcome emails, or password resets, do not get sent to actual customers. This plugin does its best to stop emails from being sent, but it is not foolproof. It is best to test and perhaps even install an email logger to keep watch.',
+                    'status'    => false,
+                ],
+                'gateways'      => [
+                    'title'     => 'Payment Gateways',
+                    'desc'      => 'Set payment gateways to test/sandbox mode.',
+                    'status'    => false,
+                ],
+                'indexing'      => [
+                    'title'     => 'Indexing',
+                    'desc'      => 'Double-check that the site is not being indexed by search engines.',
+                    'status'    => false,
+                ],
+                'access'        => [
+                    'title'     => 'Access',
+                    'desc'      => 'Set the site so that it is inaccessible to the public. You can do this for non-logged in users by defining BUILT_ACCESS as true within wp-config.php. Example: define( \'BUILT_ACCESS\', true );.',
+                    'status'    => false,
+                ],
+                'subscriptions' => [
+                    'title'     => 'Subscriptions',
+                    'desc'      => 'Confirm that subscriptions are not being processed by the site and that WooCommerce Subscriptions is in staging mode, if applicable.',
+                    'status'    => false,
+                ],
+                'webhooks'      => [
+                    'title'     => 'Webhooks',
+                    'desc'      => 'For WooCommerce subscriptions, ensure that webhook endpoints for subscription events are disabled. Also, review any automated tasks or CRON jobs related to subscriptions and adjust them accordingly.',
+                    'status'    => false,
+                ],
+                'apis'          => [
+                    'title'     => 'APIs',
+                    'desc'      => 'Check that any APIs, especially those that send data to third-party services (e.g., shipping, tax calculation), are in test/sandbox mode.',
+                    'status'    => false,
+                ],
+            ],
+            'complete'  => false,
+        ];
+        
+        // Set option.
+        update_option( 'built_checklist', $data );
+
+        // Return.
+        return $data;
+
+    }
+
+    /**
+     * Get checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function get_checklist() {
+
+        // Start.
+        ob_start();
+
+        // Get checklist.
+        $list = $this->set_checklist();
+
+        // Process.
+        if( isset( $_POST ) ) $this->process_checklist( $_POST );
+
+        // Output. ?>
+        <div class="built-panel">
+            <p style="margin-top:0;"><strong>✔️ Checklist</strong></p>
+            <ul style="margin:0;"><?php
+
+                // Check if complete.
+                if( $list['complete'] ) {
+
+                    // Output all done. ?>
+                    <li>All done! Check list is complete.</li><?php
+
+                } else {
+
+                    // Loop throgh todo.
+                    foreach( $list['todo'] as $task_id => $task ) {
+
+                        // If task is complete, set class.
+                        $class = ( isset( $_POST['built-task-' . $task_id] ) || $task['status'] ) ? ' built-task-complete' : '';
+
+                        // Output. ?>
+                        <li class="built-tasklist">
+                            <form method="POST">
+                                <div class="built-task-list-actions<?php echo $class; ?>">
+                                    <button type="submit" class="built-task-button" name="built-task-<?php echo $task_id; ?>" value="1">✔</button>
+                                    <input type="hidden" id="built-task-<?php echo $task_id; ?>" name="built-task-<?php echo $task_id; ?>" value="1" <?php checked( $task['status'], true ); ?>>
+                                    <label for="built-task-<?php echo $task_id; ?>"><?php echo $task['title']; ?></label>
+                                </div>
+                                <p><?php echo $task['desc']; ?></p>
+                            </form>
+                        </li><?php
+
+                    }
+
+                } ?>
+            </ul>
+        </div><?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /** 
+     * Process checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function process_checklist( $data ) {
+
+        // Get checklist.
+        $list = $this->set_checklist();
+
+        // Loop through data.
+        foreach( $data as $task_id => $task ) {
+
+            // Update task ID.
+            $task_id = str_replace( 'built-task-', '', $task_id );
+
+            // Check if task exists.
+            if( ! isset( $list['todo'][$task_id] ) ) continue;
+
+            // Update task.
+            $list['todo'][$task_id]['status'] = true;
+
+        }
+
+        // Check if all tasks are complete.
+        $list['complete'] = ( in_array( false, array_column( $list['todo'], 'status' ) ) ) ? false : true;
+
+        // Update option.
+        update_option( 'built_checklist', $list );
 
     }
 
