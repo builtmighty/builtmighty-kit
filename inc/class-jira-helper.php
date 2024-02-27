@@ -45,6 +45,9 @@ class builtJiraHelper {
         // Loop through response.
         foreach( $response as $user ) {
 
+            // Check if suspended.
+            if( strpos( $user['displayName'], 'suspend_' ) !== false ) continue;
+
             // Set account ID and display name.
             $user_value = base64_encode( $user['accountId'] . '|' . $user['displayName'] );
 

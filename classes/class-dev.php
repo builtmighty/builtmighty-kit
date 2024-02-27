@@ -55,6 +55,14 @@ class builtDev {
         // Add dashboard widget.
         wp_add_dashboard_widget( 'builtmighty_dashboard_widget', 'Built Mighty', [ $this, 'dashboard_content' ] );
 
+        // Add dashboard widget, if dev.
+        if( is_built_mighty() ) {
+
+            // Add dashboard widget.
+            wp_add_dashboard_widget( 'builtmighty_checklist_widget', 'Dev Site Checklist', [ $this, 'checklist_content' ] );
+
+        }
+
     }
 
     /**
@@ -89,6 +97,21 @@ class builtDev {
             }
 
         }
+
+    }
+
+    /**
+     * Checklist content.
+     * 
+     * @since   1.0.0
+     */
+    public function checklist_content() {
+
+        // Generate checklist.
+        $this->set_checklist();
+
+        // Checklist.
+        echo $this->get_checklist();
 
     }
 
@@ -322,81 +345,6 @@ class builtDev {
     }
 
     /**
-     * Get Git shell.
-     * 
-     * @since   1.0.0
-     */
-    public function get_git_shell() {
-
-        // Check if shell_exec exists.
-        if( ! is_function( 'shell_exec' ) ) return;
-
-        // Check if shell_exec is enabled.
-        if( ! shell_exec( 'echo EXEC' ) ) return;
-
-        // Start.
-        ob_start();
-
-        // Get Git information.
-        $git = shell_exec( 'cd ' . ABSPATH . ' && git status' );
-
-        // Check if Git is installed.
-        if( strpos( $git, 'fatal: Not a git repository' ) !== false || empty( $git ) ) {
-
-            // Display message. ?>
-            <div class="built-panel">
-                <p style="margin:0;"><strong>A Git repo is not setup.</strong> Create a Git repo to use this feature.</p>
-            </div><?php
-
-        } else {
-
-            // Get repo, branch, and uncommited code.
-            $repo = shell_exec( 'cd ' . ABSPATH . ' && git config --get remote.origin.url' );
-            $branch = shell_exec( 'cd ' . ABSPATH . ' && git rev-parse --abbrev-ref HEAD' );
-            $uncommitted = shell_exec( 'cd ' . ABSPATH . ' && git diff --name-only' );
-
-            // Display Git information. ?>
-            <div class="built-panel">
-                <p style="margin-top:0;">
-                    <strong>💻 GitHub</strong>
-                </p>
-                <ul style="margin:0;"><?php
-
-                    // Check for branch.
-                    if( $branch ) {
-
-                        // Output. ?>
-                        <li>Branch: <code><?php echo $branch; ?></code></li><?php
-
-                    }
-
-                    // Check for uncommitted changes.
-                    if( $uncommitted ) {
-
-                        // Output. ?>
-                        <li><span class="built-flag" style="margin-top:5px;">Uncommitted Code</a></span><code class="built-code"><?php echo $uncommitted; ?></code></li><?php
-
-                    } else {
-
-                        // Output. ?>
-                        <li>Status: <code class="built-flag">In Sync</code></li><?php
-
-                    } ?>
-
-                </ul>
-                <p style="margin:0;">
-                    <a href="<?php echo $repo; ?>" target="_blank" class="built-button" style="margin-top:10px;">View Repo</a>
-                </p>
-            </div><?php
-
-        }
-
-        // Return.
-        return ob_get_clean();
-
-    }
-
-    /**
      * Get Git.
      * 
      * @since   1.0.0
@@ -620,6 +568,156 @@ class builtDev {
 
         // Execute Order 66.
         wp_die();
+
+    }
+
+    /**
+     * Generate checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function set_checklist() {
+
+        // Check if already generated.
+        if( get_option( 'built_checklist' ) ) return get_option( 'built_checklist' );
+
+        // Set data.
+        $data = [
+            'todo'  => [
+                'email'         => [
+                    'title'     => 'Emails',
+                    'desc'      => 'Ensure that emails, especially subscription renewal notices, welcome emails, or password resets, do not get sent to actual customers. This plugin does its best to stop emails from being sent, but it is not foolproof. It is best to test and perhaps even install an email logger to keep watch.',
+                    'status'    => false,
+                ],
+                'gateways'      => [
+                    'title'     => 'Payment Gateways',
+                    'desc'      => 'Set payment gateways to test/sandbox mode.',
+                    'status'    => false,
+                ],
+                'indexing'      => [
+                    'title'     => 'Indexing',
+                    'desc'      => 'Double-check that the site is not being indexed by search engines.',
+                    'status'    => false,
+                ],
+                'access'        => [
+                    'title'     => 'Access',
+                    'desc'      => 'Set the site so that it is inaccessible to the public. You can do this for non-logged in users by defining BUILT_ACCESS as true within wp-config.php. Example: define( \'BUILT_ACCESS\', true );.',
+                    'status'    => false,
+                ],
+                'subscriptions' => [
+                    'title'     => 'Subscriptions',
+                    'desc'      => 'Confirm that subscriptions are not being processed by the site and that WooCommerce Subscriptions is in staging mode, if applicable.',
+                    'status'    => false,
+                ],
+                'webhooks'      => [
+                    'title'     => 'Webhooks',
+                    'desc'      => 'For WooCommerce subscriptions, ensure that webhook endpoints for subscription events are disabled. Also, review any automated tasks or CRON jobs related to subscriptions and adjust them accordingly.',
+                    'status'    => false,
+                ],
+                'apis'          => [
+                    'title'     => 'APIs',
+                    'desc'      => 'Check that any APIs, especially those that send data to third-party services (e.g., shipping, tax calculation), are in test/sandbox mode.',
+                    'status'    => false,
+                ],
+            ],
+            'complete'  => false,
+        ];
+        
+        // Set option.
+        update_option( 'built_checklist', $data );
+
+        // Return.
+        return $data;
+
+    }
+
+    /**
+     * Get checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function get_checklist() {
+
+        // Start.
+        ob_start();
+
+        // Get checklist.
+        $list = $this->set_checklist();
+
+        // Process.
+        if( isset( $_POST ) ) $this->process_checklist( $_POST );
+
+        // Output. ?>
+        <div class="built-panel">
+            <p style="margin-top:0;"><strong>✔️ Checklist</strong></p>
+            <ul style="margin:0;"><?php
+
+                // Check if complete.
+                if( $list['complete'] ) {
+
+                    // Output all done. ?>
+                    <li>All done! Check list is complete.</li><?php
+
+                } else {
+
+                    // Loop throgh todo.
+                    foreach( $list['todo'] as $task_id => $task ) {
+
+                        // If task is complete, set class.
+                        $class = ( isset( $_POST['built-task-' . $task_id] ) || $task['status'] ) ? ' built-task-complete' : '';
+
+                        // Output. ?>
+                        <li class="built-tasklist">
+                            <form method="POST">
+                                <div class="built-task-list-actions<?php echo $class; ?>">
+                                    <button type="submit" class="built-task-button" name="built-task-<?php echo $task_id; ?>" value="1">✔</button>
+                                    <input type="hidden" id="built-task-<?php echo $task_id; ?>" name="built-task-<?php echo $task_id; ?>" value="1" <?php checked( $task['status'], true ); ?>>
+                                    <label for="built-task-<?php echo $task_id; ?>"><?php echo $task['title']; ?></label>
+                                </div>
+                                <p><?php echo $task['desc']; ?></p>
+                            </form>
+                        </li><?php
+
+                    }
+
+                } ?>
+            </ul>
+        </div><?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /** 
+     * Process checklist.
+     * 
+     * @since   1.0.0
+     */
+    public function process_checklist( $data ) {
+
+        // Get checklist.
+        $list = $this->set_checklist();
+
+        // Loop through data.
+        foreach( $data as $task_id => $task ) {
+
+            // Update task ID.
+            $task_id = str_replace( 'built-task-', '', $task_id );
+
+            // Check if task exists.
+            if( ! isset( $list['todo'][$task_id] ) ) continue;
+
+            // Update task.
+            $list['todo'][$task_id]['status'] = true;
+
+        }
+
+        // Check if all tasks are complete.
+        $list['complete'] = ( in_array( false, array_column( $list['todo'], 'status' ) ) ) ? false : true;
+
+        // Update option.
+        update_option( 'built_checklist', $list );
 
     }
 

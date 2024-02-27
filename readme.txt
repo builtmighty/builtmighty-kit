@@ -21,6 +21,13 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 1.3.0 =
+* Add dev site checklist
+* Bugfix Jira projects/users loading
+
+= 1.2.0 = 
+* Add Jira panels + settings
+
 = 1.1.0 =
 * Full refactor
 
