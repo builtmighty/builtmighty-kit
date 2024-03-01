@@ -41,10 +41,19 @@ class builtSecurity {
      * 
      * @since   1.0.0
      */
-    public function login_errors() {
+    public function login_errors( $error ) {
 
-        // Return blank.
-        return 'There was an error.';
+        // Check for valid.
+        $valid = [
+            '<p><strong>Error:</strong> The username <strong>asdsadlk</strong> is not registered on this site. If you are unsure of your username, try your email address instead.</p>',
+            '<p><strong>Error:</strong> The password you entered for the username <strong>admin</strong> is incorrect. Lost your password?</p>'
+        ];
+
+        // Check.
+        if( in_array( $error, $valid ) ) return 'There was an error.';
+
+        // Return.
+        return $error;
 
     }
 
