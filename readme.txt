@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 1.4.0 =
+* Bugfix - Password protected page redirect.
+
 = 1.3.0 =
 * Add dev site checklist
 * Bugfix Jira projects/users loading

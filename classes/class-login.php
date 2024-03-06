@@ -20,6 +20,7 @@ class builtLogin {
         add_action( 'init', [ $this, 'redirect' ] );
         add_action( 'template_redirect', [ $this, 'login' ] );
         add_action( 'login_form', [ $this, 'login_form' ] );
+        add_action( 'wp_login_failed', [ $this, 'login_failed' ] );
 
     }
 
@@ -40,6 +41,9 @@ class builtLogin {
 
         // If user is trying to login, buh-bye.
         if( isset( $_POST['builtmighty_login'] ) ) return;
+
+        // Check if password protected page.
+        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
 
         // If user is trying to access wp-login.php, turn them right around and send them home.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) {
@@ -126,8 +130,44 @@ class builtLogin {
         // If user is trying to access wp-login.php, ta-ta.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
 
+        // Check if password protected page.
+        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
+
         // Add custom field.
         echo '<input type="hidden" name="builtmighty_login" value="true" />';
+
+    }
+
+    /**
+     * On failed login.
+     * 
+     * Redirect the user back to the login page with an error message.
+     * 
+     * @since   1.2.0
+     */
+    public function login_failed( $username ) {
+
+        // If constant isn't set, see you later.
+        if( ! defined( 'BUILT_ENDPOINT' ) ) return;
+
+        // If constant is empty, see you in a bit.
+        if( empty( BUILT_ENDPOINT ) ) return;
+
+        // If user is logged in, so long.
+        if( is_user_logged_in() ) return;
+
+        // If user is trying to login, time to bounce.
+        if( isset( $_POST['builtmighty_login'] ) ) return;
+
+        // If user is trying to access wp-login.php, ta-ta.
+        if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
+
+        // Set the necessary variables.
+        $error = isset( $error ) ? $error : '';
+
+        // Redirect to login page with error message.
+        wp_redirect( home_url( '/' . BUILT_ENDPOINT . '/?login=failed' ) );
+        exit;
 
     }
 
