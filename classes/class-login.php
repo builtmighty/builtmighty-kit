@@ -42,6 +42,9 @@ class builtLogin {
         // If user is trying to login, buh-bye.
         if( isset( $_POST['builtmighty_login'] ) ) return;
 
+        // Check if password protected page.
+        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
+
         // If user is trying to access wp-login.php, turn them right around and send them home.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) {
 
@@ -126,6 +129,9 @@ class builtLogin {
 
         // If user is trying to access wp-login.php, ta-ta.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
+
+        // Check if password protected page.
+        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
 
         // Add custom field.
         echo '<input type="hidden" name="builtmighty_login" value="true" />';
