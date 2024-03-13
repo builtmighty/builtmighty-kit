@@ -3,6 +3,9 @@
 ## About
 This plugin is the all around kit for both development sites and production sites. From defining a new login endpoint within wp-config, to protect wp-login from bot attacks, to disabling emails from development sites. This plugin should provide you with the tools for a happy, healthy environment. If you have additional tools you'd like to see add, please either open an issue or contact one of the lead devs by taggin '@lead-dev-team' within Slack.
 
+## Installation on All Sites
+It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variable is set within wp-config.php. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: local, development, or staging, to set the plugin in development mode. Set the environment variable to production, to set the plugin to production mode.
+
 <details>
   <summary>Installation on a Development Site</summary>
   
