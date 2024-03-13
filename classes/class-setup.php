@@ -56,7 +56,7 @@ class builtSetup {
     public function disable_external() {
 
         // Check if this is a dev site.
-        if( ! is_built_mighty() ) return;
+        if( ! is_kit_mode() ) return;
 
         // Add to updates.
         $this->updates .= "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
@@ -71,7 +71,7 @@ class builtSetup {
     public function disable_indexing() {
 
         // Check if this is a dev site.
-        if( ! is_built_mighty() ) return;
+        if( ! is_kit_mode() ) return;
 
         // Add to updates.
         $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n";
@@ -89,7 +89,7 @@ class builtSetup {
     public function disable_plugins() {
 
         // Check if this is a dev site.
-        if( ! is_built_mighty() ) return;
+        if( ! is_kit_mode() ) return;
 
         // Check if is_plugin_active function exists.
         if( ! function_exists( 'is_plugin_active' ) ) require_once ABSPATH . 'wp-admin/includes/plugin.php';

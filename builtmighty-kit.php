@@ -46,7 +46,7 @@ function built_activation() {
     update_option( 'built_siteurl', site_url() );
 
     // Only redirect on Built Mighty sites.
-    if( is_built_mighty() ) {
+    if( is_kit_mode() ) {
 
         // Set transient.
         set_transient( 'built_activation', true, 60 );
@@ -106,11 +106,11 @@ new builtAdmin();
 new builtAJAX();
 
 /**
- * Check if site is mightyrhino.net or builtmighty.com.
+ * Check environment.
  * 
  * @since   1.0.0
  */
-function is_built_mighty() {
+function is_kit_mode() {
 
     // Check if production environment.
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;

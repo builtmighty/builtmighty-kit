@@ -31,7 +31,7 @@ class builtMail {
     public function to_mail( $args ) {
 
         // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
-        if( is_built_mighty() && ! defined( 'BUILT_ENABLE_EMAIL' ) || defined( 'BUILT_DISABLE_EMAIL' ) ) {
+        if( is_kit_mode() && ! defined( 'BUILT_ENABLE_EMAIL' ) || defined( 'BUILT_DISABLE_EMAIL' ) ) {
 
             // Update args. 
             $args['to'] = 'developers@builtmighty.com';
