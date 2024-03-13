@@ -112,8 +112,17 @@ new builtAJAX();
  */
 function is_built_mighty() {
 
-    // Check if site is mightyrhino.net or builtmighty.com, or if site is local.
-    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false || strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false || ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) ) return true;
+    // Check if production environment.
+    if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
+
+    // Check if site is mightyrhino.net.
+    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
+
+    // Check if site is builtmighty.com.
+    if( strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
+
+    // Check environment type.
+    if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
 
     // Return false.
     return false;
