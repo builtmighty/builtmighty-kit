@@ -56,7 +56,7 @@ class builtDev {
         wp_add_dashboard_widget( 'builtmighty_dashboard_widget', 'Built Mighty', [ $this, 'dashboard_content' ] );
 
         // Add dashboard widget, if dev.
-        if( is_built_mighty() ) {
+        if( is_kit_mode() ) {
 
             // Add dashboard widget.
             wp_add_dashboard_widget( 'builtmighty_checklist_widget', 'Dev Site Checklist', [ $this, 'checklist_content' ] );
@@ -73,7 +73,7 @@ class builtDev {
     public function dashboard_content() {
 
         // Check if we're on a dev site.
-        if( is_built_mighty() ) {
+        if( is_kit_mode() ) {
 
             // Display developer content.
             echo $this->developer_content();
@@ -729,7 +729,7 @@ class builtDev {
     public function admin_notice() {
 
         // Check if we're on a dev site.
-        if( is_built_mighty() ) {
+        if( is_kit_mode() ) {
 
             // Display dev content.
             echo '<div class="notice notice-warning is-dismissible"><p>NOTICE &mdash; This is a Built Mighty development site.</p></div>';

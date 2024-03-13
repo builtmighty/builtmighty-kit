@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 1.5.0 =
+* Feature - Add WP_ENVIRONMENT_TYPE logic.
+
 = 1.4.0 =
 * Bugfix - Password protected page redirect.
 

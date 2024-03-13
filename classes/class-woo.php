@@ -34,7 +34,7 @@ class builtWoo {
         if( ! class_exists( 'WooCommerce' ) ) return;
 
         // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
-        if( is_built_mighty() && ! defined( 'BUILT_ENABLE_AS' ) || defined( 'BUILT_DISABLE_AS' ) ) {
+        if( is_kit_mode() && ! defined( 'BUILT_ENABLE_AS' ) || defined( 'BUILT_DISABLE_AS' ) ) {
 
             // Remove the action scheduler.
             remove_action( 'init', 'action_scheduler_run_queue', 10 );

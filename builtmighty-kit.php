@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A custom kit for Built Mighty developers.
-Version: 1.4.0
+Version: 1.5.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.4.0' );
+define( 'BUILT_VERSION', '1.5.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -46,7 +46,7 @@ function built_activation() {
     update_option( 'built_siteurl', site_url() );
 
     // Only redirect on Built Mighty sites.
-    if( is_built_mighty() ) {
+    if( is_kit_mode() ) {
 
         // Set transient.
         set_transient( 'built_activation', true, 60 );
@@ -106,14 +106,23 @@ new builtAdmin();
 new builtAJAX();
 
 /**
- * Check if site is mightyrhino.net or builtmighty.com.
+ * Check environment.
  * 
  * @since   1.0.0
  */
-function is_built_mighty() {
+function is_kit_mode() {
 
-    // Check if site is mightyrhino.net or builtmighty.com, or if site is local.
-    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false || strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false || ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) ) return true;
+    // Check if production environment.
+    if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
+
+    // Check if site is mightyrhino.net.
+    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
+
+    // Check if site is builtmighty.com.
+    if( strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
+
+    // Check environment type.
+    if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
 
     // Return false.
     return false;
@@ -123,7 +132,7 @@ function is_built_mighty() {
 /**
  * Check site.
  * 
- * @since   1.0.0
+ * @since   1.5.0
  */
 add_action( 'admin_init', 'built_check_site' );
 function built_check_site() {
