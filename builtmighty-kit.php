@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A custom kit for Built Mighty developers.
-Version: 1.4.0
+Version: 1.5.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.4.0' );
+define( 'BUILT_VERSION', '1.5.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -132,7 +132,7 @@ function is_kit_mode() {
 /**
  * Check site.
  * 
- * @since   1.0.0
+ * @since   1.5.0
  */
 add_action( 'admin_init', 'built_check_site' );
 function built_check_site() {
