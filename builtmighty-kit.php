@@ -76,17 +76,17 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
-require_once BUILT_PATH . 'classes/class-login.php';
-require_once BUILT_PATH . 'classes/class-access.php';
-require_once BUILT_PATH . 'classes/class-woo.php';
-require_once BUILT_PATH . 'classes/class-mail.php';
-require_once BUILT_PATH . 'classes/class-security.php';
-require_once BUILT_PATH . 'classes/class-speed.php';
-require_once BUILT_PATH . 'classes/class-setup.php';
-require_once BUILT_PATH . 'classes/class-dev.php';
-require_once BUILT_PATH . 'classes/class-admin.php';
-require_once BUILT_PATH . 'classes/class-ajax.php';
-require_once BUILT_PATH . 'classes/class-keys.php';
+require_once BUILT_PATH . 'classes/security/class-login.php';
+require_once BUILT_PATH . 'classes/security/class-access.php';
+require_once BUILT_PATH . 'classes/frontend/class-woo.php';
+require_once BUILT_PATH . 'classes/frontend/class-mail.php';
+require_once BUILT_PATH . 'classes/security/class-security.php';
+require_once BUILT_PATH . 'classes/frontend/class-speed.php';
+require_once BUILT_PATH . 'classes/core/class-setup.php';
+require_once BUILT_PATH . 'classes/core/class-dev.php';
+require_once BUILT_PATH . 'classes/core/class-admin.php';
+require_once BUILT_PATH . 'classes/core/class-ajax.php';
+require_once BUILT_PATH . 'classes/security/class-keys.php';
 require_once BUILT_PATH . 'inc/class-jira.php';
 require_once BUILT_PATH . 'inc/class-jira-helper.php';
 

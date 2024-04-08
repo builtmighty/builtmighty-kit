@@ -2,7 +2,7 @@
 /**
  * Keys.
  * 
- * Encrypts important keys..
+ * Encrypts important keys.
  * 
  * @package Built Mighty Kit
  * @since   1.0.0
