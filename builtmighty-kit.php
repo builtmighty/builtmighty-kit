@@ -105,7 +105,14 @@ new builtSpeed();
 new builtDev();
 new builtAdmin();
 new builtAJAX();
-new builtUpdates();
+
+// Check if site is in kit mode.
+if( ! is_kit_mode() ) {
+
+    // Load production specific classes.
+    new builtUpdates();
+
+}
 
 /**
  * Check environment.
@@ -117,14 +124,14 @@ function is_kit_mode() {
     // Check if production environment.
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
 
+    // Check environment type.
+    if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
+
     // Check if site is mightyrhino.net.
     if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
 
     // Check if site is builtmighty.com.
     if( strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
-
-    // Check environment type.
-    if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
 
     // Return false.
     return false;
