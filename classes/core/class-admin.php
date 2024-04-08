@@ -93,7 +93,7 @@ class builtAdmin {
         // Panel. ?>
         <div class="built-admin">
             <div class="built-logo">
-                <img src="<?php echo BUILT_URI . 'assets/logo-builtmighty.png'; ?>" alt="Built Mighty">
+                <img src="<?php echo BUILT_URI . 'assets/images/logo-builtmighty.png'; ?>" alt="Built Mighty">
             </div><?php
 
             // Check for activation.
@@ -111,7 +111,7 @@ class builtAdmin {
                         </div>
                         <div class="built-submit">
                             <input type="submit" class="button built-action button-primary button-built" data-set='<?php echo json_encode( [ 'id' => 'built-email-protect', 'action' => 'built_email_protect', 'count' => 0, 'offset' => 0, 'total' => 0 ] ); ?>' name="built-tool" value="Run">
-                            <div class="built-loading"><?php include BUILT_PATH . 'assets/loading-icon.svg'; ?></div>
+                            <div class="built-loading"><?php include BUILT_PATH . 'assets/images/loading-icon.svg'; ?></div>
                         </div>
                     </div>
                 </div><?php
@@ -179,7 +179,7 @@ class builtAdmin {
                         </div>
                         <div class="built-submit">
                             <input type="submit" class="button built-action button-primary button-built" data-set='<?php echo json_encode( [ 'id' => 'built-email-tool', 'action' => 'built_email_replace', 'count' => 0, 'offset' => 0, 'total' => 0 ] ); ?>' name="built-tool" value="Run">
-                            <div class="built-loading"><?php include BUILT_PATH . 'assets/loading-icon.svg'; ?></div>
+                            <div class="built-loading"><?php include BUILT_PATH . 'assets/images/loading-icon.svg'; ?></div>
                         </div>
                     </div>
                 </div><?php
@@ -308,10 +308,10 @@ class builtAdmin {
     public function enqueue() {
 
         // CSS.
-        wp_enqueue_style( 'built-admin-settings', BUILT_URI . 'assets/admin-settings.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'built-admin-settings', BUILT_URI . 'assets/admin/style.css', [], BUILT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'built-admin-settings', BUILT_URI . 'assets/admin-settings.js', [ 'jquery' ], BUILT_VERSION, true );
+        wp_enqueue_script( 'built-admin-settings', BUILT_URI . 'assets/admin/script.js', [ 'jquery' ], BUILT_VERSION, true );
 
         // Localize.
         wp_localize_script( 'built-admin-settings', 'built', [

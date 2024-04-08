@@ -76,17 +76,18 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
-require_once BUILT_PATH . 'classes/security/class-login.php';
-require_once BUILT_PATH . 'classes/security/class-access.php';
-require_once BUILT_PATH . 'classes/frontend/class-woo.php';
-require_once BUILT_PATH . 'classes/frontend/class-mail.php';
-require_once BUILT_PATH . 'classes/security/class-security.php';
-require_once BUILT_PATH . 'classes/frontend/class-speed.php';
 require_once BUILT_PATH . 'classes/core/class-setup.php';
 require_once BUILT_PATH . 'classes/core/class-dev.php';
 require_once BUILT_PATH . 'classes/core/class-admin.php';
 require_once BUILT_PATH . 'classes/core/class-ajax.php';
+require_once BUILT_PATH . 'classes/security/class-login.php';
+require_once BUILT_PATH . 'classes/security/class-access.php';
+require_once BUILT_PATH . 'classes/security/class-security.php';
 require_once BUILT_PATH . 'classes/security/class-keys.php';
+require_once BUILT_PATH . 'classes/plugins/class-updates.php';
+require_once BUILT_PATH . 'classes/frontend/class-woo.php';
+require_once BUILT_PATH . 'classes/frontend/class-mail.php';
+require_once BUILT_PATH . 'classes/frontend/class-speed.php';
 require_once BUILT_PATH . 'inc/class-jira.php';
 require_once BUILT_PATH . 'inc/class-jira-helper.php';
 
@@ -104,6 +105,7 @@ new builtSpeed();
 new builtDev();
 new builtAdmin();
 new builtAJAX();
+new builtUpdates();
 
 /**
  * Check environment.
