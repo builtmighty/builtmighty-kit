@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A custom kit for Built Mighty developers.
-Version: 1.5.0
+Version: 1.6.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.5.0' );
+define( 'BUILT_VERSION', '1.6.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -76,17 +76,18 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
-require_once BUILT_PATH . 'classes/class-login.php';
-require_once BUILT_PATH . 'classes/class-access.php';
-require_once BUILT_PATH . 'classes/class-woo.php';
-require_once BUILT_PATH . 'classes/class-mail.php';
-require_once BUILT_PATH . 'classes/class-security.php';
-require_once BUILT_PATH . 'classes/class-speed.php';
-require_once BUILT_PATH . 'classes/class-setup.php';
-require_once BUILT_PATH . 'classes/class-dev.php';
-require_once BUILT_PATH . 'classes/class-admin.php';
-require_once BUILT_PATH . 'classes/class-ajax.php';
-require_once BUILT_PATH . 'classes/class-keys.php';
+require_once BUILT_PATH . 'classes/core/class-setup.php';
+require_once BUILT_PATH . 'classes/core/class-dev.php';
+require_once BUILT_PATH . 'classes/core/class-admin.php';
+require_once BUILT_PATH . 'classes/core/class-ajax.php';
+require_once BUILT_PATH . 'classes/security/class-login.php';
+require_once BUILT_PATH . 'classes/security/class-access.php';
+require_once BUILT_PATH . 'classes/security/class-security.php';
+require_once BUILT_PATH . 'classes/security/class-keys.php';
+require_once BUILT_PATH . 'classes/plugins/class-updates.php';
+require_once BUILT_PATH . 'classes/frontend/class-woo.php';
+require_once BUILT_PATH . 'classes/frontend/class-mail.php';
+require_once BUILT_PATH . 'classes/frontend/class-speed.php';
 require_once BUILT_PATH . 'inc/class-jira.php';
 require_once BUILT_PATH . 'inc/class-jira-helper.php';
 
@@ -105,6 +106,14 @@ new builtDev();
 new builtAdmin();
 new builtAJAX();
 
+// Check if site is in kit mode.
+if( ! is_kit_mode() ) {
+
+    // Load production specific classes.
+    new builtUpdates();
+
+}
+
 /**
  * Check environment.
  * 
@@ -115,14 +124,14 @@ function is_kit_mode() {
     // Check if production environment.
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
 
-    // Check if site is mightyrhino.net.
-    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
-
-    // Check if site is builtmighty.com.
-    if( strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
-
     // Check environment type.
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
+
+    // Check if site is mightyrhino.net.
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
+
+    // Check if site is builtmighty.com.
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
 
     // Return false.
     return false;

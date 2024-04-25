@@ -156,7 +156,7 @@ class builtDev {
         <div class="built-dash-head">
             <div class="built-dash-logo">
                 <a href="https://builtmighty.com" target="_blank">
-                    <img src="<?php echo BUILT_URI; ?>assets/block-builtmighty.png" alt="Built Mighty">
+                    <img src="<?php echo BUILT_URI; ?>assets/images/block-builtmighty.png" alt="Built Mighty">
                 </a>
             </div>
             <div class="built-dash-message">
@@ -746,11 +746,11 @@ class builtDev {
     public function enqueue() {
 
         // CSS.
-        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dev-admin.css', [], BUILT_VERSION );
-        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/admin.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dash/dash.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/core/admin.css', [], BUILT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'builtmighty-admin', BUILT_URI . 'assets/dash.js', [ 'jquery' ], BUILT_VERSION, true );
+        wp_enqueue_script( 'builtmighty-admin', BUILT_URI . 'assets/dash/dash.js', [ 'jquery' ], BUILT_VERSION, true );
 
         // Localize.
         wp_localize_script( 'builtmighty-admin', 'built', [

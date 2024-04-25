@@ -40,6 +40,7 @@ It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variab
      * Disables access to the default WordPress admin when `BUILT_ENDPOINT` is set. Example: `define( 'BUILT_ENDPOINT', 'access' );`.
   2. While running, the plugin does the following:
      * Adds a dashboard development widget for Built Mighty developers with: server data, GitHub repo data, as well as a list of any disabled plugins.
+     * Adds a notification warning a user to not update a plugin or theme. It does allow the user to continue with updating, but it also allows them to back out and stop the update.
      * Adds a dashboard widget for Built Mighty clients with: a welcome message, a Jira issue creation form, project manager contact form, and GitHub repo data. 
      * Adds some security enhancements like: diables XML-RPC, removes WordPress version numbers, removes specific login errors, and removes user enumeration.
      * Adds some speed enhancements like: dequeues emojis, updates heartbeat timing, updates post revisions, changes action scheduler retention period, and removes junk dashboard widgets.

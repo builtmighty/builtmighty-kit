@@ -1,0 +1,105 @@
+tr.plugin-update-tr,
+form.upgrade p,
+.theme .update-message {
+    position: relative;
+}
+
+tr.plugin-update-tr:after,
+form.upgrade > p:after,
+.theme .update-message:after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    cursor: pointer;
+}
+
+div#builtmighty-kit-updates,
+div#builtmighty-kit-install {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99999;
+    background: rgb(255 255 255 / 50%);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(1px);
+    display: none;
+}
+
+div#builtmighty-kit-install {
+    display: flex;
+}
+
+.builtmighty-kit-modal {
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+    background: #1d2327;
+    border-radius: 6px;
+    padding: 30px;
+    color: #fff;
+}
+
+.builtmighty-kit-modal a {
+    color: red !important;
+}
+
+span.builtmighty-kit-modal-close {
+    background: #fff;
+    display: flex;
+    color: #000;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 100%;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.builtmighty-kit-modal-content h2 {
+    font-weight: bold;
+    color: red !important;
+    font-size: 20px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.builtmighty-kit-modal-content p {
+    margin-top: 0;
+}
+
+.builtmighty-kit-modal-buttons button#builtmighty-kit-update,
+.builtmighty-kit-modal-buttons button#builtmighty-kit-install {
+    background: red !important;
+    border-color: red !important;
+}
+
+.builtmighty-kit-modal-buttons button#builtmighty-kit-close,
+.builtmighty-kit-modal-buttons button#builtmighty-kit-install-close {
+    background: none;
+    color: #fff;
+    border-color: #fff;
+}
+
+.builtmighty-kit-modal-buttons button,
+span.builtmighty-kit-modal-close {
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+}
+
+.builtmighty-kit-modal-buttons button:hover {
+    transform: translateY(-3px);
+}
+
+span.builtmighty-kit-modal-close:hover {
+    background: red !important;
+    color: #fff;
+}
