@@ -128,10 +128,10 @@ function is_kit_mode() {
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
 
     // Check if site is mightyrhino.net.
-    if( strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
 
     // Check if site is builtmighty.com.
-    if( strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
 
     // Return false.
     return false;
