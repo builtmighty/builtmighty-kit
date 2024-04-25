@@ -28,4 +28,14 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // On install.
+    $('#builtmighty-kit-install').on('click', function() {
+        // Close modal.
+        $('div#builtmighty-kit-install').css('display', 'none');
+    });
+    $('#builtmighty-kit-install-close').on('click', function() {
+        // Redirect to plugins.
+        window.location.href = 'plugins.php';
+    });
+
 });

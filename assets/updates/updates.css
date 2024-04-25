@@ -17,7 +17,8 @@ form.upgrade > p:after,
     cursor: pointer;
 }
 
-div#builtmighty-kit-updates {
+div#builtmighty-kit-updates,
+div#builtmighty-kit-install {
     position: fixed;
     top: 0;
     left: 0;
@@ -31,6 +32,10 @@ div#builtmighty-kit-updates {
     display: none;
 }
 
+div#builtmighty-kit-install {
+    display: flex;
+}
+
 .builtmighty-kit-modal {
     max-width: 500px;
     width: 100%;
@@ -39,6 +44,10 @@ div#builtmighty-kit-updates {
     border-radius: 6px;
     padding: 30px;
     color: #fff;
+}
+
+.builtmighty-kit-modal a {
+    color: red !important;
 }
 
 span.builtmighty-kit-modal-close {
@@ -56,7 +65,7 @@ span.builtmighty-kit-modal-close {
 
 .builtmighty-kit-modal-content h2 {
     font-weight: bold;
-    color: red;
+    color: red !important;
     font-size: 20px;
     margin-top: 15px;
     margin-bottom: 5px;
@@ -66,12 +75,14 @@ span.builtmighty-kit-modal-close {
     margin-top: 0;
 }
 
-.builtmighty-kit-modal-buttons button#builtmighty-kit-update {
-    background: red;
-    border-color: red;
+.builtmighty-kit-modal-buttons button#builtmighty-kit-update,
+.builtmighty-kit-modal-buttons button#builtmighty-kit-install {
+    background: red !important;
+    border-color: red !important;
 }
 
-.builtmighty-kit-modal-buttons button#builtmighty-kit-close {
+.builtmighty-kit-modal-buttons button#builtmighty-kit-close,
+.builtmighty-kit-modal-buttons button#builtmighty-kit-install-close {
     background: none;
     color: #fff;
     border-color: #fff;
@@ -89,6 +100,6 @@ span.builtmighty-kit-modal-close {
 }
 
 span.builtmighty-kit-modal-close:hover {
-    background: red;
+    background: red !important;
     color: #fff;
 }
