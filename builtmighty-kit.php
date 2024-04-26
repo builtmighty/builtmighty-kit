@@ -133,6 +133,9 @@ function is_kit_mode() {
     // Check if site is builtmighty.com.
     if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
 
+    // Check if site is github.dev.
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'github.dev' ) !== false ) return true;
+
     // Return false.
     return false;
 
