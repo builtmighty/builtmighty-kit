@@ -19,6 +19,9 @@ class builtJiraHelper {
         // Set.
         $projects = [];
 
+        // Check for a response.
+        if( ! isset( $response['values'] ) ) return false;
+
         // Loop through response.
         foreach( $response['values'] as $project ) {
 
@@ -41,6 +44,9 @@ class builtJiraHelper {
 
         // Set.
         $users = [];
+
+        // Check for a response.
+        if( ! isset( $response ) ) return false;
 
         // Loop through response.
         foreach( $response as $user ) {
@@ -70,6 +76,9 @@ class builtJiraHelper {
 
         // Set.
         $issues = [];
+
+        // Check for a response.
+        if( ! isset( $response['issues'] ) ) return false;
 
         // Loop through response.
         foreach( $response['issues'] as $issue ) {
