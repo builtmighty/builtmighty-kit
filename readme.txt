@@ -21,6 +21,10 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 1.7.0 =
+* Added support for Codespaces.
+* Fixed some small bugs.
+
 = 1.6.0 =
 * Adds plugin/theme update warnings for production sites.
 

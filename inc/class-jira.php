@@ -30,11 +30,16 @@ class builtJira {
         $this->api_token    = ( ! empty( get_option( 'jira-token' ) ) ) ? unserialize( get_option( 'jira-token' ) ) : false;
         $this->api_url      = 'https://builtmighty.atlassian.net/rest/api/3/';
 
-        // Get keys.
-        $keys = new builtKeys();
+        // Check for values.
+        if( $this->api_token ) {
 
-        // Decrypt token.
-        $this->api_token = $keys->decrypt( $this->api_token );
+            // Get keys.
+            $keys = new builtKeys();
+
+            // Decrypt token.
+            $this->api_token = $keys->decrypt( $this->api_token );
+
+        }
 
     }
 
