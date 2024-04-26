@@ -47,8 +47,24 @@ It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variab
   
 </details>
 
-## 1.2.0
+## 1.7.0
+* Added support for Codespaces.
+* Fixed some small bugs.
 
+## 1.6.0
+* Adds plugin/theme update warnings for production sites.
+
+## 1.5.0
+* Feature - Add WP_ENVIRONMENT_TYPE logic.
+
+## 1.4.0
+* Bugfix - Password protected page redirect.
+
+## 1.3.0
+* Add dev site checklist
+* Bugfix Jira projects/users loading
+
+## 1.2.0
 * Added an admin panel for Jira settings.
 * Added a dashboard widget for Built Mighty developers.
 * Added a dashboard widget for Built Mighty clients.
@@ -58,7 +74,6 @@ It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variab
 
 
 ## 1.1.0
-
 * Added email disabling functions.
 * Added Action Scheduler disabling functions.
 * Updated method for access restrictions/access.
