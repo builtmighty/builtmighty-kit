@@ -36,7 +36,7 @@ register_activation_hook( __FILE__, 'built_activation' );
 function built_activation() {
 
     // Load setup class.
-    require_once BUILT_PATH . 'classes/class-setup.php';
+    require_once BUILT_PATH . 'classes/core/class-setup.php';
 
     // Initiate and run setup class.
     $setup = new builtSetup();
