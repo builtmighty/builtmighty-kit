@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 1.7.1 =
+* Bugfix for setup class on activation.
+
 = 1.7.0 =
 * Added support for Codespaces.
 * Fixed some small bugs.

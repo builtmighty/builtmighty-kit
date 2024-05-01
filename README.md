@@ -47,6 +47,9 @@ It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variab
   
 </details>
 
+## 1.7.1
+* Bugfix for setup class on activation.
+
 ## 1.7.0
 * Added support for Codespaces.
 * Fixed some small bugs.
