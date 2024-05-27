@@ -19,10 +19,16 @@ class built2FA {
      */
     public function __construct() {
 
+        // Check if turned on.
+        if( ! defined( 'BUILT_2FA' ) || ! BUILT_2FA ) return;
+
         // Actions.
         add_action( 'init', [ $this, 'init' ] );
         add_action( 'admin_menu', [ $this, 'menu' ] );
         add_action( 'login_form', [ $this, 'login' ] );
+        add_action( 'login_enqueue_scripts', [ $this, 'enqueue' ] );
+        add_action( 'wp_ajax_check_2fa', [ $this, 'check_2fa' ] );
+        add_action( 'wp_ajax_nopriv_check_2fa', [ $this, 'check_2fa' ] );
 
         // Filters.
         add_filter( 'wp_authenticate_user', [ $this, 'verify_login' ], 10, 2 );
@@ -83,13 +89,94 @@ class built2FA {
      * 
      * @since   2.0.0
      */
-    public function login() { 
+    public function login() {
             
         // Output. ?>
         <p>
-            <label for="authenticator_code">Authenticator Code<br />
+            <span id="check-2fa" class="button button-primary button-large">Login</span>
+        </p>
+        <p id="authenticator-code" style="display:none;overflow:hidden;height:0">
+            <label for="authenticator_code">Authentication Code<br />
             <input type="text" name="authenticator_code" id="authenticator_code" class="input" value="" size="20" /></label>
         </p><?php
+
+    }
+
+    /**
+     * Enqueue.
+     * 
+     * Enqueue scripts and styles.
+     * 
+     * @since   2.0.0
+     */
+    public function enqueue() {
+
+        // CSS.
+        wp_enqueue_style( 'built-2fa', BUILT_URI . 'assets/2fa/2fa.css', [], BUILT_VERSION );
+
+        // JS.
+        wp_enqueue_script( 'built-2fa', BUILT_URI . 'assets/2fa/2fa.js', [ 'jquery' ], BUILT_VERSION, true );
+
+        // Localize.
+        wp_localize_script( 'built-2fa', 'built2FA', [
+            'ajaxurl'   => admin_url( 'admin-ajax.php' ),
+            'nonce'     => wp_create_nonce( 'built-2fa' )
+        ] );
+
+    }
+
+    /**
+     * Check if 2FA is needed.
+     * 
+     * @since   2.0.0
+     */
+    public function check_2fa() {
+        
+        // Verify nonce.
+        if( ! wp_verify_nonce( $_POST['nonce'], 'built-2fa' ) ) wp_die();
+
+        // Check for user.
+        if( ! isset( $_POST['login'] ) ) {
+
+            // Error, but continue and submit form to let WordPress handle.
+            echo 'continue';
+            wp_die();
+
+        }
+
+        // Get user.
+        $user = get_user_by( 'login', sanitize_text_field( $_POST['login'] ) );
+
+        // Check for user.
+        if( ! $user ) {
+
+            // Error, but continue and submit form to let WordPress handle.
+            echo 'continue';
+            wp_die();
+
+        }
+
+        // Check if user is admin.
+        if( ! in_array( 'administrator', (array)$user->roles ) ) {
+
+            // 2FA is not required, so continue with login.
+            echo 'continue';
+            wp_die();
+
+        }
+
+        // Check for 2FA.
+        if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) {
+
+            // 2FA hasn't been setup yet, so continue.
+            echo 'continue';
+            wp_die();
+
+        }
+
+        // 2FA is required.
+        echo 'confirm';
+        wp_die();
 
     }
 
@@ -103,16 +190,26 @@ class built2FA {
     public function verify_login( $user, $password ) {
 
         // Check if user is admin.
-        if( ! current_user_can( 'manage_options' ) ) return $user;
+        if( ! in_array( 'administrator', (array)$user->roles ) ) return $user;
 
-        // Check for a secret.
-        if( empty( get_user_meta( $user->ID, 'google_authenticator_secret', true ) ) ) return $user;
+        // Check for 2FA setup.
+        if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) return $user;
 
         // Authenticate.
         if( $this->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
 
-        // Error.
-        return new WP_Error( 'authentication_failed', __( 'Invalid Authenticator code.' ) );
+        // Set error message dynamically, based on the page.
+        if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false || defined( 'BUILT_ENDPOINT' ) && ( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) ) {
+
+            // Error.
+            return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
+
+        } else {
+
+            // Error. 
+            return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. If you are an admin, please visit the WordPress login page.' ) );
+
+        }
 
     }
 
@@ -398,8 +495,11 @@ class built2FA {
      */
     public function authenticate( $user_id, $code ) {
 
+        // Check if setup.
+        if( empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) return true;
+
         // Check for secret.
-        if( empty( get_user_meta( $user_id, 'google_authenticator_secret', true ) ) ) return false;
+        if( empty( get_user_meta( $user_id, 'google_authenticator_secret', true ) ) ) return true;
 
         // Get secret.
         $secret = get_user_meta( $user_id, 'google_authenticator_secret', true );
@@ -418,6 +518,11 @@ class built2FA {
 
                 // Return true.
                 return true;
+
+            } else {
+
+                // Return false.
+                return false;
 
             }
 
