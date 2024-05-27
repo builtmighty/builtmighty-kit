@@ -76,6 +76,7 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
+require_once BUILT_PATH . 'vendor/autoload.php';
 require_once BUILT_PATH . 'classes/core/class-setup.php';
 require_once BUILT_PATH . 'classes/core/class-dev.php';
 require_once BUILT_PATH . 'classes/core/class-admin.php';
