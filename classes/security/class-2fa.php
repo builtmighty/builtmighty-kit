@@ -194,7 +194,7 @@ class built2FA {
 
         // Check for 2FA setup.
         if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) return $user;
-
+        
         // Authenticate.
         if( $this->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
 
