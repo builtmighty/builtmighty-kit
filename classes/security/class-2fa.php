@@ -20,12 +20,46 @@ class built2FA {
     public function __construct() {
 
         // Actions.
+        add_action( 'init', [ $this, 'init' ] );
         add_action( 'admin_menu', [ $this, 'menu' ] );
         add_action( 'login_form', [ $this, 'login' ] );
 
         // Filters.
         add_filter( 'wp_authenticate_user', [ $this, 'verify_login' ], 10, 2 );
         
+    }
+
+    /**
+     * Force admins to use 2FA.
+     * 
+     * @since   2.0.0
+     */
+    public function init() {
+
+        // Check if user is logged in.
+        if( ! is_user_logged_in() ) return;
+
+        // Check if user is admin.
+        if( ! current_user_can( 'manage_options' ) ) return;
+
+        // Get current user.
+        $user_id = get_current_user_id();
+
+        // Check if user is trying to logout.
+        if( isset( $_GET['action'] ) && $_GET['action'] == 'logout' ) return;
+
+        // Check if we are on the 2FA page.
+        if( isset( $_GET['page'] ) && $_GET['page'] == 'builtmighty-2fa' ) return;
+
+        // Check if user has 2FA setup.
+        if( empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) {
+
+            // Redirect.
+            wp_safe_redirect( admin_url( '/admin.php?page=builtmighty-2fa' ) );
+            exit;
+
+        }
+
     }
 
     /**
@@ -67,6 +101,9 @@ class built2FA {
      * @since   2.0.0
      */
     public function verify_login( $user, $password ) {
+
+        // Check if user is admin.
+        if( ! current_user_can( 'manage_options' ) ) return $user;
 
         // Check for a secret.
         if( empty( get_user_meta( $user->ID, 'google_authenticator_secret', true ) ) ) return $user;
