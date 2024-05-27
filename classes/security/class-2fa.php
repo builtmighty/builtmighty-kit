@@ -7,6 +7,8 @@
  * @package Built Mighty Kit
  * @since   2.0.0
  */
+use Endroid\QrCode\QrCode;
+use Sonata\GoogleAuthenticator\GoogleAuthenticator;
 class built2FA {
 
     /**
