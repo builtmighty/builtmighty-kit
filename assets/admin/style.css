@@ -102,3 +102,77 @@
     margin-left: 10px;
     opacity: 0;
 }
+
+.built-2fa {
+    text-align: center;
+}
+
+.built-panel-icon {
+    font-size: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.built-panel-icon span {
+    display: flex;
+    width: 100px;
+    height: 100px;
+    align-items: center;
+    justify-content: center;
+    background: #d63638;
+    border-radius: 100%;
+}
+
+.built-panel-title h2 {
+    color: #fff;
+    font-size: clamp(20px,5vw,40px);
+}
+
+.built-panel-inner {
+    background: #2c3338;
+    padding: 30px;
+    border-radius: 6px;
+}
+
+.built-panel.built-2fa {
+    max-width: 600px;
+    width: 100%;
+    margin: 30px auto 0;
+    padding: 30px;
+}
+
+.built-panel-qr img {
+    max-width: 200px;
+    border-radius: 6px;
+    margin: 0 0 15px 0;
+}
+
+.built-panel-code {
+    margin: 0 0 15px 0;
+}
+
+.built-panel-code input {
+    text-align: center;
+    background: #000;
+    color: #fff;
+    border: none;
+    max-width: 200px;
+}
+
+.built-panel-actions a,
+.built-panel-actions button {
+    background: #d63638 !important;
+    border-color: #d63638 !important;
+    width: 200px;
+}
+
+.built-2fa-error-message button {
+    background: #d63638;
+    border-radius: 2px;
+    border: none;
+    color: #fff;
+    display: inline-block;
+    padding: 3px 15px 5px;
+    margin-left: 5px;
+}
