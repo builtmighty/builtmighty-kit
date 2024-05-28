@@ -21,6 +21,12 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 2.0.0 =
+* Added 2FA for admins.
+* Fixed 404 on custom login page if already logged in.
+* Fixed redirect to custom login page if using WooCommerce form, which reveals custom login.
+* Fixed 404 on custom login page if query parameters are included in URL.
+
 = 1.7.1 =
 * Bugfix for setup class on activation.
 

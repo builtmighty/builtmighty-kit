@@ -21,7 +21,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.7.1' );
+define( 'BUILT_VERSION', date( 'YmdHis' ) );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -76,6 +76,7 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
+require_once BUILT_PATH . 'vendor/autoload.php';
 require_once BUILT_PATH . 'classes/core/class-setup.php';
 require_once BUILT_PATH . 'classes/core/class-dev.php';
 require_once BUILT_PATH . 'classes/core/class-admin.php';
@@ -84,6 +85,7 @@ require_once BUILT_PATH . 'classes/security/class-login.php';
 require_once BUILT_PATH . 'classes/security/class-access.php';
 require_once BUILT_PATH . 'classes/security/class-security.php';
 require_once BUILT_PATH . 'classes/security/class-keys.php';
+require_once BUILT_PATH . 'classes/security/class-2fa.php';
 require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 require_once BUILT_PATH . 'classes/frontend/class-woo.php';
 require_once BUILT_PATH . 'classes/frontend/class-mail.php';
@@ -101,6 +103,7 @@ new builtAccess();
 new builtWoo();
 new builtMail();
 new builtSecurity();
+new built2FA();
 new builtSpeed();
 new builtDev();
 new builtAdmin();

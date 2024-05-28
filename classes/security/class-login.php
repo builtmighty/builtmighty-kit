@@ -71,12 +71,20 @@ class builtLogin {
         // If constant is empty, farewell.
         if( empty( BUILT_ENDPOINT ) ) return;
 
+        // Set request URI.
+        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
+
         // If user is logged in, adios.
-        if( is_user_logged_in() ) return;
+        if( is_user_logged_in() && $request_uri == '/' . BUILT_ENDPOINT . '/' ) {
+
+            // Redirect to home page.
+            wp_redirect( home_url( '/' ) );
+            exit;
+
+        }
 
         // Check request.
-        if( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) {
-
+        if( $request_uri == '/' . BUILT_ENDPOINT . '/' ) {
 
             // Set the necessary variables.
             $user_login = isset( $user_login ) ? $user_login : '';
@@ -161,6 +169,15 @@ class builtLogin {
 
         // If user is trying to access wp-login.php, ta-ta.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
+
+        // Check if WooCommerce login.
+        if( isset( $_POST['_wp_http_referer'] ) && wc_get_page_permalink( 'myaccount' ) === home_url( $_POST['_wp_http_referer'] ) ) {
+
+            // Redirect to My Account page with error message.
+            wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) . '?login=failed' );
+            exit;
+
+        }
 
         // Set the necessary variables.
         $error = isset( $error ) ? $error : '';
