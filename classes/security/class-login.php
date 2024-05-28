@@ -72,11 +72,16 @@ class builtLogin {
         if( empty( BUILT_ENDPOINT ) ) return;
 
         // If user is logged in, adios.
-        if( is_user_logged_in() ) return;
+        if( is_user_logged_in() ) {
+
+            // Redirect to home page.
+            wp_redirect( home_url( '/' ) );
+            exit;
+
+        }
 
         // Check request.
         if( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) {
-
 
             // Set the necessary variables.
             $user_login = isset( $user_login ) ? $user_login : '';
