@@ -167,6 +167,15 @@ class builtLogin {
         // If user is trying to access wp-login.php, ta-ta.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
 
+        // Check if WooCommerce login.
+        if( isset( $_POST['_wp_http_referer'] ) && wc_get_page_permalink( 'myaccount' ) === home_url( $_POST['_wp_http_referer'] ) ) {
+
+            // Redirect to My Account page with error message.
+            wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) . '?login=failed' );
+            exit;
+
+        }
+
         // Set the necessary variables.
         $error = isset( $error ) ? $error : '';
 
