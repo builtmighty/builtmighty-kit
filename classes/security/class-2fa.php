@@ -109,7 +109,7 @@ class built2FA {
             <span id="check-2fa" class="button button-primary button-large">Login</span>
         </p>
         <p id="authenticator-code" style="display:none;overflow:hidden;height:0">
-            <label for="authenticator_code">Authentication Code<br />
+            <label for="authenticator_code">🔒Authentication Code<br />
             <input type="text" name="authenticator_code" id="authenticator_code" class="input" value="" size="20" /></label>
         </p><?php
 
@@ -210,7 +210,7 @@ class built2FA {
 
         // Check if set.
         if( ! isset( $_POST['authenticator_code'] ) ) return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
-        
+
         // Authenticate.
         if( $this->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
 
@@ -285,7 +285,7 @@ class built2FA {
         $user = get_user_by( 'ID', $user_id );
 
         // Get secret.
-        $secret = get_user_meta( 'google_authenticator_secret', $user_id );
+        $secret = get_user_meta( $user_id, 'google_authenticator_secret', true );
 
         // Check for secret.
         if( ! $secret ) {
@@ -490,14 +490,16 @@ class built2FA {
         // Set icon.
         if( ! empty( get_user_meta( get_current_user_id(), 'google_authenticator_confirmed', true ) ) ) {
             $icon = '🔒';
+            $color = '#266d29';
         } else {
             $icon = '🔓';
+            $color = '#d63638';
         }
 
         // Display header. ?>
         <div class="built-panel-header">
             <div class="built-panel-icon">
-                <span><?php echo $icon; ?></span>
+                <span style="background:<?php echo $color;?>"><?php echo $icon; ?></span>
             </div>
             <div class="built-panel-title">
                 <h2>Two Factor Authentication</h2>
@@ -518,23 +520,42 @@ class built2FA {
      */
     public function authenticate( $user_id, $code ) {
 
+        error_log( '[' . __FUNCTION__ . '] Authenticating ' . $user_id . ' with code ' . $code );
+        error_log( '[' . __FUNCTION__ . '] Checking if authentication is confirmed.' );
+
         // Check if setup.
         if( empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) return true;
+
+        error_log( '[' . __FUNCTION__ . '] Authentication is confirmed.' );
+        error_log( '[' . __FUNCTION__ . '] Checking for an authenticator secret.' );
 
         // Check for secret.
         if( empty( get_user_meta( $user_id, 'google_authenticator_secret', true ) ) ) return true;
 
+        error_log( '[' . __FUNCTION__ . '] User has an authenticator secret.' );
+        error_log( '[' . __FUNCTION__ . '] Getting the authenticator secret.' );
+
         // Get secret.
         $secret = get_user_meta( $user_id, 'google_authenticator_secret', true );
 
+        error_log( '[' . __FUNCTION__ . '] The secret is: ' . print_r( $secret, true ) );
+
+        error_log( '[' . __FUNCTION__ . '] Checking for code.' );
+
         // Check for code.
         if( isset( $code ) ) {
+
+            error_log( '[' . __FUNCTION__ . '] The code is: ' . $code . '.' );
 
             // Get Google Authenticator.
             $google = new GoogleAuthenticator();
 
             // Sanitize the code.
             $code = sanitize_text_field( $code );
+
+            error_log( '[' . __FUNCTION__ . '] Sanitized code: ' . $code );
+
+            error_log( '[' . __FUNCTION__ . '] Checking the code: ' . print_r( $google->checkCode( $secret, $code ), true ) );
 
             // Check code.
             if( $google->checkCode( $secret, $code ) ) {
