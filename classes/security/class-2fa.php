@@ -217,8 +217,20 @@ class built2FA {
         // Set error message dynamically, based on the page.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false || defined( 'BUILT_ENDPOINT' ) && ( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) ) {
 
-            // Error.
-            return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
+            // Check if endpoint is set.
+            if( defined( 'BUILT_ENDPOINT' ) ) {
+
+                // Redirect.
+                wp_redirect( home_url( '/' . BUILT_ENDPOINT . '/?login=failed' ) );
+                exit;
+
+            } else {
+
+                // Error and redirect.
+                wp_redirect( wp_login_url( add_query_arg( [ 'login' => 'failed' ], $_SERVER['REQUEST_URI'] ) ) );
+                exit;
+
+            }
 
         } else {
 
@@ -520,42 +532,23 @@ class built2FA {
      */
     public function authenticate( $user_id, $code ) {
 
-        error_log( '[' . __FUNCTION__ . '] Authenticating ' . $user_id . ' with code ' . $code );
-        error_log( '[' . __FUNCTION__ . '] Checking if authentication is confirmed.' );
-
         // Check if setup.
         if( empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) return true;
-
-        error_log( '[' . __FUNCTION__ . '] Authentication is confirmed.' );
-        error_log( '[' . __FUNCTION__ . '] Checking for an authenticator secret.' );
 
         // Check for secret.
         if( empty( get_user_meta( $user_id, 'google_authenticator_secret', true ) ) ) return true;
 
-        error_log( '[' . __FUNCTION__ . '] User has an authenticator secret.' );
-        error_log( '[' . __FUNCTION__ . '] Getting the authenticator secret.' );
-
         // Get secret.
         $secret = get_user_meta( $user_id, 'google_authenticator_secret', true );
 
-        error_log( '[' . __FUNCTION__ . '] The secret is: ' . print_r( $secret, true ) );
-
-        error_log( '[' . __FUNCTION__ . '] Checking for code.' );
-
         // Check for code.
         if( isset( $code ) ) {
-
-            error_log( '[' . __FUNCTION__ . '] The code is: ' . $code . '.' );
 
             // Get Google Authenticator.
             $google = new GoogleAuthenticator();
 
             // Sanitize the code.
             $code = sanitize_text_field( $code );
-
-            error_log( '[' . __FUNCTION__ . '] Sanitized code: ' . $code );
-
-            error_log( '[' . __FUNCTION__ . '] Checking the code: ' . print_r( $google->checkCode( $secret, $code ), true ) );
 
             // Check code.
             if( $google->checkCode( $secret, $code ) ) {
