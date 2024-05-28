@@ -71,8 +71,11 @@ class builtLogin {
         // If constant is empty, farewell.
         if( empty( BUILT_ENDPOINT ) ) return;
 
+        // Set request URI.
+        $request_uri = trailingslashit( $_SERVER['REQUEST_URI'] );
+
         // If user is logged in, adios.
-        if( is_user_logged_in() ) {
+        if( is_user_logged_in() && $request_uri == '/' . BUILT_ENDPOINT . '/' ) {
 
             // Redirect to home page.
             wp_redirect( home_url( '/' ) );
