@@ -487,10 +487,17 @@ class built2FA {
         // Start output buffering.
         ob_start();
 
+        // Set icon.
+        if( ! empty( get_user_meta( get_current_user_id(), 'google_authenticator_confirmed', true ) ) ) {
+            $icon = '🔒';
+        } else {
+            $icon = '🔓';
+        }
+
         // Display header. ?>
         <div class="built-panel-header">
             <div class="built-panel-icon">
-                <span>🔒</span>
+                <span><?php echo $icon; ?></span>
             </div>
             <div class="built-panel-title">
                 <h2>Two Factor Authentication</h2>
