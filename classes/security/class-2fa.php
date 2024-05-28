@@ -194,6 +194,9 @@ class built2FA {
 
         // Check for 2FA setup.
         if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) return $user;
+
+        // Check if set.
+        if( ! isset( $_POST['authenticator_code'] ) ) return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
         
         // Authenticate.
         if( $this->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
