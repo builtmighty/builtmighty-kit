@@ -42,6 +42,19 @@ class built2FA {
      */
     public function init() {
 
+        // Check for error message.
+        if( ! is_user_logged_in() && isset( $_GET['login'] ) && $_GET['login'] == 'failed' ) {
+
+            // Check if WooCommerce notices are available.
+            if( function_exists( 'wc_add_notice' ) ) {
+
+                // Add notice.
+                wc_add_notice( __( 'Login failed: Please check your username and password and try again. If you are an administrator and have setup 2FA, please login to the admin portal, so that you can supply your 2FA code.' ), 'error' );
+
+            }
+
+        }
+
         // Check if user is logged in.
         if( ! is_user_logged_in() ) return;
 
