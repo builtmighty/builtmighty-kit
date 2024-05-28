@@ -72,7 +72,7 @@ class builtLogin {
         if( empty( BUILT_ENDPOINT ) ) return;
 
         // Set request URI.
-        $request_uri = trailingslashit( $_SERVER['REQUEST_URI'] );
+        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
 
         // If user is logged in, adios.
         if( is_user_logged_in() && $request_uri == '/' . BUILT_ENDPOINT . '/' ) {
@@ -84,7 +84,7 @@ class builtLogin {
         }
 
         // Check request.
-        if( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) {
+        if( $request_uri == '/' . BUILT_ENDPOINT . '/' ) {
 
             // Set the necessary variables.
             $user_login = isset( $user_login ) ? $user_login : '';
