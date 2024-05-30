@@ -40,24 +40,25 @@ class built2FASettings {
         // Check option.
         if( ! $this->is_checked( $option ) ) return;
 
+        // Check if this is enabling/disabling a gateway.
+        if( isset( $_POST['action'] ) ) return;
+
         // Get current URL.
         $url = ( is_array( $_SERVER ) && isset( $_SERVER['HTTP_HOST'] ) ) ? 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] : 'localhost';
 
         // Get auth.
         $auth = new builtAuth();
 
-        error_log( print_r( $_POST, true ) );
-
         // Check if code is set.
         if( ! isset( $_POST['authentication_code'] ) ) {
 
             // Stop the save.
-            //wp_die( 'Authentication code required. <a href="' . $url . '" class="button button-primary">Retry</a>' );
+            wp_die( 'Authentication code required. <a href="' . $url . '" class="button button-primary">Retry</a>' );
 
         } elseif( ! $auth->authenticate( get_current_user_id(), $_POST['authentication_code'] ) ) {
 
             // Stop the save.
-            //wp_die( 'Authentication code is incorrect. <a href="' . $url . '" class="button button-primary">Try Again</a>' );
+            wp_die( 'Authentication code is incorrect. <a href="' . $url . '" class="button button-primary">Try Again</a>' );
 
         }
 
