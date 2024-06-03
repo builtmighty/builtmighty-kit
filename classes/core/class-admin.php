@@ -20,6 +20,9 @@ class builtAdmin {
         // Add admin menu.
         add_action( 'admin_menu', [ $this, 'menu' ] );
 
+        // Root.
+        add_action( 'admin_head', [ $this, 'root' ] );
+
         // Enqueue.
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 
@@ -51,6 +54,40 @@ class builtAdmin {
             'dashicons-admin-tools', 
             99 
         );
+
+    }
+
+    /**
+     * Set root.
+     * 
+     * @since   1.0.0
+     */
+    public function root() {
+
+        // Set colors.
+        $colors = [
+            'red'           => '#D4121F',
+            'light-red'     => '#e42029',
+            'light-grey'    => '#2c3338',
+            'dark-grey'     => '#1d2327',
+            'white'         => '#FFFFFF',
+            'black'         => '#000000'
+        ];
+
+        // Root CSS. ?>
+        <style>
+        :root {<?php
+
+            // Loop.
+            foreach( $colors as $key => $color ) {
+
+                // Output. ?>
+                --<?php echo $key; ?>: <?php echo $color; ?>;<?php
+
+            } ?>
+
+        }
+        </style><?php
 
     }
 
