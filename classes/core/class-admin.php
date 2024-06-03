@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Core;
 class builtAdmin {
 
     /**
@@ -69,8 +70,8 @@ class builtAdmin {
         }
 
         // New Jira API.
-        $jira = new builtJira();
-        $help = new builtJiraHelper();
+        $jira = new \BuiltMightyKit\Plugins\builtJira();
+        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
 
         // Set refresh.
         $refresh = ( isset( $_GET['refresh'] ) ) ? true : false;
@@ -281,7 +282,7 @@ class builtAdmin {
                 if( $value === '***********************' ) continue;
 
                 // Get keys.
-                $keys = new builtKeys();
+                $keys = new \BuiltMightyKit\Security\builtKeys();
 
                 // Encrypt.
                 $value = $keys->encrypt( $value );

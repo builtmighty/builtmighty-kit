@@ -7,6 +7,8 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Frontend;
+use function BuiltMightyKit\is_kit_mode;
 class builtMail {
 
     /**

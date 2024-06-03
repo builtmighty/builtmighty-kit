@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   2.0.0
  */
+namespace BuiltMightyKit\Security;
 use Sonata\GoogleAuthenticator\GoogleAuthenticator;
 class builtAuth {
 

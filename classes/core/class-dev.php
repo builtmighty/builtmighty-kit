@@ -7,6 +7,8 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Core;
+use function BuiltMightyKit\is_kit_mode;
 class builtDev {
 
     /**
@@ -283,8 +285,8 @@ class builtDev {
         ob_start();
 
         // Jira.
-        $jira = new builtJira();
-        $help = new builtJiraHelper();
+        $jira = new \BuiltMightyKit\Plugins\builtJira();
+        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
 
         // Get issues.
         $issues = $help->sort_issues( $jira->get_issues() );
@@ -519,7 +521,7 @@ class builtDev {
         }
 
         // Jira.
-        $jira = new builtJira();
+        $jira = new \BuiltMightyKit\Plugins\builtJira();
 
         // Check type.
         if( $_POST['type'] === 'built-issue-save' ) {

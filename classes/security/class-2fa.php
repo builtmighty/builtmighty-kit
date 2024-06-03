@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   2.0.0
  */
+namespace BuiltMightyKit\Security;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Sonata\GoogleAuthenticator\GoogleAuthenticator;
@@ -212,7 +213,7 @@ class built2FA {
         if( ! isset( $_POST['authenticator_code'] ) ) return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
 
         // Get auth.
-        $auth = new builtAuth();
+        $auth = new \BuiltMightyKit\Security\builtAuth();
 
         // Authenticate.
         if( $auth->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
@@ -367,7 +368,7 @@ class built2FA {
         if( isset( $_POST['google_authenticator_code'] ) ) {
 
             // Auth.
-            $auth = new builtAuth();
+            $auth = new \BuiltMightyKit\Security\builtAuth();
 
             // Authenticate.
             if( $auth->authenticate( $user_id, $_POST['google_authenticator_code'] ) ) {

@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   2.0.0
  */
+namespace BuiltMightyKit\Security;
 class built2FASettings {
 
     /**
@@ -47,7 +48,7 @@ class built2FASettings {
         $url = ( is_array( $_SERVER ) && isset( $_SERVER['HTTP_HOST'] ) ) ? 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] : 'localhost';
 
         // Get auth.
-        $auth = new builtAuth();
+        $auth = new \BuiltMightyKit\Security\builtAuth();
 
         // Check if code is set.
         if( ! isset( $_POST['authentication_code'] ) ) {
