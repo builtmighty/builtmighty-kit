@@ -60,10 +60,18 @@ class builtDB {
             // Create the tables.
             $this->create_tables();
 
+            // Set option.
+            update_option( 'built_db_version', BUILT_VERSION );
+
         } elseif( get_option( 'built_db_version' ) !== BUILT_VERSION ) {
+
+            error_log( 'Updating tables.' );
 
             // Update the tables.
             $this->update_tables();
+
+            // Set option.
+            update_option( 'built_db_version', BUILT_VERSION );
 
         }
 
@@ -80,12 +88,12 @@ class builtDB {
         $tables = [
             'built_lockdown'        => [
                 'id'            => 'int(11) NOT NULL AUTO_INCREMENT',
-                'ip'            => 'varchar(15) NOT NULL',
+                'ip'            => 'VARCHAR(45) NOT NULL',
                 'PRIMARY KEY'   => '(id)'
             ],
             'built_lockdown_log'    => [
                 'id'            => 'int(11) NOT NULL AUTO_INCREMENT',
-                'ip'            => 'varchar(15) NOT NULL',
+                'ip'            => 'VARCHAR(45) NOT NULL',
                 'user_id'       => 'int(11) NOT NULL',
                 'date'          => 'datetime NOT NULL',
                 'PRIMARY KEY'   => '(id)'
@@ -172,6 +180,17 @@ class builtDB {
 
                     // Set the SQL.
                     $sql = "ALTER TABLE $table_name ADD $column_name $type;";
+
+                    // Require the upgrade file.
+                    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+                    // Create the table.
+                    dbDelta( $sql );
+
+                } else {
+
+                    // Set the SQL.
+                    $sql = "ALTER TABLE $table_name MODIFY $column_name $type;";
 
                     // Require the upgrade file.
                     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
