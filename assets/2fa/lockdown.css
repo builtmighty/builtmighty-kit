@@ -28,3 +28,24 @@ p.builtmighty-lockdown-ip {
     padding: 7.5px;
     border-radius: 6px;
 }
+
+.builtmighty-lockdown-head span {
+    font-size: 60px;
+}
+
+.builtmighty-lockdown-form input {
+    padding: 7.5px;
+    border-radius: 6px;
+    border: none;
+    margin: 0 0 7.5px 0;
+}
+
+.builtmighty-lockdown-form button {
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    padding: 8.5px 15px 7.5px;
+    font-weight: bold;
+    cursor: pointer;
+}

@@ -51,14 +51,45 @@ class builtLockdown {
         // Check if any admins have 2FA setup.
         if( ! $this->check_admins() ) return;
 
-        // Start output buffering.
-        ob_start();
+        // Set data.
+        $data = [
+            'status'    => 'success',
+            'message'   => '',
+            'redirect'  => false,
+        ];
 
         // Data.
         $ip = $this->get_ip();
 
-        $data = $_POST;
+        // Check for form submission.
+        if( isset( $_POST['google_authenticator_code'] ) ) {
 
+            // Get auth.
+            $auth = new \BuiltMightyKit\Security\builtAuth();
+
+            // Authenticate.
+            if( $auth->authenticate( $user->ID, $_POST['google_authenticator_code'] ) ) {
+
+                // Add IP to approved.
+                $this->add_ip( $ip );
+
+                // Redirect.
+                wp_redirect( admin_url() );
+                exit;
+
+            } else {
+
+                // Set data.
+                $data['status'] = 'error';
+                $data['message'] = 'Invalid authentication code.';
+
+            }
+
+        }
+
+        // Start output buffering.
+        ob_start();
+ 
         // Load the lockdown template.
         include BUILT_PATH . 'views/security/lockdown.php';
 

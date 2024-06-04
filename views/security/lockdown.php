@@ -13,7 +13,10 @@
         <title>🔒 Locked &mdash; IP Not Approved</title><?php
 
         // Admin head.
-        do_action( 'admin_head' ); ?>
+        do_action( 'admin_head' );
+        
+        // CSS. 
+        echo '<link rel="stylesheet" id="lockdown-css" href="' . BUILT_URI . 'assets/2fa/lockdown.css?ver=' . BUILT_VERSION . '"  media="all" />'; ?>
 
     </head>
     <body><?php
