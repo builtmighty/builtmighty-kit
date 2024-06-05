@@ -346,10 +346,10 @@ class builtAdmin {
     public function enqueue() {
 
         // CSS.
-        wp_enqueue_style( 'built-admin-settings', BUILT_URI . 'assets/admin/style.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'built-admin-settings', BUILT_URI . 'assets/core/admin.css', [], BUILT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'built-admin-settings', BUILT_URI . 'assets/admin/script.js', [ 'jquery' ], BUILT_VERSION, true );
+        wp_enqueue_script( 'built-admin-settings', BUILT_URI . 'assets/core/admin.js', [ 'jquery' ], BUILT_VERSION, true );
 
         // Localize.
         wp_localize_script( 'built-admin-settings', 'built', [

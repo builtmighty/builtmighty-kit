@@ -20,6 +20,8 @@ class built2FASettings {
         // If 2FA is disabled, peace out.
         if( ! defined( 'BUILT_2FA' ) || BUILT_2FA === false ) return;
 
+        return;
+
         // Actions.
         add_action( 'update_option', [ $this, 'update_option' ], 10, 3 );
         add_action( 'woocommerce_update_options', [ $this, 'update_woocommerce' ], 10, 2 );
@@ -124,10 +126,10 @@ class built2FASettings {
     public function enqueue() {
 
         // CSS.
-        wp_enqueue_style( 'builtmighty-2fa-settings', BUILT_URI . 'assets/2fa/2fa-settings.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'builtmighty-2fa-settings', BUILT_URI . 'assets/security/2fa-settings.css', [], BUILT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'builtmighty-2fa-settings', BUILT_URI . 'assets/2fa/2fa-settings.js', [ 'jquery' ], BUILT_VERSION, true );
+        wp_enqueue_script( 'builtmighty-2fa-settings', BUILT_URI . 'assets/security/2fa-settings.js', [ 'jquery' ], BUILT_VERSION, true );
         wp_localize_script( 'builtmighty-2fa-settings', 'builtmighty', [
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
             'nonce' => wp_create_nonce( 'builtmighty-2fa-settings' )

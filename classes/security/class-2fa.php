@@ -126,10 +126,10 @@ class built2FA {
     public function enqueue() {
 
         // CSS.
-        wp_enqueue_style( 'built-2fa', BUILT_URI . 'assets/2fa/2fa.css', [], BUILT_VERSION );
+        wp_enqueue_style( 'built-2fa', BUILT_URI . 'assets/security/2fa.css', [], BUILT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'built-2fa', BUILT_URI . 'assets/2fa/2fa.js', [ 'jquery' ], BUILT_VERSION, true );
+        wp_enqueue_script( 'built-2fa', BUILT_URI . 'assets/security/2fa.js', [ 'jquery' ], BUILT_VERSION, true );
 
         // Localize.
         wp_localize_script( 'built-2fa', 'built2FA', [

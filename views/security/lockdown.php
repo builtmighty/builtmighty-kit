@@ -16,7 +16,7 @@
         do_action( 'admin_head' );
         
         // CSS. 
-        echo '<link rel="stylesheet" id="lockdown-css" href="' . BUILT_URI . 'assets/2fa/lockdown.css?ver=' . BUILT_VERSION . '"  media="all" />'; ?>
+        echo '<link rel="stylesheet" id="lockdown-css" href="' . BUILT_URI . 'assets/security/lockdown.css?ver=' . BUILT_VERSION . '"  media="all" />'; ?>
 
     </head>
     <body>

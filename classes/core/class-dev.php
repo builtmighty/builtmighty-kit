@@ -27,9 +27,6 @@ class builtDev {
         // Add admin notification for dev sites.
         add_action( 'admin_notices', [ $this, 'admin_notice' ] );
 
-        // Load admin styles.
-        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
-
         // Process form.
         add_action( 'wp_ajax_built_process_form', [ $this, 'process_form' ] );
         
@@ -737,28 +734,6 @@ class builtDev {
             echo '<div class="notice notice-warning is-dismissible"><p>NOTICE &mdash; This is a Built Mighty development site.</p></div>';
 
         }
-
-    }
-
-    /**
-     * Enqueue admin styles.
-     * 
-     * @since   1.0.0
-     */
-    public function enqueue() {
-
-        // CSS.
-        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/dash/dash.css', [], BUILT_VERSION );
-        wp_enqueue_style( 'builtmighty-admin', BUILT_URI . 'assets/core/admin.css', [], BUILT_VERSION );
-
-        // JS.
-        wp_enqueue_script( 'builtmighty-admin', BUILT_URI . 'assets/dash/dash.js', [ 'jquery' ], BUILT_VERSION, true );
-
-        // Localize.
-        wp_localize_script( 'builtmighty-admin', 'built', [
-            'ajax' => admin_url( 'admin-ajax.php' ),
-            'nonce' => wp_create_nonce( 'builtmighty' ),
-        ] );
 
     }
 
