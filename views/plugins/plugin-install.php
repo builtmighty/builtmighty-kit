@@ -10,7 +10,7 @@
         <div class="builtmighty-kit-modal-content">
             <span class="builtmighty-kit-modal-close">&times;</span>
             <h2>WARNING: Adding Plugins/Themes</h2>
-            <p>Adding plugins/themes on production can cause the site to crash and be inaccessible. Even if it does not crash the site, it brings uncommitted code onto the server and will cause the automated deployment system to fail, which will make deployments take much longer. Please only install if absolutely necessary. If you have any questions, please reach out to <a href="mailto:<?php echo antispambot( 'developers@builtmighty.com', true ); ?>">Built Mighty</a>.</p>
+            <p>Adding new plugins/themes on a production site involves risks that may cause your site to crash or become inaccessible. Please proceed with caution. This action will add new uncommitted code to the server and interrupt the automated deployment system. A manual re-sync will be necessary before the system can run smoothly. Please only take this action if absolutely necessary, otherwise let us know and we can take care of it for you. If you have any questions, please reach out to <a href="mailto:<?php echo antispambot( 'developers@builtmighty.com', true ); ?>">Built Mighty</a>.</p>
             <div class="builtmighty-kit-modal-buttons">
                 <button class="button button-primary" id="builtmighty-kit-install">Continue</button>
                 <button class="button button-secondary" id="builtmighty-kit-install-close">Leave</button>
