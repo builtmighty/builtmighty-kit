@@ -27,7 +27,9 @@ class built2FA {
         add_action( 'init', [ $this, 'init' ] );
         add_action( 'admin_menu', [ $this, 'menu' ] );
         add_action( 'login_form', [ $this, 'login' ] );
+        add_action( 'woocommerce_login_form', [ $this, 'login' ] );
         add_action( 'login_enqueue_scripts', [ $this, 'enqueue' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ] );
         add_action( 'wp_ajax_check_2fa', [ $this, 'check_2fa' ] );
         add_action( 'wp_ajax_nopriv_check_2fa', [ $this, 'check_2fa' ] );
 
@@ -238,8 +240,18 @@ class built2FA {
 
         } else {
 
-            // Error. 
-            return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. If you are an admin, please visit the WordPress login page.' ) );
+            // Check if WooCommerce login.
+            if( isset( $_POST['woocommerce-login-nonce'] ) && function_exists( 'wc_add_notice' ) ) {
+
+                // Add notice.
+                wp_die( 'Invalid authentication code.' );
+
+            } else {
+
+                // Error.
+                return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. If you are an admin, please visit the WordPress login page.' ) );
+
+            }
 
         }
 
