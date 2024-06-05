@@ -25,6 +25,13 @@ class builtLockdown {
         // Run on WP.
         add_action( 'admin_init', [ $this, 'lockdown' ] );
 
+        // Add fields to backend user.
+        add_action( 'edit_user_profile', [ $this, 'profile_fields' ] );
+        add_action( 'show_user_profile', [ $this, 'profile_fields' ] );
+        add_action( 'personal_options_update', [ $this, 'save_profile_fields' ] );
+        add_action( 'edit_user_profile_update', [ $this, 'save_profile_fields' ] );
+
+
     }
 
     /**
@@ -80,6 +87,71 @@ class builtLockdown {
     }
 
     /**
+     * Profile fields.
+     * 
+     * Add fields to the user profile.
+     * 
+     * @since   2.0.0
+     */
+    public function profile_fields( $user ) {
+
+        // Check if user is admin.
+        if( ! in_array( 'administrator', (array) $user->roles ) ) return;
+
+        // Start output buffering.
+        ob_start();
+
+        // Get IPs.
+        $ips = $this->get_ips( $user->ID );
+
+        // Load the 2FA template.
+        include BUILT_PATH . 'views/security/lockdown-user.php';
+
+        // Output the buffer.
+        echo ob_get_clean();
+
+    }
+
+    /** 
+     * Save profile fields.
+     * 
+     * Save the profile fields.
+     * 
+     * @since   2.0.0
+     */
+    public function save_profile_fields( $user_id ) {
+
+        // Check nonce.
+        if( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-user_' . $user_id ) ) return;
+
+        // Check if user is admin.
+        if( ! in_array( 'administrator', (array) get_userdata( $user_id )->roles ) ) return;
+
+        // Check if remove/add are set.
+        if( isset( $_POST['remove_ip'] ) ) {
+
+            // Sanitize.
+            $id = absint( $_POST['remove_ip'] );
+
+            // Global.
+            global $wpdb;
+
+            // Delete.
+            $wpdb->delete( $wpdb->prefix . 'built_lockdown', [ 'id' => $id ] );
+
+        } elseif( isset( $_POST['add_ip'] ) && ! empty( $_POST['user_ip'] ) ) {
+
+            // Sanitize.
+            $ip = sanitize_text_field( $_POST['user_ip'] );
+
+            // Add IP.
+            $this->add_ip( $ip, $user_id );
+
+        }
+
+    }
+
+    /**
      * Check for allowed IPs.
      * 
      * Check if the user's IP is allowed.
@@ -99,6 +171,40 @@ class builtLockdown {
 
         // Return true.
         return true;
+
+    }
+
+    /**
+     * Get IPs.
+     * 
+     * Get the user's allowed IPs.
+     * 
+     * @since   2.0.0
+     */
+    public function get_ips( $user_id ) {
+
+        // Global.
+        global $wpdb;
+
+        // Get results.
+        $results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}built_lockdown WHERE user_id = %d", $user_id ), ARRAY_A );
+
+        // Check if results.
+        if( empty( $results ) ) return [];
+
+        // Set IPs.
+        $ips = [];
+
+        // Loop through results.
+        foreach( $results as $result ) {
+
+            // Add IP.
+            $ips[$result['id']] = $result['ip'];
+
+        }
+
+        // Return IPs.
+        return $ips;
 
     }
 
@@ -125,6 +231,9 @@ class builtLockdown {
             'message'   => '',
             'redirect'  => false,
         ];
+        
+        // Sanitize.
+        $post = array_map( 'sanitize_text_field', $post );
 
         // Check for authenticator submission.
         if( isset( $post['google_authenticator_code'] ) ) {
@@ -136,7 +245,7 @@ class builtLockdown {
             if( $auth->authenticate( $post['user_id'], $post['google_authenticator_code'] ) ) {
 
                 // Add IP to approved.
-                $added = $this->add_ip( $post['user_ip'] );
+                $added = $this->add_ip( $post['user_ip'], $post['user_id'] );
 
                 // Check if IP was added.
                 if( $added ) {
@@ -250,7 +359,7 @@ class builtLockdown {
         if( $token !== $data['token'] ) return;
 
         // Add IP to approved.
-        $added = $this->add_ip( $data['user_ip'] );
+        $added = $this->add_ip( $data['user_ip'], $data['user_id'] );
 
         // Check if IP was added.
         if( $added ) {
@@ -275,13 +384,13 @@ class builtLockdown {
      *  
      * @since   2.0.0
      */
-    public function add_ip( $ip ) {
+    public function add_ip( $ip, $user_id ) {
 
         // Global.
         global $wpdb;
 
         // Insert.
-        $wpdb->insert( $wpdb->prefix . 'built_lockdown', [ 'ip' => $ip ] );
+        $wpdb->insert( $wpdb->prefix . 'built_lockdown', [ 'ip' => $ip, 'user_id' => $user_id ] );
 
         // Check for error.
         if( $wpdb->last_error ) return false;

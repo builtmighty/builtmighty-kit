@@ -42,8 +42,8 @@ class builtDB {
         // Set prefix.
         $this->prefix = $table_prefix;
 
-        // Check version.
-        $this->check_version();
+        // On initialize.
+        add_action( 'init', [ $this, 'check_version' ] );
         
     }
 
@@ -64,9 +64,7 @@ class builtDB {
             update_option( 'built_db_version', BUILT_VERSION );
 
         } elseif( get_option( 'built_db_version' ) !== BUILT_VERSION ) {
-
-            error_log( 'Updating tables.' );
-
+            
             // Update the tables.
             $this->update_tables();
 
@@ -89,6 +87,7 @@ class builtDB {
             'built_lockdown'        => [
                 'id'            => 'int(11) NOT NULL AUTO_INCREMENT',
                 'ip'            => 'VARCHAR(45) NOT NULL',
+                'user_id'       => 'int(11) NOT NULL',
                 'PRIMARY KEY'   => '(id)'
             ],
             'built_lockdown_log'    => [
@@ -165,6 +164,14 @@ class builtDB {
 
             // Set the table name.
             $table_name = $this->prefix . $table;
+
+            // Check if table exists.
+            if( $this->db->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+                
+                // Create the tables.
+                $this->create_tables();
+
+            }
 
             // Get the columns.
             $columns = $this->db->get_results( "SHOW COLUMNS FROM $table_name" );
