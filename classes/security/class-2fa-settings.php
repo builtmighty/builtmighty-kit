@@ -20,201 +20,171 @@ class built2FASettings {
         // If 2FA is disabled, peace out.
         if( ! defined( 'BUILT_2FA' ) || BUILT_2FA === false ) return;
 
-        return;
+        // Check if 2FA settings is disabled.
+        if( defined( 'BUILT_2FA_SETTINGS' ) && BUILT_2FA_SETTINGS === false ) return;
 
-        // Actions.
-        add_action( 'update_option', [ $this, 'update_option' ], 10, 3 );
-        add_action( 'woocommerce_update_options', [ $this, 'update_woocommerce' ], 10, 2 );
-        add_action( 'admin_footer', [ $this, 'authentication_form' ] );
-        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
+        // Check access.
+        add_action( 'admin_init', [ $this, 'setting_access' ] );
 
     }
 
     /**
-     * On option update, check if user is good to go on update.
+     * Setting access.
      * 
      * @since   2.0.0
      */
-    public function update_option( $option, $value, $old_value ) {
+    public function setting_access() {
 
-        // Check user.
-        if( ! $this->is_admin( get_current_user_id() ) ) return;
+        // Check if user is admin.
+        if( ! current_user_can( 'manage_options' ) ) return;
 
-        // Check option.
-        if( ! $this->is_checked( $option ) ) return;
+        // Get current page.
+        global $pagenow;
 
-        // Check if this is enabling/disabling a gateway.
-        if( isset( $_POST['action'] ) ) return;
+        // Get query vars.
+        parse_str( (string)$_SERVER['QUERY_STRING'], $query );
+        
+        // Generate a unique cookie based off of the current page/query.
+        $cookie = 'builtmighty_2fa_' . md5( $pagenow . json_encode( (array)$query ) );
 
-        // Get current URL.
-        $url = ( is_array( $_SERVER ) && isset( $_SERVER['HTTP_HOST'] ) ) ? 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] : 'localhost';
+        // Check for cookie.
+        if( isset( $_COOKIE[$cookie] ) && $_COOKIE[$cookie] == 'true' ) return;
 
-        // Get auth.
-        $auth = new \BuiltMightyKit\Security\builtAuth();
+        // Check for blocked setting.
+        if( $this->block_settings( $pagenow, $query ) ) {
 
-        // Check if code is set.
-        if( ! isset( $_POST['authentication_code'] ) ) {
+            // Check for authentication.
+            if( isset( $_POST['google_authenticator_code'] ) ) {
 
-            // Stop the save.
-            wp_die( 'Authentication code required. <a href="' . $url . '" class="button button-primary">Retry</a>' );
+                // Auth.
+                $auth = new \BuiltMightyKit\Security\builtAuth();
 
-        } elseif( ! $auth->authenticate( get_current_user_id(), $_POST['authentication_code'] ) ) {
+                // Authenticate.
+                if( $auth->authenticate( get_current_user_id(), $_POST['google_authenticator_code'] ) ) {
 
-            // Stop the save.
-            wp_die( 'Authentication code is incorrect. <a href="' . $url . '" class="button button-primary">Try Again</a>' );
+                    // Set a short-term cookie that allows access to this page.
+                    setcookie( $cookie, 'true', time() + 300, COOKIEPATH, COOKIE_DOMAIN );
 
-        }
+                    // Return.
+                    return;
 
-        // Save.
-        return;
+                }
 
-    }
+            }
 
-    /**
-     * TODO: Add 2FA when the following is set:
-     * 
-     * $_POST['action'] = woocommerce_toggle_gateway_enabled
-     * $option = wc_square_settings
-     * 
-     */
-
-    /**
-     * On WooCommerce option update, check if user is good to go on update.
-     * 
-     * @since   2.0.0
-     */
-    public function update_woocommerce( $option, $value = NULL ) {
-
-        // Check user.
-        if( ! $this->is_admin( get_current_user_id() ) ) return;
-
-        // Check option.
-        if( ! $this->is_checked( $option ) ) return;
-
-        // Log.
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
-        error_log( '[' . __FUNCTION__ . '] Option: ' . $option . ' | Value: ' . print_r( $value, true ) );
-
-    }
-
-    /**
-     * Authentication form.
-     * 
-     * @since   2.0.0
-     */
-    public function authentication_form() {
-
-        // Output. ?>
-        <div id="builtmighty-setting-authentication" class="wrap builtmighty-setting-authentication" style="display:none">
-            <div class="builtmighty-setting-form">
-                <h1><?php _e( 'Authentication Required', 'builtmighty' ); ?></h1>
-                <p><?php _e( 'Please enter your authentication code to save this value.', 'builtmighty' ); ?></p>
-                <div class="builtmighty-fields">
-                    <input type="text" id="builtmighty-setting-auth" name="builtmighty-setting-auth" placeholder="<?php _e( 'Authentication Code', 'builtmighty' ); ?>" />
-                    <span id="builtmighty-submit-auth" class="button-primary woocommerce-save-button">Confirm + Save</span>
-                </div>
+            // Start output buffering.
+            ob_start(); 
+            
+            // Form. ?>
+            <div class="builtmighty-lockdown-form">
+                <h1>🔒Authentication Required</h1>
+                <p>Please enter your authentication code to access this page containing sensitive information.</p>
+                <form method="post">
+                    <div class="built-panel-code">
+                        <input type="text" name="google_authenticator_code" id="google_authenticator_code" class="regular-text" placeholder="Enter your code" />
+                    </div>
+                    <div class="built-panel-actions">
+                        <button type="submit" class="button button-primary">Access Setting</button>
+                    </div>
+                </form>
             </div>
-        </div><?php
+            <style>.built-panel-code{margin:0 0 15px}.built-panel-code input{padding:5px 10px;border-radius:4px;border:1px solid rgb(0 0 0 / 30%)}</style><?php
 
-    }
+            // Get form.
+            $form = ob_get_clean();
 
-    /**
-     * Enqueue.
-     * 
-     * @since   2.0.0
-     */
-    public function enqueue() {
-
-        // CSS.
-        wp_enqueue_style( 'builtmighty-2fa-settings', BUILT_URI . 'assets/security/2fa-settings.css', [], BUILT_VERSION );
-
-        // JS.
-        wp_enqueue_script( 'builtmighty-2fa-settings', BUILT_URI . 'assets/security/2fa-settings.js', [ 'jquery' ], BUILT_VERSION, true );
-        wp_localize_script( 'builtmighty-2fa-settings', 'builtmighty', [
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce' => wp_create_nonce( 'builtmighty-2fa-settings' )
-        ] );
-
-    }
-
-    /**
-     * Check if current user has 2FA enabled.
-     * 
-     * @since   2.0.0
-     */
-    public function is_admin( $user_id ) {
-
-        // Check that user isn't empty.
-        if( empty( $user_id ) ) return false;
-
-        // Return.
-        return ( ! empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) ? true : false;
-
-    }
-
-    /**
-     * Check if an option needs to be verified.
-     * 
-     * @since   2.0.0
-     */
-    public function is_checked( $option ) {
-
-        // Equalize option.
-        $option = strtolower( $option );
-
-        // Set options.
-        $options = [
-            'gateway',
-            'cheque',
-            'bacs',
-            'cod',
-            'stripe',
-            'square',
-            'authorize.net',
-            'paypal',
-            'cybersource',
-            'braintree',
-            'mollie',
-            'woocommerce_payments',
-            'wc_payments',
-            'amazon_pay',
-            'apple_pay',
-            'google_pay',
-            'klarna',
-            'afterpay',
-            'affirm',
-            'sezzle',
-            'splitit',
-            'laybuy',
-            'clearpay',
-            'zip',
-            'paybright',
-            'payu',
-            'payfast',
-            'paystack',
-            'paytm',
-            'razorpay',
-            'mpesa',
-            'flutterwave',
-            'paygate',
-            'peach_payments',
-            'paytabs',
-            'sagepay',
-            'worldpay',
-            '2checkout',
-            'verifone'
-        ];
-
-        // Loop valid through options.
-        foreach( $options as $o ) {
-
-            // Check if string contains option.
-            if( str_contains( $option, $o ) ) return true;
+            // Output form.
+            wp_die( $form );
 
         }
+
+    }
+
+    /**
+     * Block settings.
+     * 
+     * @since   2.0.0
+     */
+    public function block_settings( $pagenow, $query ) {
+
+        // Check if DOING_AJAX.
+        if( defined( 'DOING_AJAX' ) && DOING_AJAX ) return false;
+
+        // Get settings.
+        $settings = $this->get_settings();
+
+        // Get pagenows.
+        $pagenows = array_keys( (array)$settings );
+
+        // Check for pagenow.
+        if( ! in_array( $pagenow, (array)$pagenows ) ) return false;
+
+        // Check if pagenow is empty.
+        if( empty( $settings[$pagenow] ) ) return true;
+
+        // Pages.
+        $pages = array_keys( (array)$settings[$pagenow] );
+
+        // Check for page.
+        if( isset( $query['page'] ) && ! in_array( $query['page'], (array)$pages ) ) return false;
+
+        // Set match.
+        $match = false;
+
+        // Loop through.
+        foreach( $settings[$pagenow][$query['page']] as $location ) {
+
+            // Get location
+            $location = explode( ':', $location );
+
+            // Check if location is set.
+            if( $query[$location[0]] === $location[1] ) {
+
+                // Set match and break.
+                $match = true;
+                break;
+
+            }
+            
+
+        }
+
+        // Check if location is set.
+        if( $match ) return true;
 
         // Return.
         return false;
+
+    }
+
+    /**
+     * Get settings.
+     * 
+     * @since   2.0.0
+     */
+    public function get_settings() {
+
+        // Define settings.
+        $settings = [
+            'user-new.php'          => [],
+            'user-edit.php'         => [],
+            'theme-editor.php'      => [],
+            'plugin-editor.php'     => [],
+            'plugin-install.php'    => [],
+            'admin.php'             => [
+                'wc-settings'   => [
+                    'tab:checkout',
+                    'tab:square',
+                    'tab:advanced',
+                ],
+                'wc-admin'      => [
+                    'path:/payments/overview',
+                ],
+            ],
+        ];
+
+        // Return.
+        return $settings;
 
     }
 

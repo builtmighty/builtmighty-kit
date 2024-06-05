@@ -107,14 +107,8 @@ class built2FA {
      */
     public function login() {
             
-        // Output. ?>
-        <p>
-            <span id="check-2fa" class="button button-primary button-large">Login</span>
-        </p>
-        <p id="authenticator-code" style="display:none;overflow:hidden;height:0">
-            <label for="authenticator_code">🔒Authentication Code<br />
-            <input type="text" name="authenticator_code" id="authenticator_code" class="input" value="" size="20" /></label>
-        </p><?php
+        // Output.
+        include BUILT_PATH . 'views/security/2fa-login.php';
 
     }
 
@@ -336,21 +330,8 @@ class built2FA {
         // Get the data URI
         $dataUri = $result->getDataUri();
 
-        // Panel. ?>
-        <div class="built-panel built-2fa">
-            <?php echo $this->header(); ?>
-            <div class="built-panel-inner">
-                <div class="built-panel-qr">
-                    <img src="<?php echo $dataUri; ?>" alt="QR Code">
-                </div>
-                <div class="built-panel-code">
-                    <input type="text" name="google_authenticator_secret" id="google_authenticator_secret" value="<?php echo esc_attr( $secret ); ?>" class="regular-text" readonly />
-                </div>
-                <div class="built-panel-actions">
-                    <a href="<?php echo admin_url( '/admin.php?page=builtmighty-2fa&confirm=true' ); ?>" class="button button-primary">Confirm</a>
-                </div>
-            </div>
-        </div><?php
+        // Panel.
+        include BUILT_PATH . 'views/security/2fa-setup.php';
 
     } 
 
@@ -401,20 +382,8 @@ class built2FA {
 
         }
 
-        // Panel. ?>
-        <div class="built-panel built-2fa">
-            <?php echo $this->header(); ?>
-            <div class="built-panel-inner">
-                <form method="post">
-                    <div class="built-panel-code">
-                        <input type="text" name="google_authenticator_code" id="google_authenticator_code" class="regular-text" placeholder="Enter your code" />
-                    </div>
-                    <div class="built-panel-actions">
-                        <button type="submit" class="button button-primary">Submit</button>
-                    </div>
-                </form>
-            </div>
-        </div><?php
+        // Panel.
+        include BUILT_PATH . 'views/security/2fa-confirm.php';
 
     }
 
@@ -440,20 +409,8 @@ class built2FA {
 
         }
 
-        // Panel. ?>
-        <div class="built-panel built-2fa">
-            <?php echo $this->header(); ?>
-            <div class="built-panel-inner">
-                <p>Two Factor Authentication has been setup and confirmed.<br>
-                You're good to go, unless you need to reset and restart the process.</p>
-                <form method="post">
-                    <div class="built-panel-actions">
-                        <input type="hidden" name="google_authenticator_reset" value="true" />
-                        <button type="submit" class="button button-primary">Reset</button>
-                    </div>
-                </form>
-            </div>
-        </div><?php
+        // Panel.
+        include BUILT_PATH . 'views/security/2fa-finished.php';
         
     }
 
@@ -469,13 +426,9 @@ class built2FA {
         // Start output buffering.
         ob_start();
 
-        // Display error message. ?>
-        <div class="built-panel built-2fa-error">
-            <h2>ACCESS DENIED</h2>
-            <p>You do not have permission to access this page.</p>
-        </div>
-        <style>.built-2fa-error{display:flex;flex-direction:column;height:70vh;align-items:center;justify-content:center;}.built-2fa-error h2{margin:0;color:#fff}</style><?php
-
+        // Display error message.
+        include BUILT_PATH . 'views/security/2fa-denied.php';
+        
         // Return.
         return ob_get_clean();
 
@@ -493,13 +446,8 @@ class built2FA {
         // Start output buffering.
         ob_start();
 
-        // Display error message. ?>
-        <div class="notice notice-error is-dismissible built-2fa-error-message">
-            <form method="post">
-                <input type="hidden" name="google_authenticator_reset" value="true" />
-                <p>Sorry, but the code entered was incorrect. Please try again. Still having issues? <button type="submit">Reset</button></p>
-            </form>
-        </div><?php
+        // Display error message.
+        include BUILT_PATH . 'views/security/2fa-error.php';
 
         // Return.
         return ob_get_clean();
@@ -518,24 +466,8 @@ class built2FA {
         // Start output buffering.
         ob_start();
 
-        // Set icon.
-        if( ! empty( get_user_meta( get_current_user_id(), 'google_authenticator_confirmed', true ) ) ) {
-            $icon = '🔒';
-            $color = '#266d29';
-        } else {
-            $icon = '🔓';
-            $color = '#d63638';
-        }
-
-        // Display header. ?>
-        <div class="built-panel-header">
-            <div class="built-panel-icon">
-                <span style="background:<?php echo $color;?>"><?php echo $icon; ?></span>
-            </div>
-            <div class="built-panel-title">
-                <h2>Two Factor Authentication</h2>
-            </div>
-        </div><?php
+        // Header.
+        include BUILT_PATH . 'views/security/2fa-header.php';
 
         // Return.
         return ob_get_clean();

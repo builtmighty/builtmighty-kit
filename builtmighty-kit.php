@@ -85,7 +85,7 @@ function built_deactivation() {
  */
 require_once BUILT_PATH . 'vendor/autoload.php';
 require_once BUILT_PATH . 'classes/core/class-setup.php';
-require_once BUILT_PATH . 'classes/core/class-dev.php';
+require_once BUILT_PATH . 'classes/core/class-widget.php';
 require_once BUILT_PATH . 'classes/core/class-admin.php';
 require_once BUILT_PATH . 'classes/core/class-ajax.php';
 require_once BUILT_PATH . 'classes/core/class-db.php';
@@ -119,7 +119,7 @@ new \BuiltMightyKit\Security\built2FA();
 new \BuiltMightyKit\Security\built2FASettings();
 new \BuiltMightyKit\Security\builtLockdown();
 new \BuiltMightyKit\Frontend\builtSpeed();
-new \BuiltMightyKit\Core\builtDev();
+new \BuiltMightyKit\Core\builtWidget();
 new \BuiltMightyKit\Core\builtAdmin();
 new \BuiltMightyKit\Core\builtAJAX();
 
