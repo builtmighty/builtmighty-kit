@@ -28,7 +28,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '1.9.62' );
+define( 'BUILT_VERSION', '1.9.64' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -39,7 +39,7 @@ define( 'BUILT_DOMAIN', 'builtmighty-kit' );
  * 
  * @since   1.0.0
  */
-register_activation_hook( __FILE__, 'built_activation' );
+register_activation_hook( __FILE__, '\BuiltMightyKit\built_activation' );
 function built_activation() {
 
     // Load setup class.
@@ -70,7 +70,7 @@ function built_activation() {
  * 
  * @since   1.0.0
  */
-register_deactivation_hook( __FILE__, 'built_deactivation' );
+register_deactivation_hook( __FILE__, '\BuiltMightyKit\built_deactivation' );
 function built_deactivation() {
 
     // Flush rewrite rules.
@@ -97,6 +97,7 @@ require_once BUILT_PATH . 'classes/security/class-auth.php';
 require_once BUILT_PATH . 'classes/security/class-2fa.php';
 require_once BUILT_PATH . 'classes/security/class-2fa-settings.php';
 require_once BUILT_PATH . 'classes/security/class-lockdown.php';
+require_once BUILT_PATH . 'classes/security/class-lockdown-log.php';
 require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 require_once BUILT_PATH . 'classes/frontend/class-woo.php';
 require_once BUILT_PATH . 'classes/frontend/class-mail.php';
@@ -118,6 +119,7 @@ new \BuiltMightyKit\Core\builtDB();
 new \BuiltMightyKit\Security\built2FA();
 new \BuiltMightyKit\Security\built2FASettings();
 new \BuiltMightyKit\Security\builtLockdown();
+new \BuiltMightyKit\Security\builtLockdownLog();
 new \BuiltMightyKit\Frontend\builtSpeed();
 new \BuiltMightyKit\Core\builtWidget();
 new \BuiltMightyKit\Core\builtAdmin();
