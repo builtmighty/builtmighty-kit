@@ -16,6 +16,8 @@ class builtLockdownLog {
      */
     public function __construct() {
 
+        return;
+
         // Log.
         add_action( 'wp_login_failed', [ $this, 'log' ] );
 
@@ -30,8 +32,6 @@ class builtLockdownLog {
 
         // Global.
         global $wpdb;
-
-        
 
         error_log( 'POST: ' . print_r( $_POST, true ) );
 

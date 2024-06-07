@@ -453,3 +453,19 @@ div#builtmighty-lockdown-ips button[name=remove_ip] {
 div#builtmighty-lockdown-ips button[name=remove_ip]:hover {
     transform: translate(0px, -2px);
 }
+
+.built-footer-action a.button {
+    background: #266d29;
+    border-color: #266d29;
+    color: #fff;
+    width: 150px;
+}
+
+button.google-authenticator-reset {
+    background: none !important;
+    border: none !important;
+    color: var(--white);
+    text-decoration: underline;
+    margin-top: 5px;
+    cursor: pointer;
+}

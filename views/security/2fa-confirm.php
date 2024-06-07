@@ -6,7 +6,7 @@
  * @since   2.0.0
  */ ?>
 <div class="built-panel built-2fa">
-    <?php echo $this->header(); ?>
+    <?php include BUILT_PATH . 'views/security/2fa-header.php'; ?>
     <div class="built-panel-inner">
         <form method="post">
             <div class="built-panel-code">
