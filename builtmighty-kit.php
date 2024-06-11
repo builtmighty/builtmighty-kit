@@ -124,14 +124,7 @@ new \BuiltMightyKit\Frontend\builtSpeed();
 new \BuiltMightyKit\Core\builtWidget();
 new \BuiltMightyKit\Core\builtAdmin();
 new \BuiltMightyKit\Core\builtAJAX();
-
-// Check if site is in kit mode.
-if( ! is_kit_mode() ) {
-
-    // Load production specific classes.
-    new \BuiltMightyKit\Plugins\builtUpdates();
-
-}
+new \BuiltMightyKit\Plugins\builtUpdates();
 
 /**
  * Check environment.

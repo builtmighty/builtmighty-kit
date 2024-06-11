@@ -8,6 +8,7 @@
  * @since   1.0.0
  */
 namespace BuiltMightyKit\Plugins;
+use function BuiltMightyKit\is_kit_mode;
 class builtUpdates {
 
     /**
@@ -16,6 +17,9 @@ class builtUpdates {
      * @since   1.0.0
      */
     public function __construct() {
+
+        // Check if site is in kit mode.
+        if( ! is_kit_mode() ) return;
 
         // Confirmation modal.
         add_action( 'admin_footer', [ $this, 'modal' ] );
