@@ -33,8 +33,6 @@ class builtLockdownLog {
         // Global.
         global $wpdb;
 
-        error_log( 'POST: ' . print_r( $_POST, true ) );
-
          // Get user IP.
         $ip = $_SERVER['REMOTE_ADDR'];
 
@@ -46,11 +44,6 @@ class builtLockdownLog {
 
         // Get user time.
         $time = date( 'Y-m-d H:i:s' );
-
-        error_log( 'IP: ' . print_r( $ip, true ) );
-        error_log( 'Agent: ' . print_r( $agent, true ) );
-        error_log( 'Login: ' . print_r( $login, true ) );
-        error_log( 'Time: ' . print_r( $time, true ) );
 
         // Redirect.
         wp_redirect( home_url( '/' . BUILT_ENDPOINT . '?login=failed' ) );
