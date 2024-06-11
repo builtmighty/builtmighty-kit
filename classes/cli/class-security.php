@@ -213,7 +213,7 @@ class builtSecurity {
         global $wpdb;
 
         // Get results.
-        $results = $wpdb->get_results( $wpdb->prepare( "SELECT ip FROM {$wpdb->prefix}built_lockdown" ), ARRAY_A );
+        $results = $wpdb->get_results( "SELECT user_id, ip FROM {$wpdb->prefix}built_lockdown", ARRAY_A );
 
         // Check approved.
         if( ! empty( $results ) ) {
@@ -221,7 +221,13 @@ class builtSecurity {
             // Output approved.
             \WP_CLI::line( 'Approved:' );
             foreach( $results as $result ) {
-                \WP_CLI::line( '• ' . $result['ip'] );
+
+                // Get user by ID.
+                $user = get_user_by( 'ID', $result['user_id'] );
+
+                // Output.
+                \WP_CLI::line( '• ' . $user->user_login . ' - ' . $result['ip'] );
+
             }
 
         } else {

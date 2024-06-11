@@ -131,7 +131,7 @@ new \BuiltMightyKit\Plugins\builtUpdates();
  * 
  * @since   1.0.0
  */
-if( defined( 'WP_CLI' ) && WP_CLI ) {
+if( defined( '\WP_CLI' ) && \WP_CLI ) {
 
     // Register.
     add_action( 'plugins_loaded', '\BuiltMightyKit\register_cli' );
@@ -149,7 +149,7 @@ function register_cli() {
     require_once BUILT_PATH . 'classes/cli/class-security.php';
 
     // Register CLI classes.
-    WP_CLI::add_command( 'kit security', '\BuiltMightyKit\CLI\builtSecurity' );
+    \WP_CLI::add_command( 'kit security', '\BuiltMightyKit\CLI\builtSecurity' );
 
 }
 
