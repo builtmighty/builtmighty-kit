@@ -159,7 +159,7 @@ class builtAdmin {
     public function field( $id, $label, $field ) {
 
         // Set value.
-        $value = ( ! empty( get_option( $id ) ) ) ? get_option( $id ) : '';
+        $value = ( ! empty( get_option( $id ) ) ) ? unserialize( get_option( $id ) ) : '';
         $value = ( ! empty( $_POST[ $id ] ) ) ? $_POST[ $id ] : $value;
 
         // Set ID.
@@ -210,6 +210,21 @@ class builtAdmin {
                     // Output text. ?>
                     <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
+                } elseif( $field['type'] == 'checkbox' ) {
+
+                    // Loop through options.
+                    foreach( $field['options'] as $option_key => $option ) {
+
+                        // Set checked.
+                        $checked = ( in_array( $option_key, (array)$value ) ) ? ' checked' : '';
+
+                        // Output. ?>
+                        <div class="builtmighty-checkbox">
+                            <input <?php echo $field_id; ?>type="checkbox" name="<?php echo $id; ?>[]" value="<?php echo $option_key; ?>"<?php echo $checked; ?>> <?php echo $option; ?>
+                        </div><?php
+
+                    }
+
                 } else {
 
                     // Don't output a field.
@@ -232,8 +247,18 @@ class builtAdmin {
         // Loop.
         foreach( $_POST as $key => $value ) {
 
-            // Sanitize.
-            $value = sanitize_text_field( $value );
+            // Check if array.
+            if( is_array( $value ) ) {
+
+                // Serialize.
+                $value = serialize( $value );
+
+            } else {
+
+                // Sanitize.
+                $value = sanitize_text_field( $value );
+
+            }
 
             // Check key.
             if( $key == 'jira-token' ) {

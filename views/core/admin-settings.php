@@ -40,7 +40,10 @@
         // Jira API Token.
         echo $this->field( 'jira-token', 'Jira Token', [
             'type'      => 'password'
-        ] ); ?>
+        ] ); 
+        
+        // Add settings.
+        do_action( '\BuiltMightyKit\Core\add_settings' ); ?>
 
         <div class="built-save">
             <input type="submit" class="button button-primary button-built" name="built-save" value="Save"><?php

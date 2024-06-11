@@ -469,3 +469,15 @@ button.google-authenticator-reset {
     margin-top: 5px;
     cursor: pointer;
 }
+
+.built-input {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.builtmighty-checkbox {
+    background: rgb(255 255 255 / 5%);
+    padding: 5px;
+    margin: 0 5px 5px 0;
+    border-radius: 6px;
+}

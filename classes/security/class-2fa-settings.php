@@ -26,6 +26,9 @@ class built2FASettings {
         // Check access.
         add_action( 'admin_init', [ $this, 'setting_access' ] );
 
+        // Add settings.
+        add_action( '\BuiltMightyKit\Core\add_settings', [ $this, 'add_settings' ] );
+
     }
 
     /**
@@ -38,20 +41,17 @@ class built2FASettings {
         // Check if user is admin.
         if( ! current_user_can( 'manage_options' ) ) return;
 
-        // Get current page.
-        global $pagenow;
-
-        // Get query vars.
-        parse_str( (string)$_SERVER['QUERY_STRING'], $query );
+        // Set page.
+        $page = $_SERVER['REQUEST_URI'];
         
         // Generate a unique cookie based off of the current page/query.
-        $cookie = 'builtmighty_2fa_' . md5( $pagenow . json_encode( (array)$query ) );
+        $cookie = 'builtmighty_2fa_' . md5( $page );
 
         // Check for cookie.
         if( isset( $_COOKIE[$cookie] ) && $_COOKIE[$cookie] == 'true' ) return;
 
         // Check for blocked setting.
-        if( $this->block_settings( $pagenow, $query ) ) {
+        if( $this->block_settings( $page ) ) {
 
             // Check for authentication.
             if( isset( $_POST['google_authenticator_code'] ) ) {
@@ -77,8 +77,8 @@ class built2FASettings {
             
             // Form. ?>
             <div class="builtmighty-lockdown-form">
-                <h1>🔒Authentication Required</h1>
-                <p>Please enter your authentication code to access this page containing sensitive information.</p>
+                <h1>🔒Two Factor Authentication Required</h1>
+                <p>Please enter your two factor authentication code to access this page, which contains sensitive information.</p>
                 <form method="post">
                     <div class="built-panel-code">
                         <input type="text" name="google_authenticator_code" id="google_authenticator_code" class="regular-text" placeholder="Enter your code" />
@@ -105,86 +105,168 @@ class built2FASettings {
      * 
      * @since   2.0.0
      */
-    public function block_settings( $pagenow, $query ) {
+    public function block_settings( $page ) {
 
         // Check if DOING_AJAX.
         if( defined( 'DOING_AJAX' ) && DOING_AJAX ) return false;
 
         // Get settings.
-        $settings = $this->get_settings();
+        $settings = unserialize( get_option( '2fa_settings' ) );
 
-        // Get pagenows.
-        $pagenows = array_keys( (array)$settings );
-
-        // Check for pagenow.
-        if( ! in_array( $pagenow, (array)$pagenows ) ) return false;
-
-        // Check if pagenow is empty.
-        if( empty( $settings[$pagenow] ) ) return true;
-
-        // Pages.
-        $pages = array_keys( (array)$settings[$pagenow] );
-
-        // Check for page.
-        if( isset( $query['page'] ) && ! in_array( $query['page'], (array)$pages ) ) return false;
+        // Merge default settings.
+        $settings = array_merge( (array)$settings, (array)$this->default_settings() );
 
         // Set match.
         $match = false;
 
-        // Loop through.
-        foreach( $settings[$pagenow][$query['page']] as $location ) {
+        // Loop through settings.
+        foreach( $settings as $setting ) {
 
-            // Get location
-            $location = explode( ':', $location );
+            // Check if page contains setting.
+            if( strpos( $page, $setting ) !== false ) {
 
-            // Check if location is set.
-            if( $query[$location[0]] === $location[1] ) {
-
-                // Set match and break.
+                // Set match.
                 $match = true;
                 break;
 
             }
-            
 
         }
 
-        // Check if location is set.
-        if( $match ) return true;
-
         // Return.
-        return false;
+        return $match;
 
     }
 
     /**
-     * Get settings.
+     * Add settings.
      * 
      * @since   2.0.0
      */
-    public function get_settings() {
+    public function add_settings() {
 
-        // Define settings.
-        $settings = [
-            'user-new.php'          => [],
-            'user-edit.php'         => [],
-            'theme-editor.php'      => [],
-            'plugin-editor.php'     => [],
-            'plugin-install.php'    => [],
-            'admin.php'             => [
-                'wc-settings'   => [
-                    'tab:checkout',
-                    'tab:square',
-                    'tab:advanced',
-                ],
-                'wc-admin'      => [
-                    'path:/payments/overview',
-                ],
-            ],
+        // Admin.
+        $admin = new \BuiltMightyKit\Core\builtAdmin();
+
+        // Field. 
+        echo $admin->field( '2fa_settings', '2FA Settings', [
+            'type'      => 'checkbox',
+            'id'        => '2fa_settings',
+            'label'     => '2FA for Settings',
+            'options'   => (array)$this->dynamic_settings(),
+            'default'   => false
+        ] );
+    
+    }
+
+    /**
+     * Default settings.
+     * 
+     * Always set these pages to 2FA authentication.
+     * 
+     * @since   2.0.0
+     */
+    public function default_settings() {
+
+        // Set and return default.
+        return [
+            'admin.php?page=wc-settings&tab=checkout',
+            'user-new.php',
+            'user-edit.php?user_id=',
+            'theme-editor.php',
+            'plugin-editor.php',
+            'plugin-install.php',
+            'widgets.php',
         ];
 
+    }
+
+    /** 
+     * Dynamic settings.
+     * 
+     * @since   2.0.0
+     */
+    public function dynamic_settings() {
+
+        // Globals.
+        global $submenu, $menu;
+
+        // Set menu items.
+        $menu_items = [];
+
+        // Loop.
+        foreach( $menu as $item ) {
+
+            // Check for title.
+            if( empty( $item[0] ) ) continue;
+
+            // Check label.
+            if( $this->check_option( $item[0] ) ) continue;
+
+            // Add to menu items.
+            $menu_items[$item[2]] = $this->clean_label( $item[0] );
+
+        }
+
+        // Loop through submenu.
+        foreach( $submenu as $parent => $items ) {
+
+            // Loop through items.
+            foreach( $items as $item ) {
+
+                // Check for title.
+                if( empty( $item[0] ) ) continue;
+
+                // Check label.
+                if( $this->check_option( $item[0] ) ) continue;
+
+                // Add to menu items.
+                $menu_items[$item[2]] = $this->clean_label( $item[0] );
+
+            }
+
+        }
+        
         // Return.
-        return $settings;
+        return $menu_items;
+
+    }
+
+    /** 
+     * Clean label.
+     * 
+     * @since   2.0.0
+     */
+    public function clean_label( $label ) {
+
+        // Remove trailing numbers.
+        $label = preg_replace('/(.*?)([0-9*])/', '$1', $label );
+
+        // Return.
+        return $label;
+        
+    }
+
+    /**
+     * Check option.
+     * 
+     * @since   2.0.0
+     */
+    public function check_option( $label ) {
+
+        // Set labels.
+        $labels = [
+            'home',
+            'dashboard',
+            'built mighty',
+            'built 2fa'
+        ];
+
+        // Check for label.
+        if( in_array( strtolower( $label ), (array)$labels ) ) return true;
+
+        // Return.
+        return false;
 
     }
 
