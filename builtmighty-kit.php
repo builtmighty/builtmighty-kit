@@ -126,6 +126,33 @@ new \BuiltMightyKit\Core\builtAdmin();
 new \BuiltMightyKit\Core\builtAJAX();
 new \BuiltMightyKit\Plugins\builtUpdates();
 
+/** 
+ * CLI.
+ * 
+ * @since   1.0.0
+ */
+if( defined( 'WP_CLI' ) && WP_CLI ) {
+
+    // Register.
+    add_action( 'plugins_loaded', '\BuiltMightyKit\register_cli' );
+
+}
+
+/**
+ * Register CLI.
+ * 
+ * @since   1.0.0
+ */
+function register_cli() {
+
+    // Require CLI classes.
+    require_once BUILT_PATH . 'classes/cli/class-security.php';
+
+    // Register CLI classes.
+    WP_CLI::add_command( 'kit security', '\BuiltMightyKit\CLI\builtSecurity' );
+
+}
+
 /**
  * Check environment.
  * 
