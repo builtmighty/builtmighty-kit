@@ -31,7 +31,6 @@ class builtLockdown {
         add_action( 'personal_options_update', [ $this, 'save_profile_fields' ] );
         add_action( 'edit_user_profile_update', [ $this, 'save_profile_fields' ] );
 
-
     }
 
     /**
