@@ -96,6 +96,7 @@ class builtDB {
                 'user_id'       => 'int(11) NOT NULL',
                 'user_agent'    => 'text NOT NULL',
                 'type'          => 'VARCHAR(45) NOT NULL',
+                'status'        => 'VARCHAR(45) NOT NULL',
                 'date'          => 'datetime NOT NULL',
                 'PRIMARY KEY'   => '(id)'
             ]
