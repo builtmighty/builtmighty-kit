@@ -113,8 +113,18 @@ class built2FASettings {
         // Get settings.
         $settings = unserialize( get_option( '2fa_settings' ) );
 
-        // Merge default settings.
-        $settings = array_merge( (array)$settings, (array)$this->default_settings() );
+        // Check for settings.
+        if( empty( $settings ) ) {
+
+            // Set default settings.
+            $settings = $this->default_settings();
+
+        } else {
+
+            // Merge default settings.
+            $settings = array_merge( (array)$settings, (array)$this->default_settings() );
+
+        }
 
         // Set match.
         $match = false;
