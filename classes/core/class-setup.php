@@ -45,7 +45,7 @@ class builtSetup {
         if( ! is_kit_mode() ) return;
 
         // Add to updates.
-        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\nif( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ) {\n\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n}\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\nif( ! defined( 'WP_ACCESSIBLE_HOSTS' ) ) {\n\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n}\n";
+        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\nif( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ) define( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\nif( ! defined( 'WP_ACCESSIBLE_HOSTS' ) ) define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n";
 
         // Update config.
         $this->update_config( $updates );
@@ -60,7 +60,7 @@ class builtSetup {
     public function disable_editors() {
 
         // Add to updates.
-        $updates = "\n# 🔨 Built Mighty Kit - Disable theme/plugin editor.\nif( ! defined( 'DISALLOW_FILE_EDIT' ) ) {\n\ndefine( 'DISALLOW_FILE_EDIT', true );\n\n}\n";
+        $updates = "\n# 🔨 Built Mighty Kit - Disable theme/plugin editor.\nif( ! defined( 'DISALLOW_FILE_EDIT' ) ) define( 'DISALLOW_FILE_EDIT', true );\n";
 
         // Update config.
         $this->update_config( $updates );
@@ -81,7 +81,7 @@ class builtSetup {
         update_option( 'blog_public', '0' );
 
         // Add to updates.
-        $updates = "\n# 🔨 Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {\n\ndefine( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n}\n";
+        $updates = "\n# 🔨 Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n";
 
         // Update config.
         $this->update_config( $updates );
