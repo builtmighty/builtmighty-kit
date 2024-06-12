@@ -8,7 +8,7 @@ Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
 Text Domain: builtmighty-kit
-Copyright © 2023 Built Mighty. All Rights Reserved.
+Copyright © 2024 Built Mighty. All Rights Reserved.
 */
 
 /**
