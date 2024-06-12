@@ -98,10 +98,10 @@ require_once BUILT_PATH . 'classes/security/class-2fa.php';
 require_once BUILT_PATH . 'classes/security/class-2fa-settings.php';
 require_once BUILT_PATH . 'classes/security/class-lockdown.php';
 require_once BUILT_PATH . 'classes/security/class-lockdown-log.php';
-require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 require_once BUILT_PATH . 'classes/frontend/class-woo.php';
 require_once BUILT_PATH . 'classes/frontend/class-mail.php';
 require_once BUILT_PATH . 'classes/frontend/class-speed.php';
+require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 require_once BUILT_PATH . 'classes/plugins/class-jira.php';
 require_once BUILT_PATH . 'classes/plugins/class-jira-helper.php';
 
