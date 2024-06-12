@@ -65,24 +65,24 @@ This variable turns on 2FA for all sensitive settings on the site, which means a
 If set to true, then only approved IPs (approved by 2FA, other admins, or CLI commands) can access the site.
 
 ## 2.0.0
-* Added 2FA for admins.
-* Added 2FA for sensitive settings.
-* Added dynamic settings for 2FA sensitive settings.
-* Added logging for failed admin logins.
-* Added logging for failed 2FA logins.
-* Added IP approval system for admin access.
-* Added disabling of theme/plugin editing on all sites.
-* Added WP CLI commands for security features: 2FA setup, 2FA reset, IP approval and IP removal.
-* Added WP CLI commands for core features: disabling exernal API requests, disabling indexing, disabling plugins, updating emails, resetting emails, cleaning customer data, and removing order data.
-* Updated namespacing to make more sense.
-* Updated update/install plugin/theme wording.
-* Refactored class layouts to make more sense.
-* Refactored all assets to make more sense.
-* Refactored methods for updating wp-config variables.
-* Fixed update/install themes/plugins message so that it only displays on production sites.
-* Fixed loading custom login page with query parameters, so that it not longer 404s.
-* Fixed loading custom login page while logged in, so it now redirects to homepage.
-* Fixed wp-config updates on setup not being added, so that they are now added.
+* ✨ Added 2FA for admins.
+* ✨ Added 2FA for sensitive settings.
+* ✨ Added dynamic settings for 2FA sensitive settings.
+* ✨ Added logging for failed admin logins.
+* ✨ Added logging for failed 2FA logins.
+* ✨ Added IP approval system for admin access.
+* ✨ Added disabling of theme/plugin editing on all sites.
+* ✨ Added WP CLI commands for security features: 2FA setup, 2FA reset, IP approval and IP removal.
+* ✨ Added WP CLI commands for core features: disabling exernal API requests, disabling indexing, disabling plugins, updating emails, resetting emails, cleaning customer data, and removing order data.
+* ⚡️ Updated namespacing to make more sense.
+* ⚡️ Updated update/install plugin/theme wording.
+* ♻️ Refactored class layouts to make more sense.
+* ♻️ Refactored all assets to make more sense.
+* ♻️ Refactored methods for updating wp-config variables.
+* 🐛 Fixed update/install themes/plugins message so that it only displays on production sites.
+* 🐛 Fixed loading custom login page with query parameters, so that it not longer 404s.
+* 🐛 Fixed loading custom login page while logged in, so it now redirects to homepage.
+* 🐛 Fixed wp-config updates on setup not being added, so that they are now added.
 
 ## 1.7.1
 * Bugfix for setup class on activation.
