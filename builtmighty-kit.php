@@ -53,7 +53,7 @@ function built_activation() {
     update_option( 'built_siteurl', site_url() );
 
     // Only redirect on Built Mighty sites.
-    if( is_kit_mode ) {
+    if( is_kit_mode() ) {
 
         // Set transient.
         set_transient( 'built_activation', true, 60 );
@@ -210,7 +210,7 @@ function built_check_site() {
     } else {
 
         // Check if site URL has changed.
-        if( get_option( 'built_siteurl') === site_url() ) return;
+        if( get_option( 'built_siteurl' ) === site_url() ) return;
 
         // Update site URL.
         update_option( 'built_siteurl', site_url() );
