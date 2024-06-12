@@ -147,9 +147,11 @@ function register_cli() {
 
     // Require CLI classes.
     require_once BUILT_PATH . 'classes/cli/class-security.php';
+    require_once BUILT_PATH . 'classes/cli/class-core.php';
 
     // Register CLI classes.
     \WP_CLI::add_command( 'kit security', '\BuiltMightyKit\CLI\builtSecurity' );
+    \WP_CLI::add_command( 'kit core', '\BuiltMightyKit\CLI\builtCore' );
 
 }
 
