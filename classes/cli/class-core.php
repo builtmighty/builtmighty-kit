@@ -193,12 +193,12 @@ class builtCore {
             if( $percent == 0 ) {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Starting to update emails..." );
+                \WP_CLI::success( 'Starting to update emails...' );
 
             } else {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Updating emails..." . $percent . "% complete." );
+                \WP_CLI::success( 'Updating emails...' . $percent . '% complete.' );
 
             }
 
@@ -280,12 +280,12 @@ class builtCore {
             if( $percent == 0 ) {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Starting to reset emails..." );
+                \WP_CLI::success( 'Starting to reset emails...' );
 
             } else {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Resetting emails..." . $percent . "% complete." );
+                \WP_CLI::success( 'Resetting emails...' . $percent . '% complete.' );
 
             }
 
@@ -362,12 +362,94 @@ class builtCore {
             if( $percent == 0 ) {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Starting to remove customer data..." );
+                \WP_CLI::success( 'Starting to remove customer data...' );
 
             } else {
 
                 // Output progress to WP-CLI
-                \WP_CLI::success( "Removing customer data..." . $percent . "% complete." );
+                \WP_CLI::success( 'Removing customer data...' . $percent . '% complete.' );
+
+            }
+
+            // Increase the offset.
+            $offset += $size;
+
+        }
+
+        // Success.
+        \WP_CLI::success( 'All customer data removed.' );
+
+    }
+
+    /**
+     * Clean orders.
+     * 
+     * Run the command to clean orders off of the site.
+     * 
+     * wp kit core clean_orders
+     * 
+     * @since   2.0.0
+     */
+    public function clean_orders( $args, $assoc_args ) {
+
+        // Check if WooCommerce is active.
+        if( ! class_exists( 'WooCommerce' ) ) {
+
+            // Error.
+            \WP_CLI::error( 'WooCommerce is not active on this site.' );
+
+        }
+
+        // Global.
+        global $wpdb;
+
+        // Set size.
+        $size   = 100;
+        $offset = 0;
+
+        // Get total.
+        $total = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'shop_order'" );
+
+        // Loop.
+        while( true ) {
+
+            // Query.
+            $query = $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'shop_order' LIMIT %d OFFSET %d",
+                $size,
+                $offset
+            );
+
+            // Get order IDs.
+            $order_ids = $wpdb->get_col( $query );
+
+            // Stop if we don't have orders.
+            if( empty( $order_ids ) ) break;
+
+            // Loop through order IDs and delete them.
+            foreach( $order_ids as $order_id ) {
+
+                // Get the order.
+                $order = wc_get_order( $order_id );
+
+                // Delete the order.
+                $order->delete( true );
+
+            }
+
+            // Percentage.
+            $percent = intval( ( $offset / $total ) * 100 );
+
+            // Check percent. 
+            if( $percent == 0 ) {
+
+                // Output progress to WP-CLI
+                \WP_CLI::success( 'Starting to remove orders...' );
+
+            } else {
+
+                // Output progress to WP-CLI
+                \WP_CLI::success( 'Removing orders...' . $percent . '% complete.' );
 
             }
             
@@ -377,7 +459,7 @@ class builtCore {
         }
 
         // Success.
-        WP_CLI::success( 'All customer data removed.' );
+        \WP_CLI::success( 'All orders removed.' );
 
     }
 
