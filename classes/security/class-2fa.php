@@ -45,6 +45,9 @@ class built2FA {
      */
     public function init() {
 
+        // If WP CLI or REST API, return.
+        if( defined( 'WP_CLI' ) && \WP_CLI || defined( 'REST_REQUEST' ) && REST_REQUEST ) return;
+
         // Check for error message.
         if( ! is_user_logged_in() && isset( $_GET['login'] ) && $_GET['login'] == 'failed' ) {
 
