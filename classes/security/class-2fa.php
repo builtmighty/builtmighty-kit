@@ -208,14 +208,42 @@ class built2FA {
         // Check for 2FA setup.
         if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) return $user;
 
+        // Get log.
+        $log = new \BuiltMightyKit\Security\builtLockdownLog();
+
+        // Set data.
+        $data = [
+            'ip'        => $_SERVER['REMOTE_ADDR'],
+            'user'      => $user->ID,
+            'agent'     => $_SERVER['HTTP_USER_AGENT'],
+            'type'      => '2FA',
+        ];
+
         // Check if set.
-        if( ! isset( $_POST['authenticator_code'] ) ) return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
+        if( ! isset( $_POST['authenticator_code'] ) ) {
+
+            // Set data.
+            $data['status'] = 'missing';
+
+            // Log failure.
+            $log->log( $data );
+
+            // Return.
+            return new WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
+
+        }
 
         // Get auth.
         $auth = new \BuiltMightyKit\Security\builtAuth();
 
         // Authenticate.
         if( $auth->authenticate( $user->ID, $_POST['authenticator_code'] ) ) return $user;
+
+        // Set data.
+        $data['status'] = 'failed';
+
+        // Log failure.
+        $log->log( $data );
 
         // Set error message dynamically, based on the page.
         if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false || defined( 'BUILT_ENDPOINT' ) && ( $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT || $_SERVER['REQUEST_URI'] === '/' . BUILT_ENDPOINT . '/' ) ) {
