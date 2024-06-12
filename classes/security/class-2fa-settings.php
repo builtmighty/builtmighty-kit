@@ -21,7 +21,7 @@ class built2FASettings {
         if( ! defined( 'BUILT_2FA' ) || BUILT_2FA === false ) return;
 
         // Check if 2FA settings is disabled.
-        if( defined( 'BUILT_2FA_SETTINGS' ) && BUILT_2FA_SETTINGS === false ) return;
+        if( ! defined( 'BUILT_2FA_SETTINGS' ) && BUILT_2FA_SETTINGS === false ) return;
 
         // Check access.
         add_action( 'admin_init', [ $this, 'setting_access' ] );
