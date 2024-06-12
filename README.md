@@ -85,37 +85,36 @@ If set to true, then only approved IPs (approved by 2FA, other admins, or CLI co
 * 🐛 Fixed wp-config updates on setup not being added, so that they are now added.
 
 ## 1.7.1
-* Bugfix for setup class on activation.
+* 🐛 Bugfix for setup class on activation.
 
 ## 1.7.0
-* Added support for Codespaces.
-* Fixed some small bugs.
+* ✨ Added support for Codespaces.
+* 🐛 Fixed some small bugs.
 
 ## 1.6.0
-* Adds plugin/theme update warnings for production sites.
+* ✨ Adds plugin/theme update warnings for production sites.
 
 ## 1.5.0
-* Feature - Add WP_ENVIRONMENT_TYPE logic.
+* ✨ Feature - Add WP_ENVIRONMENT_TYPE logic.
 
 ## 1.4.0
-* Bugfix - Password protected page redirect.
+* 🐛 Bugfix - Password protected page redirect.
 
 ## 1.3.0
-* Add dev site checklist
-* Bugfix Jira projects/users loading
+* ✨ Add dev site checklist
+* 🐛 Bugfix Jira projects/users loading
 
 ## 1.2.0
-* Added an admin panel for Jira settings.
-* Added a dashboard widget for Built Mighty developers.
-* Added a dashboard widget for Built Mighty clients.
-* Added a setup class for development environments.
-* Added a speed class for production sites.
-* Added a security class for production sites.
-
+* ✨ Added an admin panel for Jira settings.
+* ✨ Added a dashboard widget for Built Mighty developers.
+* ✨ Added a dashboard widget for Built Mighty clients.
+* ✨ Added a setup class for development environments.
+* ✨ Added a speed class for production sites.
+* ✨ Added a security class for production sites.
 
 ## 1.1.0
-* Added email disabling functions.
-* Added Action Scheduler disabling functions.
-* Updated method for access restrictions/access.
-* Updated documentation.
-* Refactored plugin structure.
+* ✨ Added email disabling functions.
+* ✨ Added Action Scheduler disabling functions.
+* ⚡️ Updated method for access restrictions/access.
+* ⚡️ Updated documentation.
+* ♻️ Refactored plugin structure.
