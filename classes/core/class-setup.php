@@ -80,11 +80,29 @@ class builtSetup {
         // Set site to noindex.
         update_option( 'blog_public', '0' );
 
+    }
+
+    /**
+     * Set environment.
+     * 
+     * @since   2.0.0
+     */
+    public function set_environment( $type ) {
+
+        // Check for type.
+        if( empty( $type ) ) return false;
+
+        // Check for valid type.
+        if( ! in_array( $type, [ 'local', 'development', 'staging', 'production' ] ) ) return false;
+
         // Add to updates.
-        $updates = "\n# 🔨 Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n";
+        $updates = "\n# 🔨 Built Mighty Kit - Set environment type.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', '" . $type . "' );\n";
 
         // Update config.
         $this->update_config( $updates );
+
+        // Return.
+        return true;
 
     }
 

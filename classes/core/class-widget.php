@@ -496,6 +496,40 @@ class builtWidget {
      */
     public function admin_notice() {
 
+        // Check if WP_ENVIRONMENT_TYPE is set.
+        if( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+
+            // Check if set.
+            if( isset( $_POST['set_environment'] ) ) {
+
+                // Get setup.
+                $setup = new \BuiltMightyKit\Core\builtSetup();
+
+                // Set environment.
+                $set = $setup->set_environment( sanitize_text_field( $_POST['set_environment'] ) );
+
+            }
+
+            // Check if set.
+            if( ! $set ) {
+
+                // Display notice. ?>
+                <div class="notice notice-error is-dismissible">
+                    <p><strong>WP_ENVIRONMENT_TYPE</strong> is not defined. What type of environment is this?</p>
+                    <form method="post">
+                        <div style="margin:0 0 7.5px 0">
+                            <button type="submit" name="set_environment" value="local" class="button button-primary">Local</button>
+                            <button type="submit" name="set_environment" value="development" class="button button-primary">Development</button>
+                            <button type="submit" name="set_environment" value="staging" class="button button-primary">Staging</button>
+                            <button type="submit" name="set_environment" value="production" class="button button-primary">Production</button>
+                        </div>
+                    </form>
+                </div><?php
+
+            }
+
+        }
+
         // Check if we're on a dev site.
         if( is_kit_mode() ) {
 

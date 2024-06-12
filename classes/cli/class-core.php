@@ -108,6 +108,48 @@ class builtCore {
     }
 
     /**
+     * Set environment type.
+     * 
+     * Run the command to set the environment type for the site.
+     * 
+     * wp kit core environment --type=value
+     * 
+     * @since   2.0.0
+     */
+    public function environment( $args, $assoc_args ) {
+
+        // Get setup.
+        $setup = new \BuiltMightyKit\Core\builtSetup();
+
+        // Check for type.
+        if( ! isset( $assoc_args['type'] ) ) {
+
+            // Error.
+            \WP_CLI::error( 'Please provide a type for the environment.' );
+
+        } else {
+
+            // Set the environment.
+            $set = $setup->set_environment( $assoc_args['type'] );
+
+            // Check if set.
+            if( ! $set ) {
+
+                // Error.
+                \WP_CLI::error( 'There was an error setting the environment type. Available types are: local, development, staging, production' );
+
+            } else {
+
+                // Output.
+                \WP_CLI::success( 'Successfully set the environment type to ' . $assoc_args['type'] . '.' );
+
+            }
+
+        }
+
+    }
+
+    /**
      * Update emails.
      * 
      * Run the command to update emails to user-RANDOMSTRING@builtmighty.com for the site.
