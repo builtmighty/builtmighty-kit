@@ -1,13 +1,14 @@
 <?php
 /**
- * CLI block.
+ * CLI Security.
  * 
- * Create CLI commands for protection.
+ * Create CLI commands for the Built Mighty Kit.
  * 
- * @package Built Mighty Protection
- * @since   1.0.0
+ * @package Built Mighty Kit
+ * @since   2.0.0
  */
 namespace BuiltMightyKit\CLI;
+use Sonata\GoogleAuthenticator\GoogleAuthenticator;
 class builtSecurity {
 
     /**
@@ -15,14 +16,22 @@ class builtSecurity {
      * 
      * Get the 2FA authentication code.
      * 
-     * wp kit security get_secret --user=username
+     * wp kit security get_secret --username=username
      * 
      * @since   2.0.0
      */
     public function get_secret( $args, $assoc_args ) {
 
+        // Check if user is set.
+        if( ! isset( $assoc_args['username'] ) ) {
+
+            // Error.
+            \WP_CLI::error( 'Please provide a username. Use --username=value' );
+
+        }
+        
         // Get current user by username.
-        $user = get_user_by( 'login', $assoc_args['user'] );
+        $user = get_user_by( 'login', $assoc_args['username'] );
 
         // Check for valid user.
         if( ! $user ) {
@@ -48,7 +57,7 @@ class builtSecurity {
         }
         
         // Output secret.
-        \WP_CLI::line( 'Authenticator Code: ' . $secret );
+        \WP_CLI::success( 'Authenticator Code: ' . $secret );
 
     }
 
@@ -57,14 +66,22 @@ class builtSecurity {
      * 
      * Enable 2FA for a user.
      * 
-     * wp kit security setup --user=username --code=value
+     * wp kit security setup --username=username --code=value
      * 
      * @since   2.0.0
      */
     public function setup( $args, $assoc_args ) {
 
+        // Check if user is set.
+        if( ! isset( $assoc_args['username'] ) ) {
+
+            // Error.
+            \WP_CLI::error( 'Please provide a username. Use --username=value' );
+
+        }
+
         // Get current user by username.
-        $user = get_user_by( 'login', $assoc_args['user'] );
+        $user = get_user_by( 'login', $assoc_args['username'] );
 
         // Check for valid user.
         if( ! $user ) {
@@ -101,7 +118,7 @@ class builtSecurity {
                 update_user_meta( $user->ID, 'google_authenticator_confirmed', true );
 
                 // Success.
-                \WP_CLI::success( '2FA successfully enabled for ' . $assoc_args['user'] . '.' );
+                \WP_CLI::success( '2FA successfully enabled for ' . $assoc_args['username'] . '.' );
 
             } else {
 
@@ -124,14 +141,14 @@ class builtSecurity {
      * 
      * Reset 2FA for a user.
      * 
-     * wp kit security reset --user=username
+     * wp kit security reset --username=username
      * 
      * @since   2.0.0
      */
     public function reset( $args, $assoc_args ) {
 
         // Get current user by username.
-        $user = get_user_by( 'login', $assoc_args['user'] );
+        $user = get_user_by( 'login', $assoc_args['username'] );
 
         // Check for valid user.
         if( ! $user ) {
@@ -146,18 +163,26 @@ class builtSecurity {
         delete_user_meta( $user->ID, 'google_authenticator_confirmed' );
 
         // Success.
-        \WP_CLI::success( '2FA successfully reset for ' . $assoc_args['user'] . '.' );
+        \WP_CLI::success( '2FA successfully reset for ' . $assoc_args['username'] . '.' );
 
     }
 
     /**
      * Approve IP.
      * 
-     * wp kit security approve --ip=value --user=username
+     * wp kit security approve --username=username --ip=value 
      * 
      * @since   2.0.0
      */
     public function approve( $args, $assoc_args ) {
+
+        // Check for user.
+        if( ! isset( $assoc_args['username'] ) ) {
+
+            // Error.
+            \WP_CLI::error( 'Please provide a username. Use --username=value' );
+
+        }
 
         // Check for IP.
         if( ! isset( $assoc_args['ip'] ) ) {
@@ -167,16 +192,8 @@ class builtSecurity {
 
         }
 
-        // Check for user.
-        if( ! isset( $assoc_args['user'] ) ) {
-
-            // Error.
-            \WP_CLI::error( 'Please provide a username. Use --user=value' );
-
-        }
-
         // Get user ID.
-        $user = get_user_by( 'login', $assoc_args['user'] );
+        $user = get_user_by( 'login', $assoc_args['username'] );
 
         // Check if we have a user.
         if( ! $user ) {
@@ -194,7 +211,7 @@ class builtSecurity {
         $security->add_ip( $ip, $user->ID );
 
         // Success.
-        \WP_CLI::success( 'IP added to approved for ' . $assoc_args['user'] . '.' );
+        \WP_CLI::success( 'IP added to approved for ' . $assoc_args['username'] . '.' );
 
     }
 
@@ -236,6 +253,36 @@ class builtSecurity {
             \WP_CLI::line( 'Approved list is empty.' );
 
         }
+
+    }
+
+    /**
+     * Remove.
+     * 
+     * Remove from approved list.
+     * 
+     * wp kit security remove --ip=value
+     * 
+     * @since   1.0.0
+     */
+    public function remove( $args, $assoc_args ) {
+
+        // Check for IP.
+        if( ! isset( $assoc_args['ip'] ) ) {
+
+            // Error.
+            \WP_CLI::error( 'Please provide an IP address to remove. Use --ip=value' );
+
+        }
+
+        // Global.
+        global $wpdb;
+
+        // Delete.
+        $wpdb->delete( $wpdb->prefix . 'built_lockdown', [ 'ip' => $assoc_args['ip'] ] );
+
+        // Success.
+        \WP_CLI::success( $assoc_args['ip'] . ' removed from approved list.' );
 
     }
 
