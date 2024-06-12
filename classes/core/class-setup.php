@@ -12,25 +12,6 @@ use function BuiltMightyKit\is_kit_mode;
 class builtSetup {
 
     /**
-     * Variables.
-     * 
-     * @since   1.0.0
-     */
-    private $updates;
-
-    /**
-     * Construct.
-     * 
-     * @since   1.0.0
-     */
-    public function __construct() {
-
-        // Set updates.
-        $this->updates = '';
-
-    }
-
-    /**
      * Run setup..
      * 
      * Runs setup process for plugin.
@@ -61,7 +42,10 @@ class builtSetup {
         if( ! is_kit_mode() ) return;
 
         // Add to updates.
-        $this->updates .= "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+
+        // Update config.
+        $this->update_config( $updates );
 
     }
 
@@ -75,11 +59,14 @@ class builtSetup {
         // Check if this is a dev site.
         if( ! is_kit_mode() ) return;
 
-        // Add to updates.
-        $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n";
-
         // Set site to noindex.
         update_option( 'blog_public', '0' );
+
+        // Add to updates.
+        $updates = "\n# 🔨 Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {\n\ndefine( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n}\n\n";
+
+        // Update config.
+        $this->update_config( $updates );
 
     }
 
@@ -181,16 +168,16 @@ class builtSetup {
      * 
      * @since   1.0.0
      */
-    public function update_config() {
+    public function update_config( $updates ) {
 
         // Config.
         $config = $this->get_config();
 
         // If the updates aren't in the config, add them after the opening PHP tag.
-        if( strpos( $config, $this->updates['config'] ) === false ) {
+        if( strpos( (string)$config, (string)$updates ) === false ) {
 
-            // Add updates.
-            $config = str_replace( '<?php', '<?php' . $this->updates['config'], $config );
+            // Add updates to wp-config.php.
+            $config = str_replace( 'require_once ABSPATH . \'wp-settings.php\';', $updates . 'require_once ABSPATH . \'wp-settings.php\';', $config );
 
             // Write the updates to the wp-config.php file.
             file_put_contents( ABSPATH . 'wp-config.php', $config );
