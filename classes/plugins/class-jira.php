@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Plugins;
 class builtJira {
 
     /**
@@ -34,7 +35,7 @@ class builtJira {
         if( $this->api_token ) {
 
             // Get keys.
-            $keys = new builtKeys();
+            $keys = new \BuiltMightyKit\Security\builtKeys();
 
             // Decrypt token.
             $this->api_token = $keys->decrypt( $this->api_token );
@@ -60,7 +61,7 @@ class builtJira {
         delete_option( 'jira_api_projects' );
 
         // Get Jira Helper.
-        $help = new builtJiraHelper();
+        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
 
         // Set range.
         $range = range( 0, 10 );
@@ -89,7 +90,7 @@ class builtJira {
         }
 
         // Sort.
-        $help = new builtJiraHelper();
+        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
 
         // Save.
         update_option( 'jira_api_projects', $projects );
@@ -116,7 +117,7 @@ class builtJira {
             delete_option( 'jira_api_users' );
 
             // Get Jira Helper.
-            $help = new builtJiraHelper();
+            $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
     
             // Set range.
             $range = range( 0, 20 );

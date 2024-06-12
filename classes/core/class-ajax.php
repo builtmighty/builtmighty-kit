@@ -7,6 +7,7 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Core;
 class builtAJAX {
 
     /**
@@ -33,7 +34,7 @@ class builtAJAX {
         if( ! wp_verify_nonce( $_POST['nonce'], 'built' ) ) wp_die( 'Nonce failed.' );
 
         // Get setup.
-        $setup = new builtSetup();
+        $setup = new \BuiltMightyKit\Core\builtSetup();
 
         // Reset.
         $data = $setup->update_emails( $_POST['data_set'] );
@@ -63,7 +64,7 @@ class builtAJAX {
         if( ! wp_verify_nonce( $_POST['nonce'], 'built' ) ) wp_die( 'Nonce failed.' );
 
         // Get setup.
-        $setup = new builtSetup();
+        $setup = new \BuiltMightyKit\Core\builtSetup();
 
         // Reset.
         $data = $setup->reset_emails( $_POST['data_set'] );
