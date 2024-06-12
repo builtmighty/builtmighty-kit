@@ -16,8 +16,6 @@ class builtLockdownLog {
      */
     public function __construct() {
 
-        return;
-
         // Log.
         add_action( 'wp_login_failed', [ $this, 'log' ] );
 
@@ -30,35 +28,42 @@ class builtLockdownLog {
      */
     public function failed_login() {
 
-        // Global.
-        global $wpdb;
+        // Get user ID from login.
+        $user = get_user_by( 'login', $_POST['log'] );
 
-         // Get user IP.
-        $ip = $_SERVER['REMOTE_ADDR'];
+        // Set data.
+        $data = [
+            'ip'        => $_SERVER['REMOTE_ADDR'],
+            'user'      => $user->ID,
+            'agent'     => $_SERVER['HTTP_USER_AGENT'],
+            'type'      => 'login',
+            'status'    => 'failed'
+        ];
 
-        // Get user agent.
-        $agent = $_SERVER['HTTP_USER_AGENT'];
-
-        // Get user login.
-        $login = $_POST['log'];
-
-        // Get user time.
-        $time = date( 'Y-m-d H:i:s' );
-
-        // Redirect.
-        wp_redirect( home_url( '/' . BUILT_ENDPOINT . '?login=failed' ) );
-        exit;
+        // Log.
+        $this->log( $data );
 
     }
 
-    /** 
-     * Failed 2FA.
+    /**
+     * Log.
      * 
      * @since   2.0.0
      */
-    public function failed_2fa() {
+    public function log( $data ) {
 
+        // Global.
+        global $wpdb;
 
+        // Insert.
+        $wpdb->insert( $wpdb->prefix . 'built_lockdown_log', [
+            'ip'            => $data['ip'],
+            'user_id'       => $data['user'],
+            'user_agent'    => $data['agent'],
+            'type'          => $data['type'],
+            'status'        => $data['status'],
+            'date'          => date( 'Y-m-d H:i:s' )
+        ] );
 
     }
 
