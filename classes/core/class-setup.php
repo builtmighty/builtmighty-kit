@@ -59,9 +59,6 @@ class builtSetup {
      */
     public function disable_editors() {
 
-        // Check if this is a dev site.
-        if( ! is_kit_mode() ) return;
-
         // Add to updates.
         $updates = "\n# 🔨 Built Mighty Kit - Disable theme/plugin editor.\nif( ! defined( 'DISALLOW_FILE_EDIT' ) ) {\n\ndefine( 'DISALLOW_FILE_EDIT', true );\n\n}\n";
 
