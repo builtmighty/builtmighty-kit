@@ -47,22 +47,22 @@ The following constants can be set within wp-config.php for each site, in order 
 
 `define( 'WP_ENVIRONMENT_TYPE', 'development' );`
 *(options: local, development, staging, production)*
-This variable should be set on **all** sites. It greatly determines how the plugin operates and what options are available. It also is a global, WordPress constant that can be used by other plugins.
+This variable should be set on **all** sites. It greatly determines how the plugin operates and what options are available. Setting this to local, development, or staging, will enable email protection features, as well as plugin disabling. Note that it is also is a global, WordPress constant that can be used by other plugins.
 
 `define( 'BUILT_ENDPOINT', 'access' );`
-This variable sets the custom login endpoint for the site. If this is not set, the feature will not be enable. If set, the new login will be the second parameter and any attempts to access wp-admin or wp-login.php, while not logged in, will send the user to the home page.
+This variable sets the custom log in endpoint for the site. If this is not set, the feature will not be enabled. If set, the new login will be the second parameter, and any attempts to access wp-admin or wp-login.php, while not logged in, will send the user to the home page. For example, settings the above would make the log in URL: `https://builtmighty.com/access`.
 
 `define( 'BUILT_ACCESS', true );`
-This constant disables access to the site, unless the user is logged in. The login URL is still accessible, either the custom or default, but not other URLs are accessible.
+This constant disables access to the site unless the user is logged in. If the user is not logged in, the user will be redirected to builtmighty.com. The login URL is still accessible, either the custom or default, but no other URLs are accessible.
 
 `define( 'BUILT_2FA', true );`
-If this is set to true, then two factor authentication is enabled for all administrators. Upon logging in initially, all admins will be forced to set up two factor authentication.
+If this is set to true, then two-factor authentication is enabled and required for all administrators. Upon logging in initially, all admins will be forced to set up two-factor authentication.
 
 `define( 'BUILT_2FA_SETTINGS', true );`
-This variable turns on 2FA for all sensitive settings on the site, which means admins with two factor authentication set up must provide a code in order to view the settings. Additional blocked/sensitive settings can be set within the Built Mighty menu item, which is only accessible by users with @builtmighty.com or @littlerhino.io email addresses.
+This variable turns on two-factor authentication for all sensitive settings on the site, which means admins with two-factor authentication set up must provide an authentication code to view the settings. Additional blocked/sensitive settings can be set within the Built Mighty menu, which is only accessible by users with @builtmighty.com or @littlerhino.io email addresses.
 
 `define( 'BUILT_LOCKDOWN', true );`
-If set to true, then only approved IPs (approved by 2FA, other admins, or CLI commands) can access the site.
+If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
 
 ## 2.0.0
 * ✨ Added 2FA for admins.
