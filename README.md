@@ -38,6 +38,7 @@ This plugin is the all around kit for Built Mighty client sites. From defining a
 * Adds a Built Mighty developer dashboard widget with: PHP version, MySQL version, WordPress verison, and current Git branch.
 * Adds a Built Mighty developer checklist to development environments, to ensure proper development environment security.
 * Adds a Built Mighty client dashboard widget with project manager information, contact form, and Jira issue creation form.
+=======
 
 ## Installation on All Sites
 It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variable should be set within wp-config.php. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production`, to set the plugin to production mode.
