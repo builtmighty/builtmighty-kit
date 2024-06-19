@@ -7,26 +7,9 @@
  * @package Built Mighty Kit
  * @since   1.0.0
  */
+namespace BuiltMightyKit\Core;
+use function BuiltMightyKit\is_kit_mode;
 class builtSetup {
-
-    /**
-     * Variables.
-     * 
-     * @since   1.0.0
-     */
-    private $updates;
-
-    /**
-     * Construct.
-     * 
-     * @since   1.0.0
-     */
-    public function __construct() {
-
-        // Set updates.
-        $this->updates = '';
-
-    }
 
     /**
      * Run setup..
@@ -42,6 +25,9 @@ class builtSetup {
 
         // Disable indexing.
         $this->disable_indexing();
+
+        // Disable editors.
+        $this->disable_editors();
 
         // Disable plugins.
         $this->disable_plugins();
@@ -59,7 +45,25 @@ class builtSetup {
         if( ! is_kit_mode() ) return;
 
         // Add to updates.
-        $this->updates .= "\n// Built Mighty Kit - Disable external connections.\ndefine( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n// Built Mighty Kit - Whitelist external connections.\ndefine( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n\n";
+        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\nif( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ) define( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\nif( ! defined( 'WP_ACCESSIBLE_HOSTS' ) ) define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n";
+
+        // Update config.
+        $this->update_config( $updates );
+
+    }
+
+    /**
+     * Disable theme/plugin editor.
+     * 
+     * @since   2.0.0
+     */
+    public function disable_editors() {
+
+        // Add to updates.
+        $updates = "\n# 🔨 Built Mighty Kit - Disable theme/plugin editor.\nif( ! defined( 'DISALLOW_FILE_EDIT' ) ) define( 'DISALLOW_FILE_EDIT', true );\n";
+
+        // Update config.
+        $this->update_config( $updates );
 
     }
 
@@ -73,11 +77,32 @@ class builtSetup {
         // Check if this is a dev site.
         if( ! is_kit_mode() ) return;
 
-        // Add to updates.
-        $this->updates .= "\n// Built Mighty Kit - Disable indexing.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', 'development' );\n\n";
-
         // Set site to noindex.
         update_option( 'blog_public', '0' );
+
+    }
+
+    /**
+     * Set environment.
+     * 
+     * @since   2.0.0
+     */
+    public function set_environment( $type ) {
+
+        // Check for type.
+        if( empty( $type ) ) return false;
+
+        // Check for valid type.
+        if( ! in_array( $type, [ 'local', 'development', 'staging', 'production' ] ) ) return false;
+
+        // Add to updates.
+        $updates = "\n# 🔨 Built Mighty Kit - Set environment type.\nif( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) define( 'WP_ENVIRONMENT_TYPE', '" . $type . "' );\n";
+
+        // Update config.
+        $this->update_config( $updates );
+
+        // Return.
+        return true;
 
     }
 
@@ -179,16 +204,16 @@ class builtSetup {
      * 
      * @since   1.0.0
      */
-    public function update_config() {
+    public function update_config( $updates ) {
 
         // Config.
         $config = $this->get_config();
 
         // If the updates aren't in the config, add them after the opening PHP tag.
-        if( strpos( $config, $this->updates['config'] ) === false ) {
+        if( strpos( (string)$config, (string)$updates ) === false ) {
 
-            // Add updates.
-            $config = str_replace( '<?php', '<?php' . $this->updates['config'], $config );
+            // Add updates to wp-config.php.
+            $config = str_replace( 'require_once ABSPATH . \'wp-settings.php\';', $updates . 'require_once ABSPATH . \'wp-settings.php\';', $config );
 
             // Write the updates to the wp-config.php file.
             file_put_contents( ABSPATH . 'wp-config.php', $config );
