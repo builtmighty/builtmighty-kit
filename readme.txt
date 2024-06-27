@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 2.0.1 =
+* Fixed ActionScheduler bug where it was still running.
+
 = 2.0.0 =
 * Added 2FA for admins.
 * Fixed 404 on custom login page if already logged in.
