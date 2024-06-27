@@ -19,7 +19,7 @@ class builtWoo {
     public function __construct() {
 
         // Actions.
-        add_action( 'init', [ $this, 'disable_actionscheduler' ], 1 );
+        add_action( 'init', [ $this, 'disable_actionscheduler' ], 10 );
 
     }
 
@@ -32,14 +32,14 @@ class builtWoo {
      */
     public function disable_actionscheduler() {
 
-        // If WooCommerce isn't active, hasta la vista.
-        if( ! class_exists( 'WooCommerce' ) ) return;
+        // If the ActionScheduler doesn't exist, hasta la vista.
+        if( ! class_exists( 'ActionScheduler' ) ) return;
 
         // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
         if( is_kit_mode() && ! defined( 'BUILT_ENABLE_AS' ) || defined( 'BUILT_DISABLE_AS' ) ) {
 
-            // Remove the action scheduler.
-            remove_action( 'init', 'action_scheduler_run_queue', 10 );
+            // Disable the ActionScheduler.
+            remove_action( 'action_scheduler_run_queue', [ ActionScheduler::runner(), 'run' ] );
 
         }
 
