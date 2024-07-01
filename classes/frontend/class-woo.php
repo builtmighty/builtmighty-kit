@@ -33,13 +33,13 @@ class builtWoo {
     public function disable_actionscheduler() {
 
         // If the ActionScheduler doesn't exist, hasta la vista.
-        if( ! class_exists( 'ActionScheduler' ) ) return;
+        if( ! class_exists( '\ActionScheduler' ) ) return;
 
         // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
         if( is_kit_mode() && ! defined( 'BUILT_ENABLE_AS' ) || defined( 'BUILT_DISABLE_AS' ) ) {
 
             // Disable the ActionScheduler.
-            remove_action( 'action_scheduler_run_queue', [ ActionScheduler::runner(), 'run' ] );
+            remove_action( 'action_scheduler_run_queue', [ \ActionScheduler::runner(), 'run' ] );
 
         }
 
