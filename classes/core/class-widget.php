@@ -496,6 +496,9 @@ class builtWidget {
      */
     public function admin_notice() {
 
+        // Set.
+        $set = false;
+
         // Check if WP_ENVIRONMENT_TYPE is set.
         if( ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
 
