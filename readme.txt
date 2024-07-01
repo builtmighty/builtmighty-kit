@@ -21,6 +21,11 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 2.0.2 =
+* Fixed ActionScheduler error
+* Fixed environment type form always displaying
+* Fixed environment type logic being set
+
 = 2.0.1 =
 * Fixed ActionScheduler bug where it was still running.
 

@@ -65,6 +65,11 @@ This variable turns on two-factor authentication for all sensitive settings on t
 `define( 'BUILT_LOCKDOWN', true );`
 If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
 
+## 2.0.2
+* 🐛 Bug fix for ActionScheduler error
+* 🐛 Bug fix for environment type form always displaying
+* 🐛 Bug fix for environment type logic being set
+
 ## 2.0.0
 * ✨ Added 2FA for admins.
 * ✨ Added 2FA for sensitive settings.
