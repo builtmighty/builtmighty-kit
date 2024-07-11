@@ -17,6 +17,9 @@ class builtLogin {
      */
     public function __construct() {
 
+        // Check if standard permalinks are set.
+        if( empty( get_option( 'permalink_structure' ) ) ) return;
+
         // Actions.
         add_action( 'init', [ $this, 'redirect' ] );
         add_action( 'template_redirect', [ $this, 'login' ] );
