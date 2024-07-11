@@ -54,7 +54,7 @@ This variable should be set on **all** sites. It greatly determines how the plug
 This variable sets the custom log in endpoint for the site. If this is not set, the feature will not be enabled. If set, the new login will be the second parameter, and any attempts to access wp-admin or wp-login.php, while not logged in, will send the user to the home page. For example, settings the above would make the log in URL: `https://builtmighty.com/access`.
 
 `define( 'BUILT_ACCESS', true );`
-This constant disables access to the site unless the user is logged in. If the user is not logged in, the user will be redirected to builtmighty.com. The login URL is still accessible, either the custom or default, but no other URLs are accessible.
+This constant disables access to the site unless the user is logged in. If the user is not logged in, the user will be redirected to builtmighty.com. The login URL is still accessible, either the custom or default, but no other URLs are accessible. If you want to provide access to the site to a user without having them login, you can add the query parameter `bypass=true` to any URL and it'll grant the user one hour of access across the site, for example: `https://builtmighty.com/?bypass=true`.
 
 `define( 'BUILT_2FA', true );`
 If this is set to true, then two-factor authentication is enabled and required for all administrators. Upon logging in initially, all admins will be forced to set up two-factor authentication.
@@ -64,6 +64,11 @@ This variable turns on two-factor authentication for all sensitive settings on t
 
 `define( 'BUILT_LOCKDOWN', true );`
 If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
+
+## 2.1.0
+* ✨ Add query parameter bypass when access block is place.
+* 🐛 Bug fix fatal error with failed login log when using incorrect password.
+* 🐛 Bug fix custom login endpoint broken when using standard permalinks.
 
 ## 2.0.2
 * 🐛 Bug fix for ActionScheduler error

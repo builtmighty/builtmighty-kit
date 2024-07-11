@@ -21,6 +21,11 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 2.1.0 =
+* Add query parameter bypass when access block is place.
+* Bug fix fatal error with failed login log when using incorrect password.
+* Bug fix custom login endpoint broken when using standard permalinks.
+
 = 2.0.2 =
 * Fixed ActionScheduler error
 * Fixed environment type form always displaying

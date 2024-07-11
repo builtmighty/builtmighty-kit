@@ -17,7 +17,7 @@ class builtLockdownLog {
     public function __construct() {
 
         // Log.
-        add_action( 'wp_login_failed', [ $this, 'log' ] );
+        add_action( 'wp_login_failed', [ $this, 'failed_login' ] );
 
     }
 
@@ -33,11 +33,11 @@ class builtLockdownLog {
 
         // Set data.
         $data = [
-            'ip'        => $_SERVER['REMOTE_ADDR'],
-            'user'      => $user->ID,
-            'agent'     => $_SERVER['HTTP_USER_AGENT'],
-            'type'      => 'login',
-            'status'    => 'failed'
+            'ip'        => (string)$_SERVER['REMOTE_ADDR'],
+            'user'      => (int)$user->ID,
+            'agent'     => (string)$_SERVER['HTTP_USER_AGENT'],
+            'type'      => (string)'login',
+            'status'    => (string)'failed'
         ];
 
         // Log.

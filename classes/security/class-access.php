@@ -40,6 +40,18 @@ class builtAccess {
         // If user is trying to login, sayonara.
         if( isset( $_POST['builtmighty_login'] ) ) return;
 
+        // Check if cookie set.
+        if( isset( $_COOKIE['builtmighty_bypass'] ) ) return;
+
+        // Check if get parameter is set to bypass.
+        if( isset( $_GET['bypass'] ) && $_GET['bypass'] == 'true' ) {
+
+            // Set cookie.
+            setcookie( 'builtmighty_bypass', 'true', time() + 3600, '/' );
+            return;
+
+        }
+
         // If custom login page is set and user is trying to access it, off I go.
         if( defined( 'BUILT_ENDPOINT' ) && strpos( $_SERVER['REQUEST_URI'], BUILT_ENDPOINT ) !== false ) return;
 
