@@ -100,9 +100,10 @@ require_once BUILT_PATH . 'classes/security/class-lockdown-log.php';
 require_once BUILT_PATH . 'classes/frontend/class-woo.php';
 require_once BUILT_PATH . 'classes/frontend/class-mail.php';
 require_once BUILT_PATH . 'classes/frontend/class-speed.php';
-require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 require_once BUILT_PATH . 'classes/plugins/class-jira.php';
 require_once BUILT_PATH . 'classes/plugins/class-jira-helper.php';
+require_once BUILT_PATH . 'classes/plugins/class-slack.php';
+require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 
 /**
  * Initiate classes.
@@ -123,6 +124,7 @@ new \BuiltMightyKit\Frontend\builtSpeed();
 new \BuiltMightyKit\Core\builtWidget();
 new \BuiltMightyKit\Core\builtAdmin();
 new \BuiltMightyKit\Core\builtAJAX();
+new \BuiltMightyKit\Plugins\builtSlack();
 new \BuiltMightyKit\Plugins\builtUpdates();
 
 /** 
