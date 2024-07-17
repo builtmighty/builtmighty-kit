@@ -40,8 +40,11 @@
         // Jira API Token.
         echo $this->field( 'jira-token', 'Jira Token', [
             'type'      => 'password'
-        ] ); 
-        
+        ] );
+
+        // Include.
+        include BUILT_PATH . 'views/core/admin-slack.php';
+
         // Add settings.
         do_action( '\BuiltMightyKit\Core\add_settings' ); ?>
 
