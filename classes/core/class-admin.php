@@ -159,7 +159,7 @@ class builtAdmin {
     public function field( $id, $label, $field ) {
 
         // Set value.
-        $value = ( ! empty( get_option( $id ) ) ) ? unserialize( get_option( $id ) ) : '';
+        $value = ( ! empty( get_option( $id ) ) ) ? get_option( $id ) : '';
         $value = ( ! empty( $_POST[ $id ] ) ) ? $_POST[ $id ] : $value;
 
         // Set ID.
@@ -181,6 +181,9 @@ class builtAdmin {
 
                         // Loop through options.
                         foreach( $field['options'] as $option_key => $option ) {
+
+                            error_log( '[' . __FUNCTION__ . '] OPTION KEY: ' . print_r( $option_key, true ) );
+                            error_log( '[' . __FUNCTION__ . '] VALUE: ' . print_r( $value, true ) );
 
                             // Set selected.
                             $selected = ( $option_key == $value ) ? ' selected' : '';
