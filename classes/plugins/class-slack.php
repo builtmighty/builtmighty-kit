@@ -86,9 +86,6 @@ class builtSlack {
 
         // Get args.
         $args = $this->get_args();
-
-        error_log( 'Args: ' . print_r( $args, true ) );
-        error_log( 'Slack Channel: ' . get_option( 'slack-channel' ) );
         
         // Get channel.
         if( empty( get_option( 'slack-channel' ) ) ) return;
@@ -110,12 +107,8 @@ class builtSlack {
             'text'      => $message
         ];
 
-        error_log( 'Args: ' . print_r( $args, true ) );
-
         // Post message.
         $response = wp_remote_post( $this->get_api( 'chat.postMessage' ), $args );
-
-        error_log( 'Response: ' . print_r( $response, true ) );
 
         // Check for error.
         if( is_wp_error( $response ) ) return false;
@@ -151,8 +144,6 @@ class builtSlack {
 
         // Join channel.
         $response = wp_remote_post( $this->get_api( 'conversations.join' ), $args );
-
-        error_log( __FUNCTION__ . ' - ' . print_r( $response, true ) );
 
         // Check for error.
         if( is_wp_error( $response ) ) return false;
