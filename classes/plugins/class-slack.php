@@ -94,12 +94,7 @@ class builtSlack {
         $channel = get_option( 'slack-channel' );
 
         // Check.
-        if( empty( get_option( 'joined-slack-channel' ) ) || get_option( 'joined-slack-channel' ) !== $channel ) {
-
-            // Join channel.
-            $this->add_channel( $channel );
-
-        }
+        $this->check_channel( $channel );
 
         // Set body.
         $args['body'] = [
@@ -121,6 +116,23 @@ class builtSlack {
 
         // Return.
         return true;
+
+    }
+
+    /**
+     * Check channel.
+     * 
+     * @since   1.0.0
+     */
+    public function check_channel( $channel ) {
+
+        // Check.
+        if( empty( get_option( 'joined-slack-channel' ) ) || get_option( 'joined-slack-channel' ) !== $channel ) {
+
+            // Join channel.
+            $this->add_channel( $channel );
+
+        }
 
     }
 
