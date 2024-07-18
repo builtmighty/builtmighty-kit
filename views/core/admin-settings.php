@@ -6,41 +6,8 @@
  * @since   2.0.0
  */ ?>
  <div class="built-panel built-admin-panel">
-    <p>Welcome to the client configuration panel for this client. Here, you can connect both the client's project on Jira, as well as their project manager.</p>
+    <p>Welcome to the client configuration panel for this client. Here, you can connect the site to the client's Slack channel.</p>
     <form method="POST" class="built-fields"><?php
-
-        // Check for projects.
-        if( ! empty( $projects ) && is_array( $projects ) ) {
-
-            // Project select field.
-            echo $this->field( 'jira-project', 'Project', [
-                'type'      => 'select',
-                'options'   => $projects,
-                'id'        => 'jira-project'
-            ] );
-
-        }
-
-        // Check for users.
-        if( ! empty( $users ) && is_array( $users ) ) {
-        
-            // User select field.
-            echo $this->field( 'jira-pm', 'Project Manager', [
-                'type'      => 'select',
-                'options'   => $users
-            ] ); 
-
-        }
-        
-        // Jira User field.
-        echo $this->field( 'jira-user', 'Jira User', [
-            'type'      => 'text'
-        ] );
-        
-        // Jira API Token.
-        echo $this->field( 'jira-token', 'Jira Token', [
-            'type'      => 'password'
-        ] );
 
         // Include.
         include BUILT_PATH . 'views/core/admin-slack.php';
