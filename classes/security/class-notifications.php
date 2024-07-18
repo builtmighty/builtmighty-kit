@@ -32,7 +32,9 @@ class builtNotifications {
 
         // Actions.
         add_action( 'woocommerce_update_options', [ $this, 'woocommerce' ] );
-        add_action( 'upgrader_process_complete', [ $this, 'code_updates' ] );
+        add_action( 'upgrader_process_complete', [ $this, 'code_updates' ], 10, 2 );
+        add_action( 'activated_plugin', [ $this, 'plugin_activate' ], 10, 2 );
+        add_action( 'deactivated_plugin', [ $this, 'plugin_deactivate' ], 10, 2 );
         add_action( 'switch_theme', [ $this, 'theme' ] );
         add_action( 'user_register', [ $this, 'admin_create' ], 10, 2 );
         add_action( 'delete_user', [ $this, 'admin_delete' ], 10, 3 );
@@ -56,12 +58,15 @@ class builtNotifications {
         // Check if settings were saved.
         if( ! isset( $_POST['save'] ) ) return;
 
-        error_log( '[' . __FUNCTION__ . '] Running.' );
-        error_log( '[' . __FUNCTION__ . '] OPTIONS: ' . print_r( $options, true ) );
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
+        // Get referer.
+        $referer = parse_url( $_POST['_wp_http_referer'] );
+        parse_str( $referer['query'], $query );
+
+        // Message.
+        $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>."; 
 
         // Send.
-        //$this->slack->message( $message );
+        $this->slack->message( $message );
 
     }
 
@@ -75,12 +80,119 @@ class builtNotifications {
      */
     public function code_updates( $upgrader, $data ) {
 
-        error_log( '[' . __FUNCTION__ . '] Running.' );
-        error_log( '[' . __FUNCTION__ . '] DATA: ' . print_r( $data, true ) );
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
+        // Set message.
+        $message = "";
+
+        // Check type.
+        if( $data['type'] == 'plugin' ) {
+
+            // Check action.
+            if( $data['action'] == 'update' ) {
+
+                // Check count.
+                if( count( $data['plugins'] ) > 1 ) {
+
+                    // Set message.
+                    $message = "🔄 Multiple plugins were just updated.\n";
+
+                    // Loop through plugins.
+                    foreach( $data['plugins'] as $plugin ) {
+
+                        // Add to message.
+                        $message .= "\n>`" . $plugin . "`";
+
+                    }
+
+                } else {
+
+                    // Set message.
+                    $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.";
+
+                }
+
+            } elseif( $data['action'] == 'install' ) {
+
+                // Set message.
+                $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.";
+
+            }
+
+        } elseif( $data['type'] == 'theme' ) {
+
+            // Check action.
+            if( $data['action'] == 'update' ) {
+
+                // Check themes.
+                if( count( $data['themes'] ) > 1 ) {
+
+                    // Set message.
+                    $message = "🔄 Multiple themes were just updated.\n";
+
+                    // Loop through themes.
+                    foreach( $data['themes'] as $theme ) {
+
+                        // Add to message.
+                        $message .= "\n>`" . $theme . "`";
+
+                    }
+
+                } else {
+
+                    // Set message.
+                    $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.";
+
+                }
+
+            } elseif( $data['action'] == 'install' ) {
+
+                // Set message.
+                $message = "📦 A theme was just installed: `" . $_POST['slug'] . '`.';
+
+            }
+
+        }
+
+        // Check for a message.
+        if( empty( $message ) ) return;
 
         // Send.
-        //$this->slack->message( $message );
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Plugin Activate.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   string  $plugin
+     * @return  void
+     */
+    public function plugin_activate( $plugin ) {
+
+        // Set message.
+        $message = "🔌 A plugin was just ✅ activated: `" . $plugin . "`.";
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Plugin Deactivate.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   string  $plugin
+     * @return  void
+     */
+    public function plugin_deactivate( $plugin ) {
+
+        // Set message.
+        $message = "🔌 A plugin was just 🔻 deactivated: `" . $plugin . "`.";
+
+        // Send.
+        $this->slack->message( $message );
 
     }
 
@@ -94,12 +206,11 @@ class builtNotifications {
      */
     public function theme( $stylesheet ) {
 
-        error_log( '[' . __FUNCTION__ . '] Running.' );
-        error_log( '[' . __FUNCTION__ . '] STYLESHEET: ' . print_r( $stylesheet, true ) );
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
+        // Set message.
+        $message = "🎨 The theme was just changed to `" . $stylesheet . "`.";
 
         // Send.
-        //$this->slack->message( $message );
+        $this->slack->message( $message );
 
     }
 
@@ -216,13 +327,14 @@ class builtNotifications {
      */
     public function admin_login( $user_login, $user ) {
 
-        error_log( '[' . __FUNCTION__ . '] Running.' );
-        error_log( '[' . __FUNCTION__ . '] USER LOGIN: ' . print_r( $user_login, true ) );
-        error_log( '[' . __FUNCTION__ . '] USER: ' . print_r( $user, true ) );
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
+        // Check if user is admin.
+        if( ! in_array( 'administrator', $user->roles ) ) return;
+
+        // Set message.
+        $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $_SERVER['REMOTE_ADDR'] . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
 
         // Send.
-        //$this->slack->message( $message );
+        $this->slack->message( $message );
 
     }
 
