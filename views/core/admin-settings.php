@@ -16,15 +16,7 @@
         do_action( '\BuiltMightyKit\Core\add_settings' ); ?>
 
         <div class="built-save">
-            <input type="submit" class="button button-primary button-built" name="built-save" value="Save"><?php
-
-            // Check for data.
-            if( $projects && $users ) { ?>
-
-                <a href="<?php echo admin_url( 'admin.php?page=builtmighty&refresh=true' ); ?>" class="button button-built" style="color:#fff;">Refresh</a><?php 
-
-            } ?>
-
+            <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
         </div>
     </form>
 </div>
