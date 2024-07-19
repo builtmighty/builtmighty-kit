@@ -299,13 +299,9 @@ class builtSlack {
             ],
             'channel_id'    => get_option( 'slack-channel' ),
         ] );
-
-        error_log( '[' . __FUNCTION__ . '] Args: ' . print_r( $args, true ) );
         
         // Post.
         $response = wp_remote_post( $this->get_api( 'files.completeUploadExternal' ), $args );
-
-        error_log( '[' . __FUNCTION__ . '] Response: ' . print_r( $response, true ) );
 
         // Check for error.
         if( is_wp_error( $response ) ) return false;
