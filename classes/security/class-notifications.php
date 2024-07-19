@@ -54,6 +54,9 @@ class builtNotifications {
      */
     public function woocommerce( $options ) {
 
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'woocommerce' ) ) return;
+
         // Check if settings were saved.
         if( ! isset( $_POST['save'] ) ) return;
 
@@ -86,7 +89,7 @@ class builtNotifications {
         if( $data['type'] == 'plugin' ) {
 
             // Check action.
-            if( $data['action'] == 'update' ) {
+            if( $data['action'] == 'update' && $this->is_enabled( 'plugin-update' ) ) {
 
                 // Check count.
                 if( count( $data['plugins'] ) > 1 ) {
@@ -109,7 +112,7 @@ class builtNotifications {
 
                 }
 
-            } elseif( $data['action'] == 'install' ) {
+            } elseif( $data['action'] == 'install' && $this->is_enabled( 'plugin-install' ) ) {
 
                 // Set message.
                 $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.";
@@ -119,7 +122,7 @@ class builtNotifications {
         } elseif( $data['type'] == 'theme' ) {
 
             // Check action.
-            if( $data['action'] == 'update' ) {
+            if( $data['action'] == 'update' && $this->is_enabled( 'theme-update' ) ) {
 
                 // Check themes.
                 if( count( $data['themes'] ) > 1 ) {
@@ -142,7 +145,7 @@ class builtNotifications {
 
                 }
 
-            } elseif( $data['action'] == 'install' ) {
+            } elseif( $data['action'] == 'install' && $this->is_enabled( 'theme-install' ) ) {
 
                 // Set message.
                 $message = "📦 A theme was just installed: `" . $_POST['slug'] . '`.';
@@ -169,6 +172,9 @@ class builtNotifications {
      */
     public function plugin_activate( $plugin ) {
 
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-activate' ) ) return;
+
         // Set message.
         $message = "🔌 A plugin was just ✅ activated: `" . $plugin . "`.";
 
@@ -186,6 +192,9 @@ class builtNotifications {
      * @return  void
      */
     public function plugin_deactivate( $plugin ) {
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-deactivate' ) ) return;
 
         // Set message.
         $message = "🔌 A plugin was just 🔻 deactivated: `" . $plugin . "`.";
@@ -205,6 +214,9 @@ class builtNotifications {
      */
     public function theme( $stylesheet ) {
 
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'theme-change' ) ) return;
+
         // Set message.
         $message = "🎨 The theme was just changed to `" . $stylesheet . "`.";
 
@@ -222,6 +234,9 @@ class builtNotifications {
      * @return  void
      */
     public function admin_create( $user_id, $data ) {
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-create' ) ) return;
 
         // Check role.
         if( $data['role'] !== 'administrator' ) return;
@@ -243,6 +258,9 @@ class builtNotifications {
      * @return  void
      */
     public function admin_delete( $user_id, $reassign, $user ) {
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-delete' ) ) return;
 
         error_log( '[' . __FUNCTION__ . '] Running.' );
         error_log( '[' . __FUNCTION__ . '] USER ID: ' . print_r( $user_id, true ) );
@@ -268,7 +286,7 @@ class builtNotifications {
         if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' ) return;
 
         // Check if user went from admin to non-admin.
-        if( in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' ) {
+        if( in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' && $this->is_enabled( 'admin-role' ) ) {
 
             // Set message.
             $message = "👨‍💻 An admin user was just demoted.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`";
@@ -279,7 +297,7 @@ class builtNotifications {
         }
 
         // Check if user went from non-admin to admin.
-        if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] == 'administrator' ) {
+        if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] == 'administrator' && $this->is_enabled( 'admin-role' ) ) {
 
             // Set message.
             $message = "👨‍💻 A user was just promoted to admin.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`";
@@ -290,7 +308,7 @@ class builtNotifications {
         }
 
         // Check if user email was changed.
-        if( $old_data->user_email !== $data['user_email'] ) {
+        if( $old_data->user_email !== $data['user_email'] && $this->is_enabled( 'admin-email' ) ) {
 
             // Set message.
             $message = "👨‍💻 An admin user just changed their email.\n\n>User: `" . $data['user_login'] . "`\n>Old Email: `" . $old_data->user_email . "`\n>New Email: `" . $data['user_email'] . "`";
@@ -301,7 +319,7 @@ class builtNotifications {
         }
 
         // Check if the password was changed.
-        if( $old_data->data->user_pass !== $data['user_pass'] ) {
+        if( $old_data->data->user_pass !== $data['user_pass'] && $this->is_enabled( 'admin-password' ) ) {
 
             // Set message.
             $message = "👨‍💻 An admin user just changed their password.\n\n>User: `" . $data['user_login'] . "`";
@@ -322,6 +340,9 @@ class builtNotifications {
      * @return  void
      */
     public function admin_login( $user_login, $user ) {
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-login' ) ) return;
 
         // Check if user is admin.
         if( ! in_array( 'administrator', $user->roles ) ) return;
@@ -350,29 +371,40 @@ class builtNotifications {
         // Check for file.
         if( ! isset( $_POST['file'] ) ) return;
 
-        // Set type.
-        $type = ( isset( $_POST['theme'] ) ) ? 'theme' : 'plugin';
+        // Check type.
+        if( isset( $_POST['theme'] ) && $this->is_enabled( 'theme-editor' ) ) {
 
-        // Set message.
-        $message = "📝 A " . $type . " file was edited: `" . $_POST['file'] . "`";
+            // Set message.
+            $message = "📝 A theme file was edited: `" . $_POST['file'] . "`";
 
-        // Send.
-        $this->slack->message( $message );
+            // Send.
+            $this->slack->message( $message );
+
+        } elseif( isset( $_POST['plugin'] ) && $this->is_enabled( 'plugin-editor' ) ) {
+
+            // Set message.
+            $message = "📝 A plugin file was edited: `" . $_POST['file'] . "`";
+
+            // Send.
+            $this->slack->message( $message );
+
+        }
 
     }
 
-    // 'woocommerce'       => 'WooCommerce Settings',
-    // 'plugin-install'    => 'Plugin Installation',
-    // 'plugin-activate'   => 'Plugin Activation',
-    // 'plugin-deactivate' => 'Plugin Deactivation',
-    // 'theme-install'     => 'Theme Installation',
-    // 'theme-activate'    => 'Theme Activation',
-    // 'theme-deactivate'  => 'Theme Deactivation',
-    // 'admin-create'      => 'Admin User Creation',
-    // 'admin-delete'      => 'Admin User Deletion',
-    // 'admin-role'        => 'Admin User Role Change',
-    // 'admin-password'    => 'Admin User Password Change',
-    // 'admin-email'       => 'Admin User Email Change',
-    // 'admin-login'       => 'Admin User Login'
+    /** 
+     * Check if enabled.
+     * 
+     * @since   1.0.0
+     */
+    public function is_enabled( $setting ) {
+
+        // Get notification settings.
+        $notifications = unserialize( get_option( 'slack-notifications' ) );
+
+        // Check if setting is enabled.
+        return ( ! in_array( $setting, (array)$notifications ) ) ? false : true;
+
+    }
 
 }
