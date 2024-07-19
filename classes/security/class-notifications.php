@@ -42,6 +42,7 @@ class builtNotifications {
         add_action( 'profile_update', [ $this, 'admin_password' ], 10, 3 );
         add_action( 'profile_update', [ $this, 'admin_email' ], 10, 3 );
         add_action( 'wp_login', [ $this, 'admin_login' ], 10, 2 );
+        add_action( 'admin_init', [ $this, 'file_editor' ] );
 
     }
 
@@ -332,6 +333,33 @@ class builtNotifications {
 
         // Set message.
         $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $_SERVER['REMOTE_ADDR'] . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * File editor.
+     * 
+     * @since   1.0.0
+     */
+    public function file_editor() {
+
+        // Check for post.
+        if( ! isset( $_POST ) || empty( $_POST ) ) return;
+
+        // Check action.
+        if( ! isset( $_POST['action'] ) && $_POST['action'] !== 'edit-theme-plugin-file' ) return;
+
+        // Check for file.
+        if( ! isset( $_POST['file'] ) ) return;
+
+        // Set type.
+        $type = ( isset( $_POST['theme'] ) ) ? 'theme' : 'plugin';
+
+        // Set message.
+        $message = "📝 A " . $type . " file was edited: `" . $_POST['file'] . "`";
 
         // Send.
         $this->slack->message( $message );
