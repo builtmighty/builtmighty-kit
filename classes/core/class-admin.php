@@ -140,6 +140,14 @@ class builtAdmin {
         $value = ( ! empty( get_option( $id ) ) ) ? get_option( $id ) : '';
         $value = ( ! empty( $_POST[ $id ] ) ) ? $_POST[ $id ] : $value;
 
+        // Check if value is serialized.
+        if( is_serialized( $value ) ) {
+
+            // Unserialize.
+            $value = unserialize( $value );
+
+        }
+
         // Set ID.
         $field_id = ( ! empty( $field['id'] ) ) ? ' id="' . $field['id'] . '"' : '';
         
@@ -189,9 +197,6 @@ class builtAdmin {
                     <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
 
                 } elseif( $field['type'] == 'checkbox' ) {
-
-                    // Unserialize.
-                    $value = unserialize( $value );
 
                     // Loop through options.
                     foreach( $field['options'] as $option_key => $option ) {
