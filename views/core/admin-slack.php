@@ -33,7 +33,8 @@ if( empty( get_option( 'built_slack_token' ) ) ) {
 
         // Delete.
         delete_option( 'built_slack_token' );
-        delete_option( 'built_slack_channel' );
+        delete_option( 'slack-channel' );
+        delete_option( 'slack-notifications' );
         
         // Reload. 
         wp_safe_redirect( admin_url( 'admin.php?page=builtmighty' ) );
