@@ -190,6 +190,9 @@ class builtAdmin {
 
                 } elseif( $field['type'] == 'checkbox' ) {
 
+                    // Unserialize.
+                    $value = unserialize( $value );
+
                     // Loop through options.
                     foreach( $field['options'] as $option_key => $option ) {
 
