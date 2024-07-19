@@ -92,13 +92,13 @@ class builtNotifications {
             if( $data['action'] == 'update' && $this->is_enabled( 'plugin-update' ) ) {
 
                 // Check count.
-                if( count( $data['plugins'] ) > 1 ) {
+                if( count( (array)$data['plugins'] ) > 1 ) {
 
                     // Set message.
                     $message = "🔄 Multiple plugins were just updated.\n";
 
                     // Loop through plugins.
-                    foreach( $data['plugins'] as $plugin ) {
+                    foreach( (array)$data['plugins'] as $plugin ) {
 
                         // Add to message.
                         $message .= "\n>`" . $plugin . "`";
@@ -125,13 +125,13 @@ class builtNotifications {
             if( $data['action'] == 'update' && $this->is_enabled( 'theme-update' ) ) {
 
                 // Check themes.
-                if( count( $data['themes'] ) > 1 ) {
+                if( count( (array)$data['themes'] ) > 1 ) {
 
                     // Set message.
                     $message = "🔄 Multiple themes were just updated.\n";
 
                     // Loop through themes.
-                    foreach( $data['themes'] as $theme ) {
+                    foreach( (array)$data['themes'] as $theme ) {
 
                         // Add to message.
                         $message .= "\n>`" . $theme . "`";
@@ -371,11 +371,14 @@ class builtNotifications {
         // Check for file.
         if( ! isset( $_POST['file'] ) ) return;
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Check type.
         if( isset( $_POST['theme'] ) && $this->is_enabled( 'theme-editor' ) ) {
 
             // Set message.
-            $message = "📝 A theme file was edited: `" . $_POST['file'] . "`";
+            $message = "📝 A theme file was edited.\n\n>File: `" . $_POST['file'] . "`\n>User: `" . $user->user_login . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -383,7 +386,7 @@ class builtNotifications {
         } elseif( isset( $_POST['plugin'] ) && $this->is_enabled( 'plugin-editor' ) ) {
 
             // Set message.
-            $message = "📝 A plugin file was edited: `" . $_POST['file'] . "`";
+            $message = "📝 A plugin file was edited.\n\n>File: `" . $_POST['file'] . "`\nUser: `" . $user->user_login . "`";
 
             // Send.
             $this->slack->message( $message );
