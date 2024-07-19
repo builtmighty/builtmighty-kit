@@ -105,28 +105,6 @@ class builtAdmin {
             $this->save();
 
         }
-
-        // New Jira API.
-        $jira = new \BuiltMightyKit\Plugins\builtJira();
-        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
-
-        // Set refresh.
-        $refresh = ( isset( $_GET['refresh'] ) ) ? true : false;
-
-        // Check for refresh.
-        if( $refresh ) {
-
-            // Store data.
-            $projects = $jira->store_projects( $refresh );
-            $users    = $jira->store_users( $refresh );
-
-        } else {
-
-            // Get saved Jira objects.
-            $projects = $jira->get_projects();
-            $users    = $jira->get_users();
-
-        }
         
         // Panel. ?>
         <div class="built-admin">
@@ -181,9 +159,6 @@ class builtAdmin {
 
                         // Loop through options.
                         foreach( $field['options'] as $option_key => $option ) {
-
-                            error_log( '[' . __FUNCTION__ . '] OPTION KEY: ' . print_r( $option_key, true ) );
-                            error_log( '[' . __FUNCTION__ . '] VALUE: ' . print_r( $value, true ) );
 
                             // Set selected.
                             $selected = ( $option_key == $value ) ? ' selected' : '';
@@ -263,27 +238,8 @@ class builtAdmin {
 
             }
 
-            // Check key.
-            if( $key == 'jira-token' ) {
-
-                // Check value.
-                if( $value === '***********************' ) continue;
-
-                // Get keys.
-                $keys = new \BuiltMightyKit\Security\builtKeys();
-
-                // Encrypt.
-                $value = $keys->encrypt( $value );
-
-                // Update option.
-                update_option( $key, serialize( $value ) );
-
-            } else {
-
-                // Update option.
-                update_option( $key, $value );
-
-            }
+            // Update option.
+            update_option( $key, $value );
 
         }
 
