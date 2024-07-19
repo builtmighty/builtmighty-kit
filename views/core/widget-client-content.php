@@ -17,7 +17,7 @@
 </div><?php
 
 // Check for Slack channel.
-if( ! empty( get_option( 'slack-channel' ) ) ) {
+if( ! empty( get_option( 'built_slack_token' ) ) ) {
 
     // Create menu. ?>
     <div class="built-dash-body built-panel">
