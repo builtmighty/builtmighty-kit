@@ -277,13 +277,17 @@ class builtNotifications {
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'admin-delete' ) ) return;
 
-        error_log( '[' . __FUNCTION__ . '] Running.' );
-        error_log( '[' . __FUNCTION__ . '] USER ID: ' . print_r( $user_id, true ) );
-        error_log( '[' . __FUNCTION__ . '] USER: ' . print_r( $user, true ) );
-        error_log( '[' . __FUNCTION__ . '] POST: ' . print_r( $_POST, true ) );
+        // Check if user is admin.
+        if( ! in_array( 'administrator', (array)$user->roles ) ) return;
+
+        // Get current user.
+        $current = wp_get_current_user();
+
+        // Set message.
+        $message = "👨‍💻 An admin user was just deleted.\n\n>User: `" . $user->user_login . "`\n>Email: `" . $user->user_email . "`\n\nUser was deleted by...\n>User: `" . $current->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
         // Send.
-        //$this->slack->message( $message );
+        $this->slack->message( $message );
 
     }
 
