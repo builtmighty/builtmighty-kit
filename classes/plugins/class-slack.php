@@ -460,6 +460,15 @@ class builtSlack {
         // Loop through channels.
         foreach( $channels as $channel ) {
 
+            // Check number of members.
+            if( $channel['num_members'] <= 0 ) continue;
+
+            // Check if channel is excluded.
+            if( in_array( $channel['name'], $this->channel_exclude() ) ) continue;
+
+            // Check if value of work channel.
+            if( str_contains( strtolower( $channel['name'] ), 'vow' ) !== false ) continue;
+
             // Set name.
             $name = str_replace( '-', ' ', $channel['name'] );
             $name = str_replace( '_', ' ', $name );
@@ -474,6 +483,28 @@ class builtSlack {
 
         // Return.
         return $data;
+
+    }
+
+    /**
+     * Channel exclude.
+     * 
+     * @since   1.0.0
+     */
+    public function channel_exclude() {
+
+        // Return array.
+        return [
+            '1pass',
+            '1scheduling',
+            'announcements',
+            'dev-chatter',
+            'dev-env-requests',
+            'dev-questions',
+            'jira-notifications',
+            'jira-questions',
+            'random',
+        ];
 
     }
 
