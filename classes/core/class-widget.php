@@ -130,9 +130,6 @@ class builtWidget {
         // Get disabled plugins.
         echo $this->get_disabled();
 
-        // Get Jira issues.
-        echo $this->get_jira_issues();
-
         // Get basic Git.
         echo $this->get_git();
 
@@ -198,24 +195,6 @@ class builtWidget {
         // Return.
         return ob_get_clean();
 
-    }
-
-    /**
-     * Get Jira issues.
-     * 
-     * @since   1.0.0
-     */
-    public function get_jira_issues() {
-
-        // Start.
-        ob_start();
-
-        // Jira issues.
-        include BUILT_PATH . 'views/core/widget-jira-issues.php';
-
-        // Return.
-        return ob_get_clean();
-        
     }
 
     /**
@@ -310,7 +289,7 @@ class builtWidget {
         ];
 
         // Check for missing data.
-        if( empty( $_POST['project'] ) || empty( $_POST['pm'] ) || empty( $_POST['title'] ) || empty( $_POST['desc'] ) ) {
+        if( empty( $_POST['channel'] ) || empty( $_POST['user'] ) || empty( $_POST['message'] ) ) {
 
             // Respond.
             echo json_encode( $status );
@@ -320,50 +299,28 @@ class builtWidget {
 
         }
 
-        // Jira.
-        $jira = new \BuiltMightyKit\Plugins\builtJira();
+        // Slack.
+        $slack = new \BuiltMightyKit\Plugins\builtSlack();
 
-        // Check type.
-        if( $_POST['type'] === 'built-issue-save' ) {
+        // Set message.
+        $message = 'From: ' . $_POST['user'] . "\n\n" . $_POST['message'];
 
-            // Create issue.
-            $jira->create_issue( $_POST );
+        // Post message.
+        $slack->message( $message );
 
-            // Set status.
-            $status = [
-                'status'    => 'success',
-                'message'   => 'Your issue has been created.',
-            ];
+        // Upload screenshot.
+        if( ! empty( $_POST['screenshot'] ) ) {
 
-        } else if( $_POST['type'] === 'built-project-save' ) {
-
-            // Get project manager ID.
-            $pm = explode( '|', base64_decode( $_POST['pm'] ) );
-
-            // Get user.
-            $user = $jira->get_user( $pm[0] );
-
-            // Check for email.
-            if( isset( $user['emailAddress'] ) ) {
-
-                // Append site URL to message.
-                $_POST['desc'] .= "\n\n — Submitted on: " . site_url( '/' );
-
-                // Append user.
-                $_POST['desc'] .= "\n — Submitted by: " . $_POST['user'];
-
-                // Send email.
-                wp_mail( $user['emailAddress'], stripslashes( sanitize_text_field( $_POST['title'] ) ), stripslashes( sanitize_text_field( $_POST['desc'] ) ) );
-
-                // Set status.
-                $status = [
-                    'status'    => 'success',
-                    'message'   => 'Your message has been sent.',
-                ];
-
-            }
+            // Upload and post image.
+            $slack->image( $_POST['screenshot'] );
 
         }
+
+        // Set status.
+        $status = [
+            'status'    => 'success',
+            'message'   => 'Your message has been sent.',
+        ];
 
         // Respond.
         echo json_encode( $status );
