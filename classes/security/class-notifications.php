@@ -64,8 +64,11 @@ class builtNotifications {
         $referer = parse_url( $_POST['_wp_http_referer'] );
         parse_str( $referer['query'], $query );
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Message.
-        $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>."; 
+        $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`"; 
 
         // Send.
         $this->slack->message( $message );
@@ -85,6 +88,9 @@ class builtNotifications {
         // Set message.
         $message = "";
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Check type.
         if( $data['type'] == 'plugin' ) {
 
@@ -95,7 +101,7 @@ class builtNotifications {
                 if( count( (array)$data['plugins'] ) > 1 ) {
 
                     // Set message.
-                    $message = "🔄 Multiple plugins were just updated.\n";
+                    $message = "🔄 Multiple plugins were just updated.\n>User: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
                     // Loop through plugins.
                     foreach( (array)$data['plugins'] as $plugin ) {
@@ -108,14 +114,14 @@ class builtNotifications {
                 } else {
 
                     // Set message.
-                    $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.";
+                    $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
                 }
 
             } elseif( $data['action'] == 'install' && $this->is_enabled( 'plugin-install' ) ) {
 
                 // Set message.
-                $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.";
+                $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
             }
 
@@ -128,7 +134,7 @@ class builtNotifications {
                 if( count( (array)$data['themes'] ) > 1 ) {
 
                     // Set message.
-                    $message = "🔄 Multiple themes were just updated.\n";
+                    $message = "🔄 Multiple themes were just updated.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
                     // Loop through themes.
                     foreach( (array)$data['themes'] as $theme ) {
@@ -141,14 +147,14 @@ class builtNotifications {
                 } else {
 
                     // Set message.
-                    $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.";
+                    $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
                 }
 
             } elseif( $data['action'] == 'install' && $this->is_enabled( 'theme-install' ) ) {
 
                 // Set message.
-                $message = "📦 A theme was just installed: `" . $_POST['slug'] . '`.';
+                $message = "📦 A theme was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
 
             }
 
@@ -175,8 +181,11 @@ class builtNotifications {
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'plugin-activate' ) ) return;
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Set message.
-        $message = "🔌 A plugin was just ✅ activated: `" . $plugin . "`.";
+        $message = "🔌 A plugin was just ✅ activated: `" . $plugin . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
         // Send.
         $this->slack->message( $message );
@@ -196,8 +205,11 @@ class builtNotifications {
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'plugin-deactivate' ) ) return;
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Set message.
-        $message = "🔌 A plugin was just 🔻 deactivated: `" . $plugin . "`.";
+        $message = "🔌 A plugin was just 🔻 deactivated: `" . $plugin . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
         // Send.
         $this->slack->message( $message );
@@ -217,8 +229,11 @@ class builtNotifications {
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'theme-change' ) ) return;
 
+        // Get current user.
+        $user = wp_get_current_user();
+
         // Set message.
-        $message = "🎨 The theme was just changed to `" . $stylesheet . "`.";
+        $message = "🎨 The theme was just changed to `" . $stylesheet . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
         // Send.
         $this->slack->message( $message );
@@ -242,7 +257,7 @@ class builtNotifications {
         if( $data['role'] !== 'administrator' ) return;
 
         // Set message.
-        $message = "👨‍💻 An admin user was just created.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`";
+        $message = "👨‍💻 An admin user was just created.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
         // Send.
         $this->slack->message( $message );
@@ -289,7 +304,7 @@ class builtNotifications {
         if( in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' && $this->is_enabled( 'admin-role' ) ) {
 
             // Set message.
-            $message = "👨‍💻 An admin user was just demoted.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`";
+            $message = "👨‍💻 An admin user was just demoted.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -300,7 +315,7 @@ class builtNotifications {
         if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] == 'administrator' && $this->is_enabled( 'admin-role' ) ) {
 
             // Set message.
-            $message = "👨‍💻 A user was just promoted to admin.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`";
+            $message = "👨‍💻 A user was just promoted to admin.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -311,7 +326,7 @@ class builtNotifications {
         if( $old_data->user_email !== $data['user_email'] && $this->is_enabled( 'admin-email' ) ) {
 
             // Set message.
-            $message = "👨‍💻 An admin user just changed their email.\n\n>User: `" . $data['user_login'] . "`\n>Old Email: `" . $old_data->user_email . "`\n>New Email: `" . $data['user_email'] . "`";
+            $message = "👨‍💻 An admin user just changed their email.\n\n>User: `" . $data['user_login'] . "`\n>Old Email: `" . $old_data->user_email . "`\n>New Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -322,7 +337,7 @@ class builtNotifications {
         if( $old_data->data->user_pass !== $data['user_pass'] && $this->is_enabled( 'admin-password' ) ) {
 
             // Set message.
-            $message = "👨‍💻 An admin user just changed their password.\n\n>User: `" . $data['user_login'] . "`";
+            $message = "👨‍💻 An admin user just changed their password.\n\n>User: `" . $data['user_login'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -344,11 +359,14 @@ class builtNotifications {
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'admin-login' ) ) return;
 
+        // Check if it's run.
+        if( did_action( 'wp_login' ) >= 2 ) return;
+
         // Check if user is admin.
         if( ! in_array( 'administrator', $user->roles ) ) return;
 
         // Set message.
-        $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $_SERVER['REMOTE_ADDR'] . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
+        $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $this->get_ip() . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
 
         // Send.
         $this->slack->message( $message );
@@ -378,7 +396,7 @@ class builtNotifications {
         if( isset( $_POST['theme'] ) && $this->is_enabled( 'theme-editor' ) ) {
 
             // Set message.
-            $message = "📝 A theme file was edited.\n\n>File: `" . $_POST['file'] . "`\n>User: `" . $user->user_login . "`";
+            $message = "📝 A theme file was edited.\n\n>File: `" . $_POST['file'] . "`\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -386,7 +404,7 @@ class builtNotifications {
         } elseif( isset( $_POST['plugin'] ) && $this->is_enabled( 'plugin-editor' ) ) {
 
             // Set message.
-            $message = "📝 A plugin file was edited.\n\n>File: `" . $_POST['file'] . "`\nUser: `" . $user->user_login . "`";
+            $message = "📝 A plugin file was edited.\n\n>File: `" . $_POST['file'] . "`\nUser: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
             $this->slack->message( $message );
@@ -407,6 +425,31 @@ class builtNotifications {
 
         // Check if setting is enabled.
         return ( ! in_array( $setting, (array)$notifications ) ) ? false : true;
+
+    }
+
+    /** 
+     * Get IP.
+     * 
+     * @since   1.0.0
+     */
+    public function get_ip() {
+
+        // Check if WooCommerce is installed.
+        if( class_exists( '\WC_Geolocation' ) ) {
+
+            // Get IP.
+            $ip = \WC_Geolocation::get_ip_address();
+
+        } else {
+
+            // Get IP, check for Cloudflare headers.
+            $ip = ( isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) ? $_SERVER['HTTP_CF_CONNECTING_IP'] : $_SERVER['REMOTE_ADDR'];
+
+        }
+
+        // Return.
+        return $ip;
 
     }
 
