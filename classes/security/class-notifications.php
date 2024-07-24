@@ -54,9 +54,6 @@ class builtNotifications {
      */
     public function woocommerce( $options ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'woocommerce' ) ) return;
-
         // Check if settings were saved.
         if( ! isset( $_POST['save'] ) ) return;
 
@@ -69,6 +66,9 @@ class builtNotifications {
 
         // Message.
         $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`"; 
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'woocommerce' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -179,7 +179,7 @@ class builtNotifications {
      */
     public function plugin_update( $data, $user ) {
 
-        
+
 
     }
 
@@ -193,14 +193,14 @@ class builtNotifications {
      */
     public function plugin_activate( $plugin ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'plugin-activate' ) ) return;
-
         // Get current user.
         $user = wp_get_current_user();
 
         // Set message.
         $message = "🔌 A plugin was just ✅ activated: `" . $plugin . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-activate' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -217,14 +217,14 @@ class builtNotifications {
      */
     public function plugin_deactivate( $plugin ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'plugin-deactivate' ) ) return;
-
         // Get current user.
         $user = wp_get_current_user();
 
         // Set message.
         $message = "🔌 A plugin was just 🔻 deactivated: `" . $plugin . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-deactivate' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -241,14 +241,14 @@ class builtNotifications {
      */
     public function theme( $stylesheet ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'theme-change' ) ) return;
-
         // Get current user.
         $user = wp_get_current_user();
 
         // Set message.
         $message = "🎨 The theme was just changed to `" . $stylesheet . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'theme-change' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -265,14 +265,14 @@ class builtNotifications {
      */
     public function admin_create( $user_id, $data ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'admin-create' ) ) return;
-
         // Check role.
         if( $data['role'] !== 'administrator' ) return;
 
         // Set message.
         $message = "👨‍💻 An admin user was just created.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-create' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -289,9 +289,6 @@ class builtNotifications {
      */
     public function admin_delete( $user_id, $reassign, $user ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'admin-delete' ) ) return;
-
         // Check if user is admin.
         if( ! in_array( 'administrator', (array)$user->roles ) ) return;
 
@@ -300,6 +297,9 @@ class builtNotifications {
 
         // Set message.
         $message = "👨‍💻 An admin user was just deleted.\n\n>User: `" . $user->user_login . "`\n>Email: `" . $user->user_email . "`\n\nUser was deleted by...\n>User: `" . $current->user_login . "`\n>IP: `" . $this->get_ip() . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-delete' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -320,46 +320,46 @@ class builtNotifications {
         if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' ) return;
 
         // Check if user went from admin to non-admin.
-        if( in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' && $this->is_enabled( 'admin-role' ) ) {
+        if( in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' ) {
 
             // Set message.
             $message = "👨‍💻 An admin user was just demoted.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-role' ) ) $this->slack->message( $message );
 
         }
 
         // Check if user went from non-admin to admin.
-        if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] == 'administrator' && $this->is_enabled( 'admin-role' ) ) {
+        if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] == 'administrator' ) {
 
             // Set message.
             $message = "👨‍💻 A user was just promoted to admin.\n\n>User: `" . $data['user_login'] . "`\n>Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-role' ) ) $this->slack->message( $message );
 
         }
 
         // Check if user email was changed.
-        if( $old_data->user_email !== $data['user_email'] && $this->is_enabled( 'admin-email' ) ) {
+        if( $old_data->user_email !== $data['user_email'] ) {
 
             // Set message.
             $message = "👨‍💻 An admin user just changed their email.\n\n>User: `" . $data['user_login'] . "`\n>Old Email: `" . $old_data->user_email . "`\n>New Email: `" . $data['user_email'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-email' ) ) $this->slack->message( $message );
 
         }
 
         // Check if the password was changed.
-        if( $old_data->data->user_pass !== $data['user_pass'] && $this->is_enabled( 'admin-password' ) ) {
+        if( $old_data->data->user_pass !== $data['user_pass'] ) {
 
             // Set message.
             $message = "👨‍💻 An admin user just changed their password.\n\n>User: `" . $data['user_login'] . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-password' ) ) $this->slack->message( $message );
 
         }
 
@@ -375,9 +375,6 @@ class builtNotifications {
      */
     public function admin_login( $user_login, $user ) {
 
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'admin-login' ) ) return;
-
         // Check if it's run.
         if( did_action( 'wp_login' ) >= 2 ) return;
 
@@ -386,6 +383,9 @@ class builtNotifications {
 
         // Set message.
         $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $this->get_ip() . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'admin-login' ) ) return;
 
         // Send.
         $this->slack->message( $message );
@@ -412,21 +412,21 @@ class builtNotifications {
         $user = wp_get_current_user();
 
         // Check type.
-        if( isset( $_POST['theme'] ) && $this->is_enabled( 'theme-editor' ) ) {
+        if( isset( $_POST['theme'] ) ) {
 
             // Set message.
             $message = "📝 A theme file was edited.\n\n>File: `" . $_POST['file'] . "`\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'theme-editor' ) ) $this->slack->message( $message );
 
-        } elseif( isset( $_POST['plugin'] ) && $this->is_enabled( 'plugin-editor' ) ) {
+        } elseif( isset( $_POST['plugin'] ) ) {
 
             // Set message.
             $message = "📝 A plugin file was edited.\n\n>File: `" . $_POST['file'] . "`\nUser: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
 
             // Send.
-            $this->slack->message( $message );
+            if( $this->is_enabled( 'plugin-editor' ) ) $this->slack->message( $message );
 
         }
 
