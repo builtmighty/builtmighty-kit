@@ -79,7 +79,7 @@ class builtSlack {
      * 
      * @since   1.0.0
      */
-    public function message( $message ) {
+    public function message( $message, $blocks = null ) {
 
         // Check.
         if( ! $this->get_args() ) return;
@@ -101,6 +101,9 @@ class builtSlack {
             'channel'   => get_option( 'slack-channel' ),
             'text'      => $message
         ];
+
+        // Check for blocks.
+        if( $blocks ) $args['body']['blocks'] = $blocks;
 
         // Post message.
         $response = wp_remote_post( $this->get_api( 'chat.postMessage' ), $args );
