@@ -169,6 +169,21 @@ class builtNotifications {
     }
 
     /**
+     * Plugin update.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   object  $user
+     * @return  void
+     */
+    public function plugin_update( $data, $user ) {
+
+        
+
+    }
+
+    /**
      * Plugin Activate.
      * 
      * @since   1.0.0
