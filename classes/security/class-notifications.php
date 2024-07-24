@@ -384,6 +384,9 @@ class builtNotifications {
         // Set message.
         $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>User: `" . $user_login . "`\n>IP: `" . $this->get_ip() . "`\n>User Agent: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
 
+        // Check if daily summary.
+        if( $this->is_summary( 'admin-login' ) ) $this->log( $message );
+
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'admin-login' ) ) return;
 
@@ -447,6 +450,21 @@ class builtNotifications {
 
     }
 
+    /**
+     * Check if summary.
+     * 
+     * @since   1.0.0
+     */
+    public function is_summary( $setting ) {
+
+        // Get notification settings.
+        $notifications = unserialize( get_option( 'slack-summary-notifications' ) );
+
+        // Check if setting is enabled.
+        return ( ! in_array( $setting, (array)$notifications ) ) ? false : true;
+
+    }
+
     /** 
      * Get IP.
      * 
@@ -469,6 +487,40 @@ class builtNotifications {
 
         // Return.
         return $ip;
+
+    }
+
+    /**
+     * Create log.
+     * 
+     * 
+     */
+    public function log( $message ) {
+
+        // Create log file in wp-content/uploads.
+        $file = WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log';
+
+        // Set timezone.
+        date_default_timezone_set( get_option( 'timezone_string' ) );
+
+        // Add date/time to message.
+        $message = "[" . date( 'Y-m-d g:i:s A' ) . "]\n" . $message;
+
+        // Check if file exists.
+        if( ! file_exists( $file ) ) {
+
+            // Create file.
+            file_put_contents( $file, $message );
+
+        } else {
+
+            // Append to file.
+            file_put_contents( $file, "\n\n" . $message, FILE_APPEND );
+
+        }
+
+        // Get log.
+        $log = file_get_contents( $file );
 
     }
 
