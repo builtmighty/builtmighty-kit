@@ -42,6 +42,15 @@ class builtNotifications {
         add_action( 'wp_login', [ $this, 'admin_login' ], 10, 2 );
         add_action( 'admin_init', [ $this, 'file_editor' ] );
 
+        // Check if daily summary is enabled.
+        if( get_option( 'slack-summary' ) == 'enable' ) {
+
+            // Schedule.
+            add_action( 'wp_loaded', [ $this, 'schedule' ] );
+            add_action( 'builtmighty_slack_summary', [ $this, 'sync' ] );
+
+        }
+
     }
 
     /**
@@ -491,6 +500,56 @@ class builtNotifications {
     }
 
     /**
+     * Schedule.
+     * 
+     * @since   1.0.0
+     */
+    public function schedule() {
+
+        // Check for scheduled.
+        if( ! wp_next_scheduled( 'builtmighty_slack_summary' ) ) {
+
+            // Schedule.
+            wp_schedule_event( time(), 'hourly', 'builtmighty_slack_summary' );
+
+        }
+
+    }
+
+    /**
+     * Sync.
+     * 
+     * @since   1.0.0
+     */
+    public function sync() {
+
+        // Check if we should sync.
+        if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
+
+        // Get set time.
+        $time = get_option( 'slack-summary-time' );
+
+        // Check if time is set.
+        if( empty( $time ) ) return;
+
+        // Check if time is now or past due.
+        if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
+
+        // Get the log file.
+        $log = file_get_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log' );
+
+        // Check if log is empty.
+        if( empty( $log ) ) return;
+
+        // Send.
+        $this->slack->message( "📅 Daily Summary\n\n" . $log );
+
+        // Empty log.
+        file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
+
+    }
+
+    /**
      * Create log.
      * 
      * 
@@ -518,9 +577,6 @@ class builtNotifications {
             file_put_contents( $file, "\n\n" . $message, FILE_APPEND );
 
         }
-
-        // Get log.
-        $log = file_get_contents( $file );
 
     }
 
