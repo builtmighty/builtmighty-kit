@@ -45,7 +45,7 @@ class builtSetup {
         if( ! is_kit_mode() ) return;
 
         // Add to updates.
-        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\nif( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ) define( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\nif( ! defined( 'WP_ACCESSIBLE_HOSTS' ) ) define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );\n";
+        $updates = "\n# 🔨Built Mighty Kit - Disable external connections.\nif( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ) define( 'WP_HTTP_BLOCK_EXTERNAL', true );\n\n# 🔨 Built Mighty Kit - Whitelist external connections.\nif( ! defined( 'WP_ACCESSIBLE_HOSTS' ) ) define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,downloads.wordpress.org,*.github.com' );\n";
 
         // Update config.
         $this->update_config( $updates );
