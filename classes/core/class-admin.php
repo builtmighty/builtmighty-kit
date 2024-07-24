@@ -224,6 +224,63 @@ class builtAdmin {
     }
 
     /**
+     * Get time.
+     * 
+     * @since   1.0.0
+     */
+    public function get_time() {
+
+        // Set time.
+        $time = [];
+
+        // Set range.
+        $range = range( 0, 23 );
+
+        // Loop.
+        foreach( $range as $hour ) {
+
+            // Get legible time with hour, minute, and am/pm.
+            $time[$hour . ':00'] = date( 'g:i A', strtotime( $hour . ':00' ) );
+
+        }
+
+        // Return.
+        return $time;
+
+    }
+
+    /**
+     * Get notifications.
+     * 
+     * @since   1.0.0
+     * 
+     * @return  array
+     */
+    public function get_notifications() {
+
+        // Return.
+        return [
+            'woocommerce'       => 'WooCommerce Settings',
+            'plugin-install'    => 'Plugin Installation',
+            'plugin-update'     => 'Plugin Update',
+            'plugin-activate'   => 'Plugin Activation',
+            'plugin-deactivate' => 'Plugin Deactivation',
+            'plugin-editor'     => 'Plugin Editor',
+            'theme-install'     => 'Theme Installation',
+            'theme-update'      => 'Theme Update',
+            'theme-change'      => 'Theme Change',
+            'theme-editor'      => 'Theme Editor',
+            'admin-create'      => 'Admin User Creation',
+            'admin-delete'      => 'Admin User Deletion',
+            'admin-role'        => 'Admin User Role Change',
+            'admin-password'    => 'Admin User Password Change',
+            'admin-email'       => 'Admin User Email Change',
+            'admin-login'       => 'Admin User Login'
+        ];
+
+    }
+
+    /**
      * Save.
      * 
      * @since   1.0.0
