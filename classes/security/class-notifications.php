@@ -103,16 +103,16 @@ class builtNotifications {
         $user = wp_get_current_user();
 
         // Plugin update.
-        $this->plugin_update( $data, $user );
+        $this->plugin_update( $data, $_POST, $user );
 
         // Plugin install.
-        $this->plugin_install( $data, $user );
+        $this->plugin_install( $data, $_POST, $user );
 
         // Theme update.
-        $this->theme_update( $data, $user );
+        $this->theme_update( $data, $_POST, $user );
 
         // Theme install.
-        $this->theme_install( $data, $user );
+        $this->theme_install( $data, $_POST, $user );
 
     }
 
@@ -171,10 +171,10 @@ class builtNotifications {
      * @param   object  $user
      * @return  void
      */
-    public function plugin_install( $data, $user ) {
+    public function plugin_install( $data, $plugin, $user ) {
 
         // Check.
-        if( $data['type'] !== 'plugin' && $data['action'] !== 'install' ) return;
+        if( $data['action'] !== 'plugin' && $data['action'] !== 'install' ) return;
 
         // Set message.
         $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
@@ -596,16 +596,16 @@ class builtNotifications {
     public function sync() {
 
         // Check if we should sync.
-        if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
+        //if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
 
         // Get set time.
-        $time = get_option( 'slack-summary-time' );
+        //$time = get_option( 'slack-summary-time' );
 
         // Check if time is set.
-        if( empty( $time ) ) return;
+        //if( empty( $time ) ) return;
 
         // Check if time is now or past due.
-        if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
+        //if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
 
         // Get the log file.
         $log = file_get_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log' );
@@ -614,10 +614,10 @@ class builtNotifications {
         if( empty( $log ) ) return;
 
         // Send.
-        $this->slack->message( "📅 Daily Summary\n\n" . $log );
+        $this->slack->message( "📅 Daily Summary for `" . site_url() . "`\n\n" . $log );
 
         // Empty log.
-        file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
+        //file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
 
     }
 
@@ -635,7 +635,7 @@ class builtNotifications {
         date_default_timezone_set( get_option( 'timezone_string' ) );
 
         // Add date/time to message.
-        $message = "[" . date( 'Y-m-d g:i:s A' ) . "]\n" . $message;
+        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`\n" . $message;
 
         // Check if file exists.
         if( ! file_exists( $file ) ) {
