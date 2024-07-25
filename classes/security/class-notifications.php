@@ -53,6 +53,8 @@ class builtNotifications {
 
     }
 
+    // TODO: Add better WooCommerce notifications.
+
     /**
      * WooCommerce.
      * 
@@ -76,6 +78,9 @@ class builtNotifications {
         // Message.
         $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`"; 
 
+        // Check if daily summary.
+        if( $this->is_summary( 'woocommerce' ) ) $this->log( $message );
+
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'woocommerce' ) ) return;
 
@@ -94,86 +99,20 @@ class builtNotifications {
      */
     public function code_updates( $upgrader, $data ) {
 
-        // Set message.
-        $message = "";
-
         // Get current user.
         $user = wp_get_current_user();
 
-        // Check type.
-        if( $data['type'] == 'plugin' ) {
+        // Plugin update.
+        $this->plugin_update( $data, $user );
 
-            // Check action.
-            if( $data['action'] == 'update' && $this->is_enabled( 'plugin-update' ) ) {
+        // Plugin install.
+        $this->plugin_install( $data, $user );
 
-                // Check count.
-                if( count( (array)$data['plugins'] ) > 1 ) {
+        // Theme update.
+        $this->theme_update( $data, $user );
 
-                    // Set message.
-                    $message = "🔄 Multiple plugins were just updated.\n>User: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-                    // Loop through plugins.
-                    foreach( (array)$data['plugins'] as $plugin ) {
-
-                        // Add to message.
-                        $message .= "\n>`" . $plugin . "`";
-
-                    }
-
-                } else {
-
-                    // Set message.
-                    $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-                }
-
-            } elseif( $data['action'] == 'install' && $this->is_enabled( 'plugin-install' ) ) {
-
-                // Set message.
-                $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-            }
-
-        } elseif( $data['type'] == 'theme' ) {
-
-            // Check action.
-            if( $data['action'] == 'update' && $this->is_enabled( 'theme-update' ) ) {
-
-                // Check themes.
-                if( count( (array)$data['themes'] ) > 1 ) {
-
-                    // Set message.
-                    $message = "🔄 Multiple themes were just updated.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-                    // Loop through themes.
-                    foreach( (array)$data['themes'] as $theme ) {
-
-                        // Add to message.
-                        $message .= "\n>`" . $theme . "`";
-
-                    }
-
-                } else {
-
-                    // Set message.
-                    $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-                }
-
-            } elseif( $data['action'] == 'install' && $this->is_enabled( 'theme-install' ) ) {
-
-                // Set message.
-                $message = "📦 A theme was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
-
-            }
-
-        }
-
-        // Check for a message.
-        if( empty( $message ) ) return;
-
-        // Send.
-        $this->slack->message( $message );
+        // Theme install.
+        $this->theme_install( $data, $user );
 
     }
 
@@ -188,7 +127,140 @@ class builtNotifications {
      */
     public function plugin_update( $data, $user ) {
 
+        // Check type and action.
+        if( $data['type'] !== 'plugin' && $data['action'] !== 'update' ) return;
 
+        // Check count.
+        if( count( (array)$data['plugins'] ) > 1 ) {
+
+            // Set message.
+            $message = "🔄 Multiple plugins were just updated.\n>User: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+            // Loop through plugins.
+            foreach( (array)$data['plugins'] as $plugin ) {
+
+                // Add to message.
+                $message .= "\n>`" . $plugin . "`";
+
+            }
+
+        } else {
+
+            // Set message.
+            $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+        }
+
+        // Check if summary.
+        if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-update' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Plugin install.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   object  $user
+     * @return  void
+     */
+    public function plugin_install( $data, $user ) {
+
+        // Check.
+        if( $data['type'] !== 'plugin' && $data['action'] !== 'install' ) return;
+
+        // Set message.
+        $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+        // Check if summary.
+        if( $this->is_summary( 'plugin-install' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-install' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Theme update.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   object  $user
+     * @return  void
+     */
+    public function theme_update( $data, $user ) {
+
+        // Check.
+        if( $data['type'] !== 'theme' && $data['action'] !== 'update' ) return;
+
+        // Check themes.
+        if( count( (array)$data['themes'] ) > 1 ) {
+
+            // Set message.
+            $message = "🔄 Multiple themes were just updated.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+            // Loop through themes.
+            foreach( (array)$data['themes'] as $theme ) {
+
+                // Add to message.
+                $message .= "\n>`" . $theme . "`";
+
+            }
+
+        } else {
+
+            // Set message.
+            $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+        }
+
+        // Check if summary.
+        if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'theme-update' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Theme install.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   object  $user
+     * @return  void
+     */
+    public function theme_install( $data, $user ) {
+
+        // Check.
+        if( $data['type'] !== 'theme' && $data['action'] !== 'install' ) return;
+
+        // Set message.
+        $message = "📦 A theme was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+
+        // Check if summary.
+        if( $this->is_summary( 'theme-install' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'theme-install' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
 
     }
 
