@@ -32,7 +32,7 @@ class builtAccess {
     public function redirect() {
 
         // If constant isn't set, later gator.
-        if( ! defined( 'BUILT_ACCESS' ) ) return;
+        if( ! defined( 'BUILT_ACCESS' ) || BUILT_ACCESS == false ) return;
 
         // If user is logged in, take off.
         if( is_user_logged_in() ) return;
