@@ -704,16 +704,16 @@ class builtNotifications {
     public function sync() {
 
         // Check if we should sync.
-        //if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
+        if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
 
         // Get set time.
-        //$time = get_option( 'slack-summary-time' );
+        $time = get_option( 'slack-summary-time' );
 
         // Check if time is set.
-        //if( empty( $time ) ) return;
+        if( empty( $time ) ) return;
 
         // Check if time is now or past due.
-        //if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
+        if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
 
         // Get the log file.
         $log = file_get_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log' );
