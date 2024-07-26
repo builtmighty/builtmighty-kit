@@ -102,9 +102,6 @@ class builtNotifications {
         // Get current user.
         $user = wp_get_current_user();
 
-        error_log( 'DATA: ' . print_r( $data, true ) );
-        error_log( 'POST: ' . print_r( $_POST, true ) );
-
         // Check if set.
         if( ! isset( $data['type'] ) || ! isset( $data['action'] ) ) return;
 
