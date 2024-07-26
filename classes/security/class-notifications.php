@@ -722,7 +722,7 @@ class builtNotifications {
         if( empty( $log ) ) return;
 
         // Send.
-        $this->slack->message( "📅 Daily Summary for `" . site_url() . "`\n\n" . $log );
+        $this->slack->message( "📅 Daily Summary for `" . site_url() . "`\n" . $log );
 
         // Empty log.
         file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
@@ -743,7 +743,7 @@ class builtNotifications {
         date_default_timezone_set( get_option( 'timezone_string' ) );
 
         // Add date/time to message.
-        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`" . $message;
+        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`\n" . $message;
 
         // Check if file exists.
         if( ! file_exists( $file ) ) {
