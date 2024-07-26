@@ -743,7 +743,7 @@ class builtNotifications {
         date_default_timezone_set( get_option( 'timezone_string' ) );
 
         // Add date/time to message.
-        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`\n" . $message;
+        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`" . $message;
 
         // Check if file exists.
         if( ! file_exists( $file ) ) {
