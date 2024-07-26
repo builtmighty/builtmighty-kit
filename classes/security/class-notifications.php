@@ -102,17 +102,63 @@ class builtNotifications {
         // Get current user.
         $user = wp_get_current_user();
 
+        error_log( 'DATA: ' . print_r( $data, true ) );
+        error_log( 'POST: ' . print_r( $_POST, true ) );
+
+        // Check if set.
+        if( ! isset( $data['type'] ) || ! isset( $data['action'] ) ) return;
+
+        // Core update.
+        $this->core_update( $data, $_POST, $user );
+
         // Plugin update.
-        $this->plugin_update( $data, $_POST, $user );
+        $this->plugin_update( $data, $user );
 
         // Plugin install.
-        $this->plugin_install( $data, $_POST, $user );
+        $this->plugin_install( $_POST, $user );
+        
+        // Manual plugin install.
+        $this->plugin_manual_install( $data, $_POST, $user );
 
         // Theme update.
-        $this->theme_update( $data, $_POST, $user );
+        $this->theme_update( $data, $user );
 
         // Theme install.
-        $this->theme_install( $data, $_POST, $user );
+        $this->theme_install( $_POST, $user );
+
+    }
+
+    /**
+     * Core update.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   array   $post
+     * @param   object  $user
+     */
+    public function core_update( $data, $post, $user ) {
+
+        // Check type.
+        if( ! isset( $data['type'] ) || $data['type'] !== 'core' ) return;
+
+        // Check action.
+        if( ! isset( $data['action'] ) || $data['action'] !== 'update' ) return;
+
+        // Check if version is set.
+        if( ! isset( $post['version'] ) ) return;
+
+        // Set message.
+        $message = "🔄 WordPress core was just updated to version `" . $post['version'] . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`";
+        
+        // Check if summary.
+        if( $this->is_summary( 'core-update' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'core-update' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
 
     }
 
@@ -127,38 +173,47 @@ class builtNotifications {
      */
     public function plugin_update( $data, $user ) {
 
-        // Check type and action.
-        if( $data['type'] !== 'plugin' && $data['action'] !== 'update' ) return;
+        // Check type.
+        if( ! isset( $data['type'] ) || $data['type'] !== 'plugin' ) return;
 
-        // Check count.
-        if( count( (array)$data['plugins'] ) > 1 ) {
+        // Check action.
+        if( ! isset( $data['action'] ) || $data['action'] !== 'update' ) return;
 
-            // Set message.
-            $message = "🔄 Multiple plugins were just updated.\n>User: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+        // Check if bulk.
+        if( $data['bulk'] ) {
 
             // Loop through plugins.
-            foreach( (array)$data['plugins'] as $plugin ) {
+            foreach( $data['plugins'] as $plugin ) {
 
-                // Add to message.
-                $message .= "\n>`" . $plugin . "`";
+                // Set message.
+                $message = "🔄 A plugin was just updated: `" . $plugin . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
+
+                // Check if summary.
+                if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
+
+                // Check if setting is enabled.
+                if( ! $this->is_enabled( 'plugin-update' ) ) return;
+
+                // Send.
+                $this->slack->message( $message );
 
             }
 
         } else {
 
             // Set message.
-            $message = "🔄 A plugin was just updated: `" . $data['plugins'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+            $message = "🔄 A plugin was just updated: `" . $data['plugin'] . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
+
+            // Check if summary.
+            if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
+
+            // Check if setting is enabled.
+            if( ! $this->is_enabled( 'plugin-update' ) ) return;
+
+            // Send.
+            $this->slack->message( $message );
 
         }
-
-        // Check if summary.
-        if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
-
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'plugin-update' ) ) return;
-
-        // Send.
-        $this->slack->message( $message );
 
     }
 
@@ -171,13 +226,51 @@ class builtNotifications {
      * @param   object  $user
      * @return  void
      */
-    public function plugin_install( $data, $plugin, $user ) {
+    public function plugin_install( $post, $user ) {
 
         // Check.
-        if( $data['action'] !== 'plugin' && $data['action'] !== 'install' ) return;
+        if( ! isset( $post['action'] ) || $post['action'] !== 'install-plugin' ) return;
+
+        // Check if slug is set.
+        if( ! isset( $post['slug'] ) ) return;
 
         // Set message.
-        $message = "📦 A plugin was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+        $message = "📦 A plugin was just installed: `" . $post['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
+
+        // Check if summary.
+        if( $this->is_summary( 'plugin-install' ) ) $this->log( $message );
+
+        // Check if setting is enabled.
+        if( ! $this->is_enabled( 'plugin-install' ) ) return;
+
+        // Send.
+        $this->slack->message( $message );
+
+    }
+
+    /**
+     * Plugin manual install.
+     * 
+     * @since   1.0.0
+     * 
+     * @param   array   $data
+     * @param   array   $post
+     * @param   object  $user
+     * @return  void
+     */
+    public function plugin_manual_install( $data, $post, $user ) {
+
+        // Check.
+        if( ! isset( $data['type'] ) || $data['type'] !== 'plugin' ) return;
+
+        // Check.
+        if( ! isset( $data['action'] ) || $data['action'] !== 'install' ) return;
+
+        // Check if manually installation is submitted.
+        if( ! isset( $post['install-plugin-submit'] ) ) return;
+
+        // Set message.
+        $message = "📦 A plugin was just manually installed.\nUser: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
 
         // Check if summary.
         if( $this->is_summary( 'plugin-install' ) ) $this->log( $message );
@@ -201,38 +294,50 @@ class builtNotifications {
      */
     public function theme_update( $data, $user ) {
 
-        // Check.
-        if( $data['type'] !== 'theme' && $data['action'] !== 'update' ) return;
+        // Check type.
+        if( ! isset( $data['type'] ) || $data['type'] !== 'theme' ) return;
 
-        // Check themes.
-        if( count( (array)$data['themes'] ) > 1 ) {
+        // Check action.
+        if( ! isset( $data['action'] ) || $data['action'] !== 'update' ) return;
 
-            // Set message.
-            $message = "🔄 Multiple themes were just updated.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+        // Check if bulk is set.
+        if( ! isset( $data['bulk'] ) ) return;
+
+        // Check if bulk.
+        if( $data['bulk'] ) {
 
             // Loop through themes.
-            foreach( (array)$data['themes'] as $theme ) {
+            foreach( $data['themes'] as $theme ) {
 
-                // Add to message.
-                $message .= "\n>`" . $theme . "`";
+                // Set message.
+                $message = "🔄 A theme was just updated: `" . $theme . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
+
+                // Check if summary.
+                if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
+
+                // Check if setting is enabled.
+                if( ! $this->is_enabled( 'theme-update' ) ) return;
+
+                // Send.
+                $this->slack->message( $message );
 
             }
 
         } else {
 
             // Set message.
-            $message = "🔄 A theme was just updated: `" . $data['themes'][0] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+            $message = "🔄 A theme was just updated: `" . $data['theme'] . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
+
+            // Check if summary.
+            if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
+
+            // Check if setting is enabled.
+            if( ! $this->is_enabled( 'theme-update' ) ) return;
+
+            // Send.
+            $this->slack->message( $message );
 
         }
-
-        // Check if summary.
-        if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
-
-        // Check if setting is enabled.
-        if( ! $this->is_enabled( 'theme-update' ) ) return;
-
-        // Send.
-        $this->slack->message( $message );
 
     }
 
@@ -245,13 +350,16 @@ class builtNotifications {
      * @param   object  $user
      * @return  void
      */
-    public function theme_install( $data, $user ) {
+    public function theme_install( $post, $user ) {
 
         // Check.
-        if( $data['type'] !== 'theme' && $data['action'] !== 'install' ) return;
+        if( ! isset( $post['action'] ) || $post['action'] !== 'install-theme' ) return;
+
+        // Check for theme.
+        if( ! isset( $post['slug'] ) ) return;
 
         // Set message.
-        $message = "📦 A theme was just installed: `" . $_POST['slug'] . "`.\nUser: `" . $user->user_login . "`\n>IP: " . $this->get_ip() . "`\n";
+        $message = "📦 A theme was just installed: `" . $post['slug'] . "`.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`\n";
 
         // Check if summary.
         if( $this->is_summary( 'theme-install' ) ) $this->log( $message );
@@ -487,7 +595,7 @@ class builtNotifications {
         if( ! isset( $_POST ) || empty( $_POST ) ) return;
 
         // Check action.
-        if( ! isset( $_POST['action'] ) && $_POST['action'] !== 'edit-theme-plugin-file' ) return;
+        if( ! isset( $_POST['action'] ) || $_POST['action'] !== 'edit-theme-plugin-file' ) return;
 
         // Check for file.
         if( ! isset( $_POST['file'] ) ) return;
@@ -617,7 +725,7 @@ class builtNotifications {
         $this->slack->message( "📅 Daily Summary for `" . site_url() . "`\n\n" . $log );
 
         // Empty log.
-        //file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
+        file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
 
     }
 
