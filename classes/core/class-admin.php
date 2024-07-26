@@ -260,6 +260,7 @@ class builtAdmin {
 
         // Return.
         return [
+            'core-update'       => 'WordPress Update',
             'woocommerce'       => 'WooCommerce Settings',
             'plugin-install'    => 'Plugin Installation',
             'plugin-update'     => 'Plugin Update',
