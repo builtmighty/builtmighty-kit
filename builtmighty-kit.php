@@ -101,8 +101,6 @@ require_once BUILT_PATH . 'classes/security/class-notifications.php';
 require_once BUILT_PATH . 'classes/frontend/class-woo.php';
 require_once BUILT_PATH . 'classes/frontend/class-mail.php';
 require_once BUILT_PATH . 'classes/frontend/class-speed.php';
-require_once BUILT_PATH . 'classes/plugins/class-jira.php';
-require_once BUILT_PATH . 'classes/plugins/class-jira-helper.php';
 require_once BUILT_PATH . 'classes/plugins/class-slack.php';
 require_once BUILT_PATH . 'classes/plugins/class-updates.php';
 
