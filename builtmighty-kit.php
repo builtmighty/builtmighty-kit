@@ -91,7 +91,6 @@ require_once BUILT_PATH . 'classes/core/class-db.php';
 require_once BUILT_PATH . 'classes/security/class-login.php';
 require_once BUILT_PATH . 'classes/security/class-access.php';
 require_once BUILT_PATH . 'classes/security/class-security.php';
-require_once BUILT_PATH . 'classes/security/class-keys.php';
 require_once BUILT_PATH . 'classes/security/class-auth.php';
 require_once BUILT_PATH . 'classes/security/class-2fa.php';
 require_once BUILT_PATH . 'classes/security/class-2fa-settings.php';
