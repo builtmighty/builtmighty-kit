@@ -712,8 +712,8 @@ class builtNotifications {
         // Check if time is set.
         if( empty( $time ) ) return;
 
-        // Check if time is now or past due.
-        if( date( 'H:i', current_time( 'timestamp' ) ) !== $time ) return;
+        // Check if time is current hour or past hour.
+        if( date( 'H', current_time( 'timestamp' ) ) <= $time ) return;
 
         // Get the log file.
         $log = file_get_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log' );
