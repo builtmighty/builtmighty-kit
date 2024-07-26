@@ -5,7 +5,7 @@
  * Send Slack notifications about certain touchy operations.
  * 
  * @package Built Mighty Kit
- * @since   1.0.0
+ * @since   2.2.0
  */
 namespace BuiltMightyKit\Security;
 class builtNotifications {
@@ -13,14 +13,14 @@ class builtNotifications {
     /**
      * Slack.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     private $slack;
 
     /**
      * Construct.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function __construct() {
 
@@ -31,7 +31,7 @@ class builtNotifications {
         $this->slack = new \BuiltMightyKit\Plugins\builtSlack();
 
         // Actions.
-        add_action( 'woocommerce_update_options', [ $this, 'woocommerce' ] );
+        add_action( 'updated_option', [ $this, 'woocommerce' ], 10, 3);
         add_action( 'upgrader_process_complete', [ $this, 'code_updates' ], 10, 2 );
         add_action( 'activated_plugin', [ $this, 'plugin_activate' ], 10, 2 );
         add_action( 'deactivated_plugin', [ $this, 'plugin_deactivate' ], 10, 2 );
@@ -53,30 +53,29 @@ class builtNotifications {
 
     }
 
-    // TODO: Add better WooCommerce notifications.
-
     /**
      * WooCommerce.
      * 
-     * @since   1.0.0
+     * @since  2.2.0
      * 
-     * @param   array   $options
-     * @return  void
+     * @param mixed $name
+     * @param mixed $old
+     * @param mixed $new
+     * @return void
      */
-    public function woocommerce( $options ) {
+    public function woocommerce( $name, $old, $new ) {
 
-        // Check if settings were saved.
-        if( ! isset( $_POST['save'] ) ) return;
+        // Check if name contains woocommerce or wc.
+        if( strpos( $name, 'woocommerce' ) === false && strpos( $name, 'wc' ) === false ) return;
 
-        // Get referer.
-        $referer = parse_url( $_POST['_wp_http_referer'] );
-        parse_str( $referer['query'], $query );
+        // Check if name contains transient.
+        if( strpos( $name, 'transient' ) !== false ) return;
 
-        // Get current user.
-        $user = wp_get_current_user();
+        // Check if name contains queue.
+        if( strpos( $name, 'queue' ) !== false ) return;
 
-        // Message.
-        $message = "🛒 WooCommerce " . ucwords( $query['tab'] ) . " settings were just updated <" . site_url( $_POST['_wp_http_referer'] ) . "|here>.\n>User: `" . $user->user_login . "`\n>IP: `" . $this->get_ip() . "`"; 
+        // Set message.
+        $message = "🛒 WooCommerce settings were just updated.\n\n>*Name*: `" . $name . "`\n>*Settings*: ```\n" . print_r( $new, true ) . "\n```";
 
         // Check if daily summary.
         if( $this->is_summary( 'woocommerce' ) ) $this->log( $message );
@@ -92,7 +91,7 @@ class builtNotifications {
     /**
      * Plugin/theme updates and installations.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -128,7 +127,7 @@ class builtNotifications {
     /**
      * Core update.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   array   $post
@@ -162,7 +161,7 @@ class builtNotifications {
     /**
      * Plugin update.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   object  $user
@@ -217,7 +216,7 @@ class builtNotifications {
     /**
      * Plugin install.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   object  $user
@@ -248,7 +247,7 @@ class builtNotifications {
     /**
      * Plugin manual install.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   array   $post
@@ -283,7 +282,7 @@ class builtNotifications {
     /**
      * Theme update.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   object  $user
@@ -341,7 +340,7 @@ class builtNotifications {
     /**
      * Theme install.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $data
      * @param   object  $user
@@ -372,7 +371,7 @@ class builtNotifications {
     /**
      * Plugin Activate.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   string  $plugin
      * @return  void
@@ -396,7 +395,7 @@ class builtNotifications {
     /**
      * Plugin Deactivate.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   string  $plugin
      * @return  void
@@ -420,7 +419,7 @@ class builtNotifications {
     /**
      * Theme.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -444,7 +443,7 @@ class builtNotifications {
     /**
      * Admin Create.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -468,7 +467,7 @@ class builtNotifications {
     /**
      * Admin Delete.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -495,7 +494,7 @@ class builtNotifications {
     /**
      * Admin Update.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -554,7 +553,7 @@ class builtNotifications {
     /**
      * Admin Login.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      * 
      * @param   array   $options
      * @return  void
@@ -584,7 +583,7 @@ class builtNotifications {
     /**
      * File editor.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function file_editor() {
 
@@ -624,7 +623,7 @@ class builtNotifications {
     /** 
      * Check if enabled.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function is_enabled( $setting ) {
 
@@ -639,7 +638,7 @@ class builtNotifications {
     /**
      * Check if summary.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function is_summary( $setting ) {
 
@@ -654,7 +653,7 @@ class builtNotifications {
     /** 
      * Get IP.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function get_ip() {
 
@@ -679,7 +678,7 @@ class builtNotifications {
     /**
      * Schedule.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function schedule() {
 
@@ -696,7 +695,7 @@ class builtNotifications {
     /**
      * Sync.
      * 
-     * @since   1.0.0
+     * @since   2.2.0
      */
     public function sync() {
 
