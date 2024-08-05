@@ -560,8 +560,14 @@ class builtNotifications {
      */
     public function admin_login( $user_login, $user ) {
 
-        // Check if it's run.
-        if( did_action( 'wp_login' ) >= 2 ) return;
+        // Set static variable.
+        static $has_run = false;
+
+        // Check if we have run.
+        if( $has_run ) return;
+        
+        // Set has run.
+        $has_run = true;
 
         // Check if user is admin.
         if( ! in_array( 'administrator', $user->roles ) ) return;
