@@ -17,8 +17,17 @@ $wp     = get_bloginfo( 'version' );
 <div class="built-panel">
     <p style="margin-top:0;"><strong>❔Developer Info</strong></p>
     <ul style="margin:0;">
-        <li>PHP <code><?php echo $php; ?></code></li>
-        <li>MySQL <code><?php echo $mysql; ?></code></li>
-        <li>WordPress <code><?php echo $wp; ?></code></li>
+        <li>
+            <label class="label-php">PHP</label>
+            <code><?php echo $php; ?></code>
+        </li>
+        <li>
+            <label class="label-mysql">MySQL</label>
+            <code><?php echo $mysql; ?></code>
+        </li>
+        <li>
+            <label class="label-wordpress">WordPress</label>
+            <code><?php echo $wp; ?></code>
+        </li>
     </ul>
 </div>
