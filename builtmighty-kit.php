@@ -82,6 +82,7 @@ function built_deactivation() {
  * 
  * @since   1.0.0
  */
+require_once BUILT_PATH . 'classes/init.php';
 require_once BUILT_PATH . 'vendor/autoload.php';
 require_once BUILT_PATH . 'classes/core/class-setup.php';
 require_once BUILT_PATH . 'classes/core/class-widget.php';
@@ -108,23 +109,7 @@ require_once BUILT_PATH . 'classes/plugins/class-updates.php';
  * 
  * @since   1.0.0
  */
-new \BuiltMightyKit\Security\builtLogin();
-new \BuiltMightyKit\Security\builtAccess();
-new \BuiltMightyKit\Frontend\builtWoo();
-new \BuiltMightyKit\Frontend\builtMail();
-new \BuiltMightyKit\Security\builtSecurity();
-new \BuiltMightyKit\Core\builtDB();
-new \BuiltMightyKit\Security\built2FA();
-new \BuiltMightyKit\Security\built2FASettings();
-new \BuiltMightyKit\Security\builtLockdown();
-new \BuiltMightyKit\Security\builtLockdownLog();
-new \BuiltMightyKit\Security\builtNotifications();
-new \BuiltMightyKit\Frontend\builtSpeed();
-new \BuiltMightyKit\Core\builtWidget();
-new \BuiltMightyKit\Core\builtAdmin();
-new \BuiltMightyKit\Core\builtAJAX();
-new \BuiltMightyKit\Plugins\builtSlack();
-new \BuiltMightyKit\Plugins\builtUpdates();
+\BuiltMightyKit\Plugin::get_instance();
 
 /** 
  * CLI.

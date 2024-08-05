@@ -226,7 +226,7 @@ class builtWidget {
         ob_start();
 
         // Git.
-        BUILT_PATH . 'views/core/widget-git.php';
+        include BUILT_PATH . 'views/core/widget-git.php';
 
         // Return.
         return ob_get_clean();

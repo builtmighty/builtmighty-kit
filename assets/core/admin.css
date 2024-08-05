@@ -203,6 +203,25 @@
     margin: 0 0 2px 0;
 }
 
+.built-panel ul li label {
+    width: 70px;
+    display: inline-block;
+    font-weight: bold;
+    padding: 2px 4px;
+}
+
+.built-panel ul li label.label-php {
+    color: #4f5b93;
+}
+
+.built-panel ul li label.label-mysql {
+    color: #0074a3;
+}
+
+.built-panel ul li label.label-wordpress {
+    color: #3858e9;
+}
+
 .built-panel ul li code {
     border-radius: 4px;
     margin-left: 5px;
