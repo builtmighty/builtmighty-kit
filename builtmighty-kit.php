@@ -90,6 +90,7 @@ require_once BUILT_PATH . 'classes/core/class-admin.php';
 require_once BUILT_PATH . 'classes/core/class-ajax.php';
 require_once BUILT_PATH . 'classes/core/class-db.php';
 require_once BUILT_PATH . 'classes/data/class-data.php';
+require_once BUILT_PATH . 'classes/data/class-data-api.php';
 require_once BUILT_PATH . 'classes/security/class-login.php';
 require_once BUILT_PATH . 'classes/security/class-access.php';
 require_once BUILT_PATH . 'classes/security/class-security.php';
