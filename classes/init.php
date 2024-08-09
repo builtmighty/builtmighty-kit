@@ -65,6 +65,7 @@ class Plugin {
         $this->load_class( \BuiltMightyKit\Security\builtSecurity::class );
         $this->load_class( \BuiltMightyKit\Core\builtDB::class );
         $this->load_class( \BuiltMightyKit\Data\builtData::class );
+        $this->load_class( \BuiltMightyKit\Data\builtDataAPI::class );
         $this->load_class( \BuiltMightyKit\Security\built2FA::class );
         $this->load_class( \BuiltMightyKit\Security\built2FASettings::class );
         $this->load_class( \BuiltMightyKit\Security\builtLockdown::class );
