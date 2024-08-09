@@ -5,7 +5,7 @@
  * Handles data tracking for the plugin.
  * 
  * @package Built Mighty Kit
- * @since   1.0.0
+ * @since   2.2.0
  */
 namespace BuiltMightyKit\Data;
 use function BuiltMightyKit\is_kit_mode;
@@ -14,14 +14,14 @@ class builtData {
     /**
      * Database.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     private $db;
 
     /**
      * Prefix.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     private $prefix;
 
@@ -30,7 +30,7 @@ class builtData {
      * 
      * Initialize the class.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function __construct() {
 
@@ -55,7 +55,7 @@ class builtData {
     /**
      * Schedule data event.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function schedule_data() {
 
@@ -75,7 +75,7 @@ class builtData {
     /**
      * Execute data ingest.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function execute_data_ingest() {
 
@@ -93,7 +93,7 @@ class builtData {
     /**
      * Process Pagespeed data.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function process_pagespeed() {
 
@@ -145,7 +145,7 @@ class builtData {
     /**
      * Process WooCommerce data.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function process_woocommerce() {
 
@@ -181,7 +181,7 @@ class builtData {
     /**
      * Get PageSpeed Insights data.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function get_pagespeed() {
 
@@ -204,7 +204,7 @@ class builtData {
     /**
      * Get WooCommerce data.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function get_woocommerce( $key, $day = NULL ) {
 
@@ -235,7 +235,7 @@ class builtData {
     /**
      * Get total sales.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @param   string  $day    Day.
      * @return  float
@@ -279,7 +279,7 @@ class builtData {
     /**
      * Get orders.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @param   string  $day    Day.
      * @return  int
@@ -306,7 +306,7 @@ class builtData {
     /**
      * Get refunds.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @param   string  $day    Day.
      * @return  int
@@ -350,7 +350,7 @@ class builtData {
     /**
      * Get refunded.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @param   string  $day    Day.
      * @return  int
@@ -377,7 +377,7 @@ class builtData {
     /**
      * Get products.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @param   string  $day    Day.
      * @return  int
@@ -398,7 +398,7 @@ class builtData {
     /**
      * Get customers.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      * 
      * @return  int
      */
@@ -422,7 +422,7 @@ class builtData {
     /**
      * Check if data exists.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function check_data( $name, $date ) {
 
@@ -437,7 +437,7 @@ class builtData {
     /**
      * Insert data.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function insert_data( $data ) {
 
@@ -449,7 +449,7 @@ class builtData {
     /**
      * Pagespeed keys.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function get_pagespeed_keys() {
 
@@ -467,7 +467,7 @@ class builtData {
     /**
      * WooCommerce keys.
      * 
-     * @since   2.0.0
+     * @since   2.2.0
      */
     public function get_woocommerce_keys() {
 
