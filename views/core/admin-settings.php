@@ -13,6 +13,9 @@
         include BUILT_PATH . 'views/core/admin-slack.php';
 
         // Include.
+        include BUILT_PATH . 'views/core/admin-2fa.php';
+
+        // Include.
         include BUILT_PATH . 'views/core/admin-api.php';
 
         // Add settings.
