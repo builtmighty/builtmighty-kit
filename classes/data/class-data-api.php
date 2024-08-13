@@ -116,6 +116,18 @@ class builtDataAPI {
         // Query.
         $query = "SELECT SUM( value ) FROM {$wpdb->prefix}built_site_data WHERE name = '{$report}'";
 
+        // Check if date is set.
+        if( $request->get_param( 'from' ) && $request->get_param( 'to' ) ) {
+
+            // Get date.
+            $start  = $request->get_param( 'from' );
+            $end    = $request->get_param( 'to' );
+
+            // Add range.
+            $query .= $this->get_range( $start, $end );
+
+        }
+
         // Return total.
         return $wpdb->get_var( $query );
 
@@ -138,6 +150,18 @@ class builtDataAPI {
 
         // Query.
         $query = "SELECT AVG( value ) FROM {$wpdb->prefix}built_site_data WHERE name = '{$report}'";
+
+        // Check if date is set.
+        if( $request->get_param( 'from' ) && $request->get_param( 'to' ) ) {
+
+            // Get date.
+            $start  = $request->get_param( 'from' );
+            $end    = $request->get_param( 'to' );
+
+            // Add range.
+            $query .= $this->get_range( $start, $end );
+
+        }
 
         // Return average.
         return $wpdb->get_var( $query );
@@ -195,6 +219,18 @@ class builtDataAPI {
 
         // Return current.
         return $wpdb->get_results( $query, ARRAY_A );
+
+    }
+
+    /**
+     * Get range.
+     * 
+     * @since   2.2.0
+     */
+    public function get_range( $start, $end ) {
+
+        // Return.
+        return " AND date BETWEEN '{$start}' AND '{$end}'";
 
     }
 
