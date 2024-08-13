@@ -12,6 +12,9 @@
         // Include.
         include BUILT_PATH . 'views/core/admin-slack.php';
 
+        // Include.
+        include BUILT_PATH . 'views/core/admin-api.php';
+
         // Add settings.
         do_action( '\BuiltMightyKit\Core\add_settings' ); ?>
 

@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A kit for Built Mighty clients.
-Version: 2.1.0
+Version: 2.2.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -28,7 +28,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  * 
  * @since   1.0.0
  */
-define( 'BUILT_VERSION', '2.1.0' );
+define( 'BUILT_VERSION', '2.2.0' );
 define( 'BUILT_NAME', 'builtmighty-kit' );
 define( 'BUILT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'BUILT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -89,6 +89,8 @@ require_once BUILT_PATH . 'classes/core/class-widget.php';
 require_once BUILT_PATH . 'classes/core/class-admin.php';
 require_once BUILT_PATH . 'classes/core/class-ajax.php';
 require_once BUILT_PATH . 'classes/core/class-db.php';
+require_once BUILT_PATH . 'classes/data/class-data.php';
+require_once BUILT_PATH . 'classes/data/class-data-api.php';
 require_once BUILT_PATH . 'classes/security/class-login.php';
 require_once BUILT_PATH . 'classes/security/class-access.php';
 require_once BUILT_PATH . 'classes/security/class-security.php';

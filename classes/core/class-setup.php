@@ -132,7 +132,7 @@ class builtSetup {
             if( is_plugin_active( $file ) ) {
 
                 // Add to disabled.
-                $disabled[] = $plugin;
+                $disabled[$file] = $plugin;
 
                 // Deactivate plugin.
                 deactivate_plugins( $file );

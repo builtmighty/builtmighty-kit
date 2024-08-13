@@ -185,7 +185,7 @@ class builtWidget {
         ob_start();
 
         // Check for disabled plugins.
-        if( get_option( 'built_disabled_plugins' ) ) {
+        if( get_option( 'built_disabled_plugins' ) && is_kit_mode() ) {
 
             // Disabled plugins.
             include BUILT_PATH . 'views/core/widget-disabled-plugins.php';

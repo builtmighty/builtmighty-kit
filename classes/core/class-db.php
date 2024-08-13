@@ -99,7 +99,14 @@ class builtDB {
                 'status'        => 'VARCHAR(45) NOT NULL',
                 'date'          => 'datetime NOT NULL',
                 'PRIMARY KEY'   => '(id)'
-            ]
+            ],
+            'built_site_data'       => [
+                'id'            => 'int(11) NOT NULL AUTO_INCREMENT',
+                'name'          => 'VARCHAR(45) NOT NULL',
+                'value'         => 'text NOT NULL',
+                'date'          => 'date NOT NULL',
+                'PRIMARY KEY'   => '(id)'
+            ],
         ];
 
         // Return the tables.
