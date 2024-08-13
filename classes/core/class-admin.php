@@ -158,11 +158,14 @@ class builtAdmin {
             </div>
             <div class="built-input"><?php
 
+                // Check for readonly.
+                $readonly = ( ! empty( $field['readonly'] ) ) ? ' readonly' : '';
+
                 // Check type.
                 if( $field['type'] == 'select' && ! empty( $field['options'] ) ) {
 
                     // Output select. ?>
-                    <select <?php echo $field_id; ?>name="<?php echo $id; ?>">
+                    <select <?php echo $field_id; ?>name="<?php echo $id; ?>"<?php echo $readonly; ?>>
                         <option value="">Select...</option><?php
 
                         // Loop through options.
@@ -189,12 +192,12 @@ class builtAdmin {
                     }
 
                     // Output password. ?>
-                    <input <?php echo $field_id; ?>type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"<?php echo $readonly; ?>><?php
 
                 } elseif( $field['type'] == 'text' ) {
 
                     // Output text. ?>
-                    <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"<?php echo $readonly; ?>><?php
 
                 } elseif( $field['type'] == 'checkbox' ) {
 
@@ -206,7 +209,7 @@ class builtAdmin {
 
                         // Output. ?>
                         <div class="builtmighty-checkbox">
-                            <input <?php echo $field_id; ?>type="checkbox" name="<?php echo $id; ?>[]" value="<?php echo $option_key; ?>"<?php echo $checked; ?>> <?php echo $option; ?>
+                            <input <?php echo $field_id; ?>type="checkbox" name="<?php echo $id; ?>[]" value="<?php echo $option_key; ?>"<?php echo $readonly; ?><?php echo $checked; ?>> <?php echo $option; ?>
                         </div><?php
 
                     }

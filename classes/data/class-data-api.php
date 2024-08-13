@@ -20,8 +20,37 @@ class builtDataAPI {
      */
     public function __construct() {
 
+        // Create key.
+        add_action( 'wp', [ $this, 'create_key' ] );
+
         // Register API.
         add_action( 'rest_api_init', [ $this, 'routes' ] );
+
+    }
+
+    /**
+     * Create key.
+     * 
+     * @since   2.2.0
+     */
+    public function create_key() {
+
+        // Check if kit mode.
+        if( is_kit_mode() ) return;
+
+        // Get key.
+        $key = get_option( 'built-data-key' );
+
+        // Check if key is set.
+        if( ! $key ) {
+
+            // Create key.
+            $key = wp_generate_password( 32, false );
+
+            // Update key.
+            update_option( 'built-data-key', $key );
+
+        }
 
     }
 
@@ -53,6 +82,12 @@ class builtDataAPI {
 
         // Check for a request.
         if( ! $request ) return new \WP_Error( 'no_request', 'No request found.', [ 'status' => 404 ] );
+
+        // Check for a key.
+        if( ! $request->get_param( 'key' ) ) return new \WP_Error( 'no_key', 'No API key found.', [ 'status' => 401 ] );
+
+        // Validate key.
+        if( ! $this->validate( $request->get_param( 'key' ) ) ) return new \WP_Error( 'invalid_key', 'Invalid API key.', [ 'status' => 401 ] );
 
         // Get report.
         $report = $request->get_param( 'report' );
@@ -268,6 +303,27 @@ class builtDataAPI {
 
         // Return reports.
         return $reports;
+
+    }
+
+    /** 
+     * Validate key.
+     * 
+     * @since   2.2.0
+     * 
+     * @param   string  $key    The key to validate.
+     * @return  bool
+     */
+    public function validate( $key ) {
+
+        // Get key.
+        $data_key = get_option( 'built-data-key' );
+
+        // Check if key is valid.
+        if( $key == $data_key ) return true;
+
+        // Return.
+        return false;
 
     }
 
