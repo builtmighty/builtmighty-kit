@@ -5,17 +5,19 @@ if( ! defined( 'BUILT_2FA' ) ) return;
 // Output horizontal rule.
 echo '<hr style="opacity:0.1">';
 
-// Get user roles.
-$roles = get_editable_roles();
+// Set roles.
+$roles = [];
 
-// Remove administrator.
-unset( $roles['administrator'] );
+// Loop through roles.
+foreach( get_editable_roles() as $role => $details ) {
 
-// Remove super administator if multisite.
-if( is_multisite() ) unset( $roles['super_admin'] );
+    // Skip if administrator or super administrator.
+    if( in_array( $role, [ 'administrator', 'super_admin' ] ) ) continue;
 
-// Get roles.
-$roles = array_keys( $roles );
+    // Add role.
+    $roles[ $role ] = $details['name'];
+
+}
 
 // Output user roles checkbox.
 echo $this->field( '2fa-roles', '2FA Roles', [
