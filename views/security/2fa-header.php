@@ -6,7 +6,7 @@
  * @since   2.0.0
  */
 // Set icon.
-if( ! empty( get_user_meta( get_current_user_id(), 'google_authenticator_confirmed', true ) ) ) {
+if( ! empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) {
     $icon = '🔒';
     $color = '#266d29';
 } else {
