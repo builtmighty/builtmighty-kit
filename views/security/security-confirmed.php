@@ -4,17 +4,23 @@
  * 
  * @package Built Mighty Kit
  * @since   2.0.0
- */ ?>
-<p>Two Factor Authentication has been setup and confirmed.<br>
-You're good to go, unless you need to reset and restart the process.</p>
+ */ 
+
+// Set default button link.
+$button = site_url( '/' );
+
+// Set button to WooCommerce my account page if not admin.
+if( is_plugin_active( 'woocommerce/woocommerce.php' ) && ! in_array( 'administrator', (array)$user->roles ) ) $button = get_permalink( get_option( 'woocommerce_myaccount_page_id' ) );
+
+// Set button to custom endpoint if enabled and user is admin.
+if( defined( 'BUILT_ENDPOINT' ) && in_array( 'administrator', (array)$user->roles ) ) $button = site_url( '/' . BUILT_ENDPOINT );
+
+// Set button to admin URL if custom endpoint is not enabled and user is admin.
+if( ! defined( 'BUILT_ENDPOINT' ) && in_array( 'administrator', (array)$user->roles ) ) $button = admin_url( '/' ); ?>
+
+<p>Two Factor Authentication has been setup and confirmed.<br>You're good to go!</p>
 <div class="built-panel-footer">
-    <div class="built-footer-action">
-        <a href="<?php echo site_url( '/' ); ?>" class="button button-secondary">Confirm</a>
+    <div class="built-security-actions">
+        <a href="<?php echo $button; ?>" class="button button-secondary">Finish</a>
     </div>
-    <form method="post">
-        <div class="built-panel-actions">
-            <input type="hidden" name="google_authenticator_reset" value="true" />
-            <button type="submit" class="google-authenticator-reset">Reset</button>
-        </div>
-    </form>
 </div>
