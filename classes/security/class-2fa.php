@@ -529,10 +529,24 @@ class built2FA {
         // Check request.
         if( $request_uri == '/security/' ) {
 
-            // Check for $_POST.
+            // Check for $code.
             if( isset( $_POST['google_authenticator_code'] ) ) {
 
-                echo 'HELLO';
+                // Confirm.
+                $status = $this->confirm( $_POST['key'], $_POST['google_authenticator_code'] );
+
+                // Check status.
+                if( ! $status ) {
+
+                    // Redirect, but with error.
+                    wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&confirm=true&status=error' ) );
+
+                } else {
+
+                    // Redirect.
+                    wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&status=confirmed' ) );
+
+                }
 
             }
 
@@ -565,6 +579,40 @@ class built2FA {
         }
 
     }
+
+    /**
+     * Confirm.
+     * 
+     * Confirm the 2FA setup.
+     * 
+     * @since   2.0.0
+     */
+    public function confirm( $key, $code ) {
+
+        // Auth.
+        $auth = new \BuiltMightyKit\Security\builtAuth();
+
+        // Get key.
+        $get_key = explode( ':', base64_decode( $key ) );
+
+        // Set variables.
+        $user_id    = $get_key[0];
+        $key        = $get_key[1];
+
+        // Confirm key. 
+        if( $key !== get_user_meta( $user_id, 'google_authenticator_setup', true ) ) return false;
+
+        // Authenticate.
+        if( ! $auth->authenticate( $user_id, $code ) ) return false;
+
+        // Update user meta.
+        update_user_meta( $user_id, 'google_authenticator_confirmed', true );
+
+        // Return.
+        return true;
+
+    }
+
 
     /******** OLD */
 
@@ -728,7 +776,7 @@ class built2FA {
      * 
      * @since   2.0.0
      */
-    public function confirm( $user_id ) {
+    public function test_confirm( $user_id ) {
 
         // Check for reset.
         if( isset( $_POST['google_authenticator_reset'] ) ) {
