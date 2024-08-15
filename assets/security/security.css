@@ -4,7 +4,7 @@ html {
 }
 
 body {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,7 +80,7 @@ a {
 }
 
 .built-security-button a img {
-    max-width: 60px;
+    max-width: 30px;
 }
 
 .built-security-download {
@@ -157,4 +157,11 @@ a.built-security-back {
 
 a.built-security-back:hover {
     opacity: 1;
+}
+
+p.built-security-error {
+    background: #d63638;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px;
 }
