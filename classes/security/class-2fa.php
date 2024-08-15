@@ -56,6 +56,17 @@ class built2FA {
 
         // Create setup page.
         add_action( 'template_redirect', [ $this, 'setup' ] );
+
+        // Add user fields for administration.
+        add_action( 'show_user_profile', [ $this, 'user_administration' ] );
+        add_action( 'edit_user_profile', [ $this, 'user_administration' ] );
+        add_action( 'personal_options_update', [ $this, 'user_save' ] );
+        add_action( 'edit_user_profile_update', [ $this, 'user_save' ] );
+
+        // Add WooCommerce account items.
+        add_filter( 'woocommerce_account_menu_items', [ $this, 'woocommerce_account' ] );
+        add_action( 'woocommerce_account_security_endpoint', [ $this, 'security_endpoint' ] );
+        add_action( 'init', [ $this, 'security_rewrite' ] );
         
     }
 
@@ -336,7 +347,7 @@ class built2FA {
         }
 
         // Check for 2FA.
-        if( empty( get_user_meta( $user->ID, 'google_authenticator_confirmed', true ) ) ) {
+        if( ! $this->check_confirmed( $user ) ) {
 
             // 2FA hasn't been setup yet, so continue.
             echo 'continue';
@@ -399,6 +410,251 @@ class built2FA {
     }
 
     /**
+     * Setup.
+     * 
+     * Setup 2FA.
+     * 
+     * @since   2.0.0
+     */
+    public function setup() {
+
+        // If constant isn't set, dip.
+        if( ! defined( 'BUILT_2FA' ) ) return;
+
+        // Set request URI.
+        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
+
+        // Check request URI.
+        if( $request_uri !== '/security/' ) return;
+
+        // If user is logged in, adios.
+        if( is_user_logged_in() ) {
+
+            // Redirect to home page.
+            wp_redirect( home_url( '/' ) );
+            exit;
+
+        }
+
+        // Check for required query string.
+        if( ! isset( $_GET['key'] ) ) return;
+
+        // Check for valid key.
+        if( ! $this->verify_key( $_GET['key'] ) ) return;
+
+        // Get key.
+        $get_key = explode( ':', base64_decode( $_GET['key'] ) );
+        
+        // Set variables.
+        $user_id    = $get_key[0];
+        $key        = $get_key[1];
+
+        // Check for $code.
+        if( isset( $_POST['google_authenticator_code'] ) ) {
+
+            // Confirm.
+            $status = $this->confirm( $_POST['key'], $_POST['google_authenticator_code'] );
+
+            // Check status.
+            if( ! $status ) {
+
+                // Redirect, but with error.
+                wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&confirm=true&status=error' ) );
+                exit;
+
+            } else {
+
+                // Redirect.
+                wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&status=confirmed' ) );
+                exit;
+
+            }
+
+        }
+
+        // Get current user.
+        $user = get_user_by( 'ID', $user_id );
+
+        // Get secret.
+        $secret = $this->generate_secret( $user );
+        
+        // Create the QR code.
+        $result = Builder::create()
+        ->writer(new PngWriter())
+        ->data('otpauth://totp/WordPress:' . $user->user_login . '?secret=' . $secret . '&issuer=WordPress ' . get_bloginfo('name') )
+        ->build();
+
+        // Get the data URI
+        $dataUri = $result->getDataUri();
+
+        // Include.
+        include BUILT_PATH . 'views/security/security.php';
+        exit;
+
+    }
+
+    /**
+     * User administration.
+     * 
+     * Add user administration fields.
+     * 
+     * @since   2.0.0
+     * 
+     * @param   object  $user
+     */
+    public function user_administration( $user ) {
+
+        // Check user. 
+        if( current_user_can( 'administrator' ) ) {
+
+            // Output. ?>
+            <h3>Two-Factor Authentication</h3>
+            <table class="form-table">
+                <tr>
+                    <td>
+                        <button name="google_authenticator_reset" value="HELLO" class="button button-secondary">Reset 2FA</button>
+                    </td>
+                </tr>
+            </table><?php
+
+        }
+
+    }
+
+    /**
+     * User save.
+     * 
+     * Save user administration fields.
+     * 
+     * @since   2.0.0
+     */
+    public function user_save( $user_id ) {
+
+        // Check user. 
+        if( current_user_can( 'administrator' ) ) {
+
+            // Check for reset.
+            if( isset( $_POST['google_authenticator_reset'] ) ) {
+
+                // Reset.
+                $this->clear_auth( $user_id );
+
+            }
+
+        }
+
+    }
+
+    /**
+     * WooCommerce Account menu items.
+     * 
+     * Add 2FA to WooCommerce account menu items.
+     * 
+     * @since   2.0.0
+     */
+    public function woocommerce_account( $items ) {
+
+        // Set new.
+        $new_items = [];
+
+        // Loop through items.
+        foreach( $items as $key => $item ) {
+
+            // Add item.
+            $new_items[$key] = $item;
+
+            // Check if user has 2FA setup.
+            if( ! $this->check_confirmed( get_current_user_id() ) ) {
+
+                // Check if edit account.
+                if( $key == 'edit-account' ) {
+
+                    // Add 2FA.
+                    $new_items['security'] = 'Reset 2FA';
+
+                }
+
+            } else {
+
+                // Check if edit account.
+                if( $key == 'edit-account' ) {
+
+                    // Add 2FA.
+                    $new_items['security'] = 'Setup 2FA';
+
+                }
+
+            }
+
+        }
+
+        // Return.
+        return $new_items;
+
+    }
+
+    /**
+     * Security endpoint.
+     * 
+     * Add 2FA to WooCommerce account security endpoint.
+     * 
+     * @since   2.0.0
+     */
+    public function security_endpoint() {
+
+        // Reset.
+        //$this->clear_auth( get_current_user_id() );
+
+    }
+
+    /**
+     * Load security endpoint.
+     * 
+     * Load security endpoint.
+     * 
+     * @since   2.0.0
+     */
+    public function security_rewrite() {
+
+        // Add.
+        add_rewrite_endpoint( 'security', EP_ROOT | EP_PAGES );
+
+    }
+
+    /**
+     * Confirm.
+     * 
+     * Confirm the 2FA setup.
+     * 
+     * @since   2.0.0
+     */
+    public function confirm( $key, $code ) {
+
+        // Auth.
+        $auth = new \BuiltMightyKit\Security\builtAuth();
+
+        // Get key.
+        $get_key = explode( ':', base64_decode( $key ) );
+
+        // Set variables.
+        $user_id    = $get_key[0];
+        $key        = $get_key[1];
+
+        // Confirm key. 
+        if( $key !== get_user_meta( $user_id, 'google_authenticator_setup', true ) ) return false;
+
+        // Authenticate.
+        if( ! $auth->authenticate( $user_id, $code ) ) return false;
+
+        // Update user meta.
+        update_user_meta( $user_id, 'google_authenticator_confirmed', true );
+
+        // Return.
+        return true;
+
+    }
+
+    /**
      * Generate setup.
      * 
      * Generate setup key for 2FA.
@@ -419,6 +675,34 @@ class built2FA {
         // Return.
         return ( ! $encode ) ? $key : base64_encode( $user->ID . ':' . $key );
 
+    }
+
+    /**
+     * Check setup.
+     * 
+     * Verify setup key for 2FA.
+     * 
+     * @since   2.0.0
+     * 
+     * @param   int     $user_id
+     * @param   string  $key
+     * @return  bool
+     */
+    public function verify_key( $key ) {
+
+        // Get key.
+        $get_key = explode( ':', base64_decode( $key ) );
+
+        // Set variables.
+        $user_id    = $get_key[0];
+        $key        = $get_key[1];
+
+        // Check key.
+        if( $key !== get_user_meta( $user_id, 'google_authenticator_setup', true ) ) return false;
+
+        // Return.
+        return true;
+        
     }
 
     /**
@@ -500,116 +784,32 @@ class built2FA {
     }
 
     /**
-     * Setup.
+     * Clear 2FA.
      * 
-     * Setup 2FA.
+     * Reset 2FA for user.
      * 
      * @since   2.0.0
      */
-    public function setup() {
+    public function clear_auth( $user_id ) {
 
-        // If constant isn't set, dip.
-        if( ! defined( 'BUILT_2FA' ) ) return;
-
-        // Set request URI.
-        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
-
-        // If user is logged in, adios.
-        if( is_user_logged_in() && $request_uri == '/security/' ) {
-
-            // Redirect to home page.
-            wp_redirect( home_url( '/' ) );
-            exit;
-
-        }
-
-        // Check for required query string.
-        if( $request_uri == '/security/' && ! isset( $_GET['key'] ) ) return;
-
-        // Check request.
-        if( $request_uri == '/security/' ) {
-
-            // Check for $code.
-            if( isset( $_POST['google_authenticator_code'] ) ) {
-
-                // Confirm.
-                $status = $this->confirm( $_POST['key'], $_POST['google_authenticator_code'] );
-
-                // Check status.
-                if( ! $status ) {
-
-                    // Redirect, but with error.
-                    wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&confirm=true&status=error' ) );
-
-                } else {
-
-                    // Redirect.
-                    wp_redirect( home_url( '/security?key=' . $_POST['key'] . '&status=confirmed' ) );
-
-                }
-
-            }
-
-            // Get key.
-            $get_key = explode( ':', base64_decode( $_GET['key'] ) );
-            
-            // Set variables.
-            $user_id    = $get_key[0];
-            $key        = $get_key[1];
-
-            // Get current user.
-            $user = get_user_by( 'ID', $user_id );
-
-            // Get secret.
-            $secret = $this->generate_secret( $user );
-            
-            // Create the QR code.
-            $result = Builder::create()
-            ->writer(new PngWriter())
-            ->data('otpauth://totp/WordPress:' . $user->user_login . '?secret=' . $secret . '&issuer=WordPress ' . get_bloginfo('name') )
-            ->build();
-
-            // Get the data URI
-            $dataUri = $result->getDataUri();
-
-            // Include.
-            include BUILT_PATH . 'views/security/security.php';
-            exit;
-
-        }
+        // Remove.
+        delete_user_meta( $user_id, 'google_authenticator_setup' );
+        delete_user_meta( $user_id, 'google_authenticator_secret' );
+        delete_user_meta( $user_id, 'google_authenticator_confirmed' );
 
     }
 
     /**
-     * Confirm.
+     * Clear setup key.
      * 
-     * Confirm the 2FA setup.
+     * Clear setup key for user.
      * 
      * @since   2.0.0
      */
-    public function confirm( $key, $code ) {
+    public function clear_setup( $user_id ) {
 
-        // Auth.
-        $auth = new \BuiltMightyKit\Security\builtAuth();
-
-        // Get key.
-        $get_key = explode( ':', base64_decode( $key ) );
-
-        // Set variables.
-        $user_id    = $get_key[0];
-        $key        = $get_key[1];
-
-        // Confirm key. 
-        if( $key !== get_user_meta( $user_id, 'google_authenticator_setup', true ) ) return false;
-
-        // Authenticate.
-        if( ! $auth->authenticate( $user_id, $code ) ) return false;
-
-        // Update user meta.
-        update_user_meta( $user_id, 'google_authenticator_confirmed', true );
-
-        // Return.
-        return true;
+        // Remove.
+        delete_user_meta( $user_id, 'google_authenticator_setup' );
 
     }
 
@@ -658,7 +858,7 @@ class built2FA {
         if( isset( $_GET['page'] ) && $_GET['page'] == 'builtmighty-2fa' ) return;
 
         // Check if user has 2FA setup.
-        if( empty( get_user_meta( $user_id, 'google_authenticator_confirmed', true ) ) ) {
+        if( ! $this->check_confirmed( $user ) ) {
 
             // Redirect.
             wp_safe_redirect( admin_url( '/admin.php?page=builtmighty-2fa' ) );
