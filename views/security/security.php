@@ -45,6 +45,11 @@
                     // Load confirm.
                     include BUILT_PATH . 'views/security/security-confirm.php';
 
+                } elseif( isset( $_GET['status'] ) && $_GET['status'] == 'confirmed' ) {
+
+                    // Load confirmed.
+                    include BUILT_PATH . 'views/security/security-confirmed.php';
+
                 } else {
                 
                     // Load form.
