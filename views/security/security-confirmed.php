@@ -23,4 +23,7 @@ if( ! defined( 'BUILT_ENDPOINT' ) && in_array( 'administrator', (array)$user->ro
     <div class="built-security-actions">
         <a href="<?php echo $button; ?>" class="button button-secondary">Finish</a>
     </div>
-</div>
+</div><?php
+
+// Clear.
+$this->clear_setup( $user->ID ); ?>
