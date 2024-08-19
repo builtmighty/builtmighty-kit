@@ -427,15 +427,6 @@ class built2FA {
         // Check request URI.
         if( $request_uri !== '/security/' ) return;
 
-        // If user is logged in, adios.
-        if( is_user_logged_in() ) {
-
-            // Redirect to home page.
-            wp_redirect( home_url( '/' ) );
-            exit;
-
-        }
-
         // Check for required query string.
         if( ! isset( $_GET['key'] ) ) return;
 
@@ -505,14 +496,34 @@ class built2FA {
     public function user_administration( $user ) {
 
         // Check user. 
-        if( current_user_can( 'administrator' ) ) {
-
-            // Output. ?>
+        if( current_user_can( 'administrator' ) ) { ?>
             <h3>Two-Factor Authentication</h3>
             <table class="form-table">
                 <tr>
-                    <td>
-                        <button name="google_authenticator_reset" value="HELLO" class="button button-secondary">Reset 2FA</button>
+                    <th>Status: <?php
+                    
+                    // Check status.
+                    if( $this->check_confirmed( $user ) ) {
+
+                        // Active.
+                        echo ' <span style="color:green;">Active</span>';
+
+                    } else {
+
+                        // Not active.
+                        echo ' <span style="color:red;">Inactive</span>';
+
+                    } ?></th>
+                    </th>
+                    <td><?php
+
+                        // Check status.
+                        if( $this->check_confirmed( $user ) ) { ?>
+
+                            <button name="google_authenticator_reset" class="button button-secondary">Reset 2FA</button><?php
+
+                        } ?>
+
                     </td>
                 </tr>
             </table><?php
@@ -554,6 +565,12 @@ class built2FA {
      */
     public function woocommerce_account( $items ) {
 
+        // Get current user.
+        $user = get_user_by( 'ID', get_current_user_id() );
+
+        // Check if user requires 2FA.
+        if( ! $this->check_user( $user ) ) return $items;
+
         // Set new.
         $new_items = [];
 
@@ -563,26 +580,11 @@ class built2FA {
             // Add item.
             $new_items[$key] = $item;
 
-            // Check if user has 2FA setup.
-            if( ! $this->check_confirmed( get_current_user_id() ) ) {
+            // Check if edit account.
+            if( $key == 'edit-account' ) {
 
-                // Check if edit account.
-                if( $key == 'edit-account' ) {
-
-                    // Add 2FA.
-                    $new_items['security'] = 'Reset 2FA';
-
-                }
-
-            } else {
-
-                // Check if edit account.
-                if( $key == 'edit-account' ) {
-
-                    // Add 2FA.
-                    $new_items['security'] = 'Setup 2FA';
-
-                }
+                // Add 2FA.
+                $new_items['security'] = ( $this->check_confirmed( $user ) ) ? 'Reset 2FA' : 'Setup 2FA';
 
             }
 
@@ -602,8 +604,59 @@ class built2FA {
      */
     public function security_endpoint() {
 
-        // Reset.
-        //$this->clear_auth( get_current_user_id() );
+        // Get current user.
+        $user = get_user_by( 'ID', get_current_user_id() );
+
+        // Header. ?>
+        <h2>Two-Factor Authentication</h2>
+        <p>For account security, we recommend two-factor authentication.</p>
+        <p>Status: <?php
+
+            // Check if setup.
+            if( $this->check_confirmed( $user ) || isset( $_GET['setup'] ) && $_GET['setup'] !== 'reset' ) {
+
+                // Active.
+                echo '<span style="color:green;">Active</span>';
+
+            } else {
+
+                // Inactive.
+                echo '<span style="color:red;">Inactive</span>';
+
+            } ?>
+        </p><?php
+
+        // Check for setup.
+        if( $this->check_confirmed( $user ) && ! isset( $_GET['setup'] ) ) { 
+
+            // Reset button. ?>
+            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=reset" class="button">Reset</a><?php
+            
+        } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'true' ) {
+
+            // Send email.
+            $this->send_setup_email( $user );
+
+            // Output. ?>
+            <p>A setup email has been sent to your email address.</p><?php
+
+        } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'reset' ) {
+
+            // Reset.
+            $this->clear_auth( $user->ID );
+
+            // Output. ?>
+            <p>Two-Factor Authentication has been reset.</p><?php
+
+            // Button. ?>
+            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup</a><?php
+
+        } else {
+
+            // Button. ?>
+            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup</a><?php
+
+        }
 
     }
 
