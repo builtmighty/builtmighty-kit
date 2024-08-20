@@ -613,15 +613,15 @@ class built2FA {
         <p>Status: <?php
 
             // Check if setup.
-            if( $this->check_confirmed( $user ) || isset( $_GET['setup'] ) && $_GET['setup'] !== 'reset' ) {
+            if( $this->check_confirmed( $user ) && ! isset( $_GET['setup'] ) ) {
 
                 // Active.
-                echo '<span style="color:green;">Active</span>';
+                echo '<span style="color:white;display:inline-block;background:green;line-height:1;padding:5px 10px;border-radius:6px;">Active</span>';
 
             } else {
 
                 // Inactive.
-                echo '<span style="color:red;">Inactive</span>';
+                echo '<span style="color:white;display:inline-block;background:red;line-height:1;padding:5px 10px;border-radius:6px;">Inactive</span>';
 
             } ?>
         </p><?php
