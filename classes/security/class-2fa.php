@@ -64,9 +64,14 @@ class built2FA {
         add_action( 'edit_user_profile_update', [ $this, 'user_save' ] );
 
         // Add WooCommerce account items.
-        add_filter( 'woocommerce_account_menu_items', [ $this, 'woocommerce_account' ] );
-        add_action( 'woocommerce_account_security_endpoint', [ $this, 'security_endpoint' ] );
-        add_action( 'init', [ $this, 'security_rewrite' ] );
+        if( in_array( 'woocommerce/woocommerce.php', (array)apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+
+            // Add tab and endpoint.
+            add_filter( 'woocommerce_account_menu_items', [ $this, 'woocommerce_account' ] );
+            add_action( 'woocommerce_account_security_endpoint', [ $this, 'security_endpoint' ] );
+            add_action( 'init', [ $this, 'security_rewrite' ] );
+
+        }
         
     }
 
@@ -496,7 +501,12 @@ class built2FA {
     public function user_administration( $user ) {
 
         // Check user. 
-        if( current_user_can( 'administrator' ) ) { ?>
+        if( current_user_can( 'administrator' ) ) {
+            
+            // Check if user requires 2FA. 
+            if( ! $this->check_user( $user ) ) return;
+            
+            // Administration. ?>
             <h3>Two-Factor Authentication</h3>
             <table class="form-table">
                 <tr>
@@ -518,9 +528,15 @@ class built2FA {
                     <td><?php
 
                         // Check status.
-                        if( $this->check_confirmed( $user ) ) { ?>
-
+                        if( $this->check_confirmed( $user ) ) { 
+                            
+                            // Button. ?>
                             <button name="google_authenticator_reset" class="button button-secondary">Reset 2FA</button><?php
+
+                        } else {
+
+                            // Button. ?>
+                            <button name="google_authenticator_setup" class="button button-primary">Send Setup Email</button><?php
 
                         } ?>
 
@@ -549,6 +565,14 @@ class built2FA {
 
                 // Reset.
                 $this->clear_auth( $user_id );
+
+            } elseif( isset( $_POST['google_authenticator_setup'] ) ) {
+
+                // Get user.
+                $user = get_user_by( 'ID', $user_id );
+
+                // Send email.
+                $this->send_setup_email( $user );
 
             }
 
@@ -671,6 +695,124 @@ class built2FA {
 
         // Add.
         add_rewrite_endpoint( 'security', EP_ROOT | EP_PAGES );
+
+    }
+
+    /**
+     * Add security reset/setup button.
+     * 
+     * Add security reset/setup button.
+     * 
+     * @since   2.0.0
+     */
+    public function security_setup() {
+
+        // Check if user is logged in.
+        if( ! is_user_logged_in() ) return;
+
+        // Check if admin.
+        if( is_admin() ) return;
+
+        // Check if logging out.
+        if( isset( $_GET['action'] ) && $_GET['action'] == 'logout' ) return;
+
+        // Get current user.
+        $user = get_user_by( 'ID', get_current_user_id() );
+
+        // Check if user requires 2FA.
+        if( ! $this->check_user( $user ) ) return;
+
+        // Container. ?>
+        <div class="twofactor-setup-tab"><?php
+
+            // Check if user has 2FA setup on their account.
+            if( $this->check_confirmed( $user ) && ! isset( $_GET['setup'] ) ) {
+
+                // Button. ?>
+                <a href="<?php echo home_url( '/?setup=reset' ); ?>" class="button" style="background:green;color:white;">
+                    <span class="button-init">🔒 2FA</span>   
+                    <span class="button-hover">Reset 2FA</span>
+                </a><?php
+
+            } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'reset' ) {
+
+                // Reset.
+                $this->clear_auth( $user->ID ); 
+                
+                // Button. ?>
+                <a href="<?php echo home_url( '/?setup=true' ); ?>" class="button">🔓 Setup 2FA</a><?php
+
+                // JavaScript redirect. ?>
+                <script>
+                    // Wait and redirect
+                    setTimeout(function() {
+                        window.location.href = '<?php echo home_url( '/' ); ?>';
+                    }, 1000);
+                </script><?php
+
+            } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'true' ) {
+
+                // Send email.
+                $this->send_setup_email( $user );
+
+                // JavaScript redirect. ?>
+                <script>
+                    // Wait and redirect
+                    setTimeout(function() {
+                        window.location.href = '<?php echo home_url( '/' ); ?>';
+                    }, 1000);
+                </script><?php
+
+            } else {
+
+                // Button. ?>
+                <a href="<?php echo home_url( '/?setup=true' ); ?>" class="button">🔓 Setup 2FA</a><?php
+
+            } ?>
+
+        </div>
+        <style>
+            .twofactor-setup-tab {
+                position: fixed;
+                bottom: 0;
+                left: 15px;
+                z-index: 99999;
+            }
+
+            .twofactor-setup-tab a {
+                text-decoration: none;
+                font-size: 12px;
+                font-family: sans-serif;
+                line-height: 1;
+                padding: 12.5px 25px;
+                background: #000;
+                color: #fff;
+                width: 150px;
+                text-align: center;
+                border: 1px solid rgb(0 0 0 / 10%);
+                border-radius: 6px 6px 0 0;
+                transition: all 0.3s ease;
+                -webkit-transition: all 0.3s ease;
+                -moz-transition: all 0.3s ease;
+            }
+
+            .twofactor-setup-tab a:hover {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .twofactor-setup-tab span.button-hover {
+                display: none;
+            }
+
+            .twofactor-setup-tab a:hover .button-init {
+                display: none;
+            }
+
+            .twofactor-setup-tab a:hover .button-hover {
+                display: block;
+            }
+        </style><?php
 
     }
 
