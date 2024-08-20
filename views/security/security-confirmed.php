@@ -10,10 +10,16 @@
 $button = site_url( '/' );
 
 // Set button to WooCommerce my account page if not admin.
-if( is_plugin_active( 'woocommerce/woocommerce.php' ) && ! in_array( 'administrator', (array)$user->roles ) ) $button = get_permalink( get_option( 'woocommerce_myaccount_page_id' ) );
+if( in_array( 'woocommerce/woocommerce.php', (array)apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) && ! in_array( 'administrator', (array)$user->roles ) ) $button = get_permalink( get_option( 'woocommerce_myaccount_page_id' ) );
+
+// Set button to custom endpoint if enabled, if WooCommerce is not active, and user is not admin.
+if( defined( 'BUILT_ENDPOINT' ) && ! in_array( 'woocommerce/woocommerce.php', (array)apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) $button = site_url( '/' . BUILT_ENDPOINT );
 
 // Set button to custom endpoint if enabled and user is admin.
 if( defined( 'BUILT_ENDPOINT' ) && in_array( 'administrator', (array)$user->roles ) ) $button = site_url( '/' . BUILT_ENDPOINT );
+
+// Set button to admin URL if custom endpoint is not enabled, WooCommerce is not active and user is not admin.
+if( ! defined( 'BUILT_ENDPOINT' ) && ! in_array( 'woocommerce/woocommerce.php', (array)apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) $button = admin_url( '/' );
 
 // Set button to admin URL if custom endpoint is not enabled and user is admin.
 if( ! defined( 'BUILT_ENDPOINT' ) && in_array( 'administrator', (array)$user->roles ) ) $button = admin_url( '/' ); ?>
