@@ -108,12 +108,12 @@ class builtDataAPI {
         if( $type == 'total' ) {
 
             // Get total.
-            $response = $this->get_total( $request );
+            $response = [ $this->get_total( $request ) ];
             
         } elseif( $type == 'average' ) {
 
             // Get average.
-            $response = $this->get_average( $request );
+            $response = [ $this->get_average( $request ) ];
 
         } elseif( $type == 'date' ) {
 
