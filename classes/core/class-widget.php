@@ -166,6 +166,9 @@ class builtWidget {
         // Start.
         ob_start();
 
+        // Mode.
+        $mode = is_kit_mode();
+
         // Site info.
         include BUILT_PATH . 'views/core/widget-site-info.php';
 
