@@ -500,3 +500,26 @@ button.google-authenticator-reset {
     margin: 0 5px 5px 0;
     border-radius: 6px;
 }
+
+span.service-status {
+    border-radius: 6px;
+    padding: 2px 3px 3px 3px;
+    max-width: 20px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+}
+
+span.service-status.service-inactive {
+    background: #520100;
+}
+
+span.service-status.service-active {
+    background: #005028;
+}
+
+span.label-services {
+    padding: 5px 0;
+    display: inline-block;
+}
