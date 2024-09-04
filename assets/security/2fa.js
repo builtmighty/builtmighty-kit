@@ -2,7 +2,7 @@
 jQuery(document).ready(function($) {
 
     // Intercept hitting "enter" to submit the form.
-    $('input#user_login,input#user_pass').keypress(function(e) {
+    $('input#user_login,input#user_pass,input#username,input#password').keypress(function(e) {
         if(e.which == 13) {
             e.preventDefault();
             $('span#check-2fa').click();

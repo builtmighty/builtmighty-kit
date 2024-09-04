@@ -65,6 +65,11 @@ This variable turns on two-factor authentication for all sensitive settings on t
 `define( 'BUILT_LOCKDOWN', true );`
 If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
 
+## 3.0.0
+* ✨ Add Slack Integration + Notifications
+* ✨ Add Data API Creation
+* ✨ Add 2FA for All User Roles
+
 ## 2.1.0
 * ✨ Add query parameter bypass when access block is place.
 * 🐛 Bug fix fatal error with failed login log when using incorrect password.

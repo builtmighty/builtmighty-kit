@@ -6,55 +6,23 @@
  * @since   2.0.0
  */ ?>
  <div class="built-panel built-admin-panel">
-    <p>Welcome to the client configuration panel for this client. Here, you can connect both the client's project on Jira, as well as their project manager.</p>
+    <p>Welcome to the client configuration panel for this client. Here, you can connect the site to the client's Slack channel.</p>
     <form method="POST" class="built-fields"><?php
 
-        // Check for projects.
-        if( ! empty( $projects ) && is_array( $projects ) ) {
+        // Include.
+        include BUILT_PATH . 'views/core/admin-slack.php';
 
-            // Project select field.
-            echo $this->field( 'jira-project', 'Project', [
-                'type'      => 'select',
-                'options'   => $projects,
-                'id'        => 'jira-project'
-            ] );
+        // Include.
+        include BUILT_PATH . 'views/core/admin-2fa.php';
 
-        }
+        // Include.
+        include BUILT_PATH . 'views/core/admin-api.php';
 
-        // Check for users.
-        if( ! empty( $users ) && is_array( $users ) ) {
-        
-            // User select field.
-            echo $this->field( 'jira-pm', 'Project Manager', [
-                'type'      => 'select',
-                'options'   => $users
-            ] ); 
-
-        }
-        
-        // Jira User field.
-        echo $this->field( 'jira-user', 'Jira User', [
-            'type'      => 'text'
-        ] );
-        
-        // Jira API Token.
-        echo $this->field( 'jira-token', 'Jira Token', [
-            'type'      => 'password'
-        ] ); 
-        
         // Add settings.
         do_action( '\BuiltMightyKit\Core\add_settings' ); ?>
 
         <div class="built-save">
-            <input type="submit" class="button button-primary button-built" name="built-save" value="Save"><?php
-
-            // Check for data.
-            if( $projects && $users ) { ?>
-
-                <a href="<?php echo admin_url( 'admin.php?page=builtmighty&refresh=true' ); ?>" class="button button-built" style="color:#fff;">Refresh</a><?php 
-
-            } ?>
-
+            <input type="submit" class="button button-primary button-built" name="built-save" value="Save">
         </div>
     </form>
 </div>

@@ -105,28 +105,6 @@ class builtAdmin {
             $this->save();
 
         }
-
-        // New Jira API.
-        $jira = new \BuiltMightyKit\Plugins\builtJira();
-        $help = new \BuiltMightyKit\Plugins\builtJiraHelper();
-
-        // Set refresh.
-        $refresh = ( isset( $_GET['refresh'] ) ) ? true : false;
-
-        // Check for refresh.
-        if( $refresh ) {
-
-            // Store data.
-            $projects = $jira->store_projects( $refresh );
-            $users    = $jira->store_users( $refresh );
-
-        } else {
-
-            // Get saved Jira objects.
-            $projects = $jira->get_projects();
-            $users    = $jira->get_users();
-
-        }
         
         // Panel. ?>
         <div class="built-admin">
@@ -159,8 +137,16 @@ class builtAdmin {
     public function field( $id, $label, $field ) {
 
         // Set value.
-        $value = ( ! empty( get_option( $id ) ) ) ? unserialize( get_option( $id ) ) : '';
+        $value = ( ! empty( get_option( $id ) ) ) ? get_option( $id ) : '';
         $value = ( ! empty( $_POST[ $id ] ) ) ? $_POST[ $id ] : $value;
+
+        // Check if value is serialized.
+        if( is_serialized( $value ) ) {
+
+            // Unserialize.
+            $value = unserialize( $value );
+
+        }
 
         // Set ID.
         $field_id = ( ! empty( $field['id'] ) ) ? ' id="' . $field['id'] . '"' : '';
@@ -172,11 +158,14 @@ class builtAdmin {
             </div>
             <div class="built-input"><?php
 
+                // Check for readonly.
+                $readonly = ( ! empty( $field['readonly'] ) ) ? ' readonly' : '';
+
                 // Check type.
                 if( $field['type'] == 'select' && ! empty( $field['options'] ) ) {
 
                     // Output select. ?>
-                    <select <?php echo $field_id; ?>name="<?php echo $id; ?>">
+                    <select <?php echo $field_id; ?>name="<?php echo $id; ?>"<?php echo $readonly; ?>>
                         <option value="">Select...</option><?php
 
                         // Loop through options.
@@ -203,12 +192,12 @@ class builtAdmin {
                     }
 
                     // Output password. ?>
-                    <input <?php echo $field_id; ?>type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="password" name="<?php echo $id; ?>" value="<?php echo $value; ?>"<?php echo $readonly; ?>><?php
 
                 } elseif( $field['type'] == 'text' ) {
 
                     // Output text. ?>
-                    <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"><?php
+                    <input <?php echo $field_id; ?>type="text" name="<?php echo $id; ?>" value="<?php echo $value; ?>"<?php echo $readonly; ?>><?php
 
                 } elseif( $field['type'] == 'checkbox' ) {
 
@@ -220,7 +209,7 @@ class builtAdmin {
 
                         // Output. ?>
                         <div class="builtmighty-checkbox">
-                            <input <?php echo $field_id; ?>type="checkbox" name="<?php echo $id; ?>[]" value="<?php echo $option_key; ?>"<?php echo $checked; ?>> <?php echo $option; ?>
+                            <input <?php echo $field_id; ?>type="checkbox" name="<?php echo $id; ?>[]" value="<?php echo $option_key; ?>"<?php echo $readonly; ?><?php echo $checked; ?>> <?php echo $option; ?>
                         </div><?php
 
                     }
@@ -234,6 +223,64 @@ class builtAdmin {
             </div>
         </div><?php
 
+
+    }
+
+    /**
+     * Get time.
+     * 
+     * @since   1.0.0
+     */
+    public function get_time() {
+
+        // Set time.
+        $time = [];
+
+        // Set range.
+        $range = range( 0, 23 );
+
+        // Loop.
+        foreach( $range as $hour ) {
+
+            // Get legible time with hour, minute, and am/pm.
+            $time[$hour . ':00'] = date( 'g:i A', strtotime( $hour . ':00' ) );
+
+        }
+
+        // Return.
+        return $time;
+
+    }
+
+    /**
+     * Get notifications.
+     * 
+     * @since   1.0.0
+     * 
+     * @return  array
+     */
+    public function get_notifications() {
+
+        // Return.
+        return [
+            'core-update'       => 'WordPress Update',
+            'woocommerce'       => 'WooCommerce Settings',
+            'plugin-install'    => 'Plugin Installation',
+            'plugin-update'     => 'Plugin Update',
+            'plugin-activate'   => 'Plugin Activation',
+            'plugin-deactivate' => 'Plugin Deactivation',
+            'plugin-editor'     => 'Plugin Editor',
+            'theme-install'     => 'Theme Installation',
+            'theme-update'      => 'Theme Update',
+            'theme-change'      => 'Theme Change',
+            'theme-editor'      => 'Theme Editor',
+            'admin-create'      => 'Admin User Creation',
+            'admin-delete'      => 'Admin User Deletion',
+            'admin-role'        => 'Admin User Role Change',
+            'admin-password'    => 'Admin User Password Change',
+            'admin-email'       => 'Admin User Email Change',
+            'admin-login'       => 'Admin User Login'
+        ];
 
     }
 
@@ -260,27 +307,8 @@ class builtAdmin {
 
             }
 
-            // Check key.
-            if( $key == 'jira-token' ) {
-
-                // Check value.
-                if( $value === '***********************' ) continue;
-
-                // Get keys.
-                $keys = new \BuiltMightyKit\Security\builtKeys();
-
-                // Encrypt.
-                $value = $keys->encrypt( $value );
-
-                // Update option.
-                update_option( $key, serialize( $value ) );
-
-            } else {
-
-                // Update option.
-                update_option( $key, $value );
-
-            }
+            // Update option.
+            update_option( $key, $value );
 
         }
 

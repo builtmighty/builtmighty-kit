@@ -19,7 +19,7 @@ class builtUpdates {
     public function __construct() {
 
         // Check if site is in kit mode.
-        if( ! is_kit_mode() ) return;
+        if( is_kit_mode() ) return;
 
         // Confirmation modal.
         add_action( 'admin_footer', [ $this, 'modal' ] );

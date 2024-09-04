@@ -14,7 +14,13 @@ $disabled_plugins = get_option( 'built_disabled_plugins' );
     <ul style="margin:0;"><?php
 
         // Loop.
-        foreach( $disabled_plugins as $plugin ) {
+        foreach( $disabled_plugins as $file => $plugin ) {
+
+            // Confirm file exists.
+            if( ! file_exists( WP_PLUGIN_DIR . '/' . $file ) ) continue;
+
+            // Confirm plugin is deactivated.
+            if( is_plugin_active( $file ) ) continue;
 
             // Output item. ?>
             <li><?php echo $plugin; ?> &mdash; <code class="built-flag">Inactive</code></li><?php

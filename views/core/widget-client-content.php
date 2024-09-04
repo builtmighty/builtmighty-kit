@@ -16,31 +16,16 @@
     </div>
 </div><?php
 
-// Check for Jira project or project manager.
-if( ! empty( get_option( 'jira-project' ) ) && ! empty( get_option( 'jira-pm' ) ) ) {
-
-    // Get project and project manager.
-    $project = get_option( 'jira-project' );
-    $pm = explode( '|', base64_decode( get_option( 'jira-pm' ) ) );
-
-    // Set.
-    $pm_name = $pm[1];
-    $pm_id   = $pm[0];
+// Check for Slack channel.
+if( ! empty( get_option( 'built_slack_token' ) ) ) {
 
     // Create menu. ?>
     <div class="built-dash-body built-panel">
-        <div class="built-dash-nav">
-            <span class="built-nav-button active" id="built-issue" data-id="built-issue-form">Create Task</span>
-            <span class="built-nav-button" id="built-pm" data-id="built-contact-form">Contact Us</span>
-        </div>
         <div class="built-dash-forms">
             <div class="built-form-status" style="display:none"><p></p></div><?php
 
             // Issue form.
-            echo $this->issue_form();
-            
-            // Contact form.
-            echo $this->contact_form(); ?>
+            echo $this->issue_form(); ?>
 
         </div>
     </div><?php

@@ -14,32 +14,18 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Issue/contact form switch.
-    $('.built-dash-nav span').on('click', function() {
-        // Check if active.
-        if ($(this).hasClass('active')) {return;}
-        // Get ID.
-        var formID = $(this).data('id');
-        // Remove active.
-        $('.built-dash-nav span.active').removeClass('active');
-        $('.built-dash-forms .built-form.active').removeClass('active');
-        // Add active.
-        $(this).addClass('active');
-        $('#' + formID).addClass('active');
-    });
-
     // Issue screenshot.
     $('div.built-issue-screenshot').on('paste', function(e) {
         // Get clipboard data.
         let items = e.originalEvent.clipboardData.items;
         // Only allow if image.
-        if (items[0].type.indexOf('image') == -1) {return;}
+        if (items[0].type.indexOf('image') == -1) { return; }
         // Clear text from div.
         $(this).text('');
         // Loop through items.
         for (let i = 0; i < items.length; i++) {
             // Check if image.
-            if (items[i].type.indexOf('image') == -1) {continue;}
+            if (items[i].type.indexOf('image') == -1) { continue; }
             // Get image.
             let file = items[i].getAsFile();
             // Create reader.
@@ -48,6 +34,8 @@ jQuery(document).ready(function($) {
             reader.onload = function(event) {
                 // Get base64 string.
                 let base64 = event.target.result;
+                // Remove the data URL prefix to get only the base64 string.
+                base64 = base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, '');
                 // Set base64 string.
                 $('input[name="built-issue-screenshot"]').val(base64);
             };
@@ -61,59 +49,37 @@ jQuery(document).ready(function($) {
         // Prevent default.
         e.preventDefault();
         // Declare variables.
-        let type = $(this).attr('name');
-        let project;
-        let pm;
+        let channel;
         let user;
-        let title;
-        let desc;
-        let url;
+        let message;
         let screenshot;
-        // Check type.
-        if(type == 'built-issue-save') {
-            // Create issue.
-            project = $('input[name="built-issue-project"]').val();
-            pm = $('input[name="built-issue-pm"]').val();
-            user = $('input[name="built-issue-user"]').val();
-            title = $('input[name="built-issue-subject"]').val();
-            desc = $('textarea[name="built-issue-description"]').val();
-            url = $('input[name="built-issue-url"]').val();
-            screenshot = $('input[name="built-issue-screenshot"]').val();
-        } else {
-            // Send contact.
-            project = $('input[name="built-project-project"]').val();
-            pm = $('input[name="built-project-pm"]').val();
-            user = $('input[name="built-project-user"]').val();
-            title = $('input[name="built-project-subject"]').val();
-            desc = $('textarea[name="built-project-message"]').val();
-            url = '';
-            screenshot = '';
-        }
+        // Create message.
+        channel = $('input[name="built-slack-channel"]').val();
+        user = $('input[name="built-issue-user"]').val();
+        message = $('textarea[name="built-issue-message"]').val();
+        screenshot = $('input[name="built-issue-screenshot"]').val();
+        console.log(screenshot);
         // AJAX.
         $.ajax({
             url: built.ajax,
             type: 'POST',
             data: {
                 action: 'built_process_form',
-                type: type,
-                project: project,
-                pm: pm,
+                channel: channel,
                 user: user,
-                title: title,
-                desc: desc,
-                url: url,
+                message: message,
                 screenshot: screenshot
             },
             success: function(data) {
                 // JSON parse.
                 data = JSON.parse(data);
+                console.log(data);
                 // Check data.
                 if(data.status == 'success') {
                     // Clear form.
-                    $('.built-dash-forms input[type=text], .built-dash-forms input[type=url]').val('');
-                    $('.built-dash-forms textarea').val('');
-                    $('.built-issue-screenshot').text('Paste Screenshot Here');
-                    $('.built-dash-forms input[name="built-issue-screenshot"]').val('');
+                    $('.built-issue-screenshot').text('Have a screenshot? Paste it here.');
+                    $('textarea[name="built-issue-message"]').val('');
+                    $('input[name="built-issue-screenshot"]').val('');
                     // Add message.
                     $('.built-form-status p').text(data.message);
                     // Add class.
