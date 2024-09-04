@@ -14,21 +14,6 @@ use Sonata\GoogleAuthenticator\GoogleAuthenticator;
 class built2FA {
 
     /**
-     * Steps. 
-     * 1. User logs in.
-     * 2. User has 2FA required.
-     * 3. User setup starts...
-     *  3.1 User setup key is created.
-     *  3.2 User notification email is sent with special link, including setup key.
-     *  3.3 User is logged out.
-     *  3.4 User is redirected to 2FA notification page.
-     * 4. User goes to email and clicks link.
-     * 5. User is sent to 2FA setup page.
-     * 6. User sets up 2FA and redirected to login page.
-     * 7. User logs in with 2FA.
-     */
-
-    /**
      * Construct.
      * 
      * @since   2.0.0
@@ -186,7 +171,7 @@ class built2FA {
     public function verify_woo_login( $validation_error, $username, $password ) {
 
         // Get user by login.
-        $user = get_user_by( 'login', $username );
+        $user = ( ! get_user_by( 'login', $username ) ) ? get_user_by( 'email', $username ) : get_user_by( 'login', $username );
 
         // Check if user requires 2FA.
         if( ! $this->check_user( $user ) ) return $user;
