@@ -500,3 +500,44 @@ button.google-authenticator-reset {
     margin: 0 5px 5px 0;
     border-radius: 6px;
 }
+
+.built-panel span.service-status {
+    border-radius: 6px;
+    padding: 2px 3px 3px 3px;
+    max-width: 20px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+}
+
+.built-panel span.service-status.service-inactive {
+    background: #520100;
+}
+
+.built-panel span.service-status.service-active {
+    background: #005028;
+}
+
+.built-panel span.label-services {
+    padding: 5px 0;
+    display: inline-block;
+}
+
+.built-panel .allowed {
+    display: flex;
+    flex-direction: column;
+    margin: 5px 0 0;
+}
+
+.built-panel .allowed code {
+    margin: 0 0 2px 0 !important;
+}
+
+.built-panel ul.kit-services li {
+    border-bottom: 1px solid rgb(255 255 255 / 5%);
+}
+
+.built-panel ul.kit-services li:last-child {
+    border-bottom: 0;
+}
