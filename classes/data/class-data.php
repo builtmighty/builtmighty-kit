@@ -80,7 +80,7 @@ class builtData {
     public function execute_data_ingest() {
 
         // Process Pagespeed Insights.
-        $this->process_pagespeed();
+        //$this->process_pagespeed();
 
         // Check for WooCommerce.
         if( ! class_exists( 'WooCommerce' ) ) return;
@@ -194,7 +194,7 @@ class builtData {
         ];
 
         // WP Remote GET.
-        $response = wp_remote_get( 'https://builtmighty.com/wp-json/builtmighty-kit/v1/pagespeed?site=https://builtmighty.com', $args );
+        $response = wp_remote_get( 'https://builtmighty.com/wp-json/builtmighty-kit/v1/pagespeed?site=' . site_url( '/' ), $args );
 
         // Return body.
         return json_decode( wp_remote_retrieve_body( $response ), true );
