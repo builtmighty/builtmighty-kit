@@ -21,6 +21,12 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 3.0.2 =
+* Disabled Pagespeed scores because of long API loading times
+
+= 3.0.1 =
+* Bug fix with error log in 2FA
+
 = 3.0.0 =
 * Add Slack Integration + Notifications
 * Add Data API Creation
