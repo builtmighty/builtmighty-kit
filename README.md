@@ -65,6 +65,9 @@ This variable turns on two-factor authentication for all sensitive settings on t
 `define( 'BUILT_LOCKDOWN', true );`
 If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
 
+## 3.0.3
+* 🐛 Disable data generation entirely.
+
 ## 3.0.2
 * 🐛 Disabled Pagespeed scores because of long API loading times
 
