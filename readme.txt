@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 3.0.3 =
+* Disabled all data generation.
+
 = 3.0.2 =
 * Disabled Pagespeed scores because of long API loading times
 
