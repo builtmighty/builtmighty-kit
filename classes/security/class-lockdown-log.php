@@ -27,9 +27,14 @@ class builtLockdownLog {
      * @since   2.0.0
      */
     public function failed_login() {
+        if ( ! isset( $_POST['log'] ) )
+            return;
 
         // Get user ID from login.
         $user = get_user_by( 'login', $_POST['log'] );
+
+        if ( ! $user )
+            return;
 
         // Set data.
         $data = [
