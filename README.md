@@ -64,6 +64,11 @@ This variable turns on two-factor authentication for all sensitive settings on t
 
 `define( 'BUILT_LOCKDOWN', true );`
 If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
+## 3.0.5
+🔖 Bump Version of Plugin
+
+## 3.0.4
+🐛 Add Guard Clauses to Lock Down Logging functions
 
 ## 3.0.3
 * 🐛 Disable data generation entirely.
