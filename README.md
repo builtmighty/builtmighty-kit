@@ -6,23 +6,15 @@ This plugin is the all around kit for Built Mighty client sites. From defining a
 ## Tools/Features
 #### Security
 * (optional) 2FA authentication for admin logins.
-* (optional) 2FA for sensitive settings within wp-admin.
-* (optional) Failed admin login log.
-* (optional) Failed 2FA log.
 * (optional) Blocks access to the site if not logged in.
-* (optional) Blocks all non-approved IPs from accessing wp-admin.
 * (optional) Creates a custom login URL and blocks access to default login.
 * Removes WordPress version from the head.
-* Disables login errors.
 * Prevents user enumeration via API.
 
 #### Development Environments
 * (optional) Blocks outgoing emails by setting the "to" email as "developers@builtmighty.com".
-* (optional) Disables possibly problematic WordPress plugins.
-* (optional) Adds WP_HTTP_BLOCK_EXTERNAL to wp-config to block external API requests.
+* (optional) Blocks external API requests.
 * (optional) Disables indexing for development environment sites.
-* (optional) Adds tool to update all user emails to "user-randomstring@builtmighty.com".
-* (optional) Adds tool to reset all updated user emails back to their original state.
 * (optional) Adds CLI tool to remove all WooCommerce customer data.
 * (optional) Adds CLI tool to remove all WooCommerce order data.
 
@@ -36,39 +28,26 @@ This plugin is the all around kit for Built Mighty client sites. From defining a
 * Sets action scheduler retention period to five (5) days.
 * Adds "🔨 Proudly developed by Built Mighty" to wp-admin footer.
 * Adds a Built Mighty developer dashboard widget with: PHP version, MySQL version, WordPress verison, and current Git branch.
-* Adds a Built Mighty developer checklist to development environments, to ensure proper development environment security.
-* Adds a Built Mighty client dashboard widget with project manager information, contact form, and Jira issue creation form.
+* Adds a Built Mighty client dashboard widget with welcome information, as well as a Slack message form.
 =======
 
 ## Installation on All Sites
 It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variable should be set within wp-config.php. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production`, to set the plugin to production mode.
 
-## Constants
-The following constants can be set within wp-config.php for each site, in order to enable/disable some optional features/tools.
+## Settings
+To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
 
-`define( 'WP_ENVIRONMENT_TYPE', 'development' );`
-*(options: local, development, staging, production)*
-This variable should be set on **all** sites. It greatly determines how the plugin operates and what options are available. Setting this to local, development, or staging, will enable email protection features, as well as plugin disabling. Note that it is also is a global, WordPress constant that can be used by other plugins.
+## 4.0.0 
+* ✨ Restructured plugin files and methods.
+* ✨ Updated admin UI and centralized settings.
+* ✨ Updated dashboard widget information and output.
+* 🐛 Fixed login errors.
 
-`define( 'BUILT_ENDPOINT', 'access' );`
-This variable sets the custom log in endpoint for the site. If this is not set, the feature will not be enabled. If set, the new login will be the second parameter, and any attempts to access wp-admin or wp-login.php, while not logged in, will send the user to the home page. For example, settings the above would make the log in URL: `https://builtmighty.com/access`.
-
-`define( 'BUILT_ACCESS', true );`
-This constant disables access to the site unless the user is logged in. If the user is not logged in, the user will be redirected to builtmighty.com. The login URL is still accessible, either the custom or default, but no other URLs are accessible. If you want to provide access to the site to a user without having them login, you can add the query parameter `bypass=true` to any URL and it'll grant the user one hour of access across the site, for example: `https://builtmighty.com/?bypass=true`.
-
-`define( 'BUILT_2FA', true );`
-If this is set to true, then two-factor authentication is enabled and required for all administrators. Upon logging in initially, all admins will be forced to set up two-factor authentication.
-
-`define( 'BUILT_2FA_SETTINGS', true );`
-This variable turns on two-factor authentication for all sensitive settings on the site, which means admins with two-factor authentication set up must provide an authentication code to view the settings. Additional blocked/sensitive settings can be set within the Built Mighty menu, which is only accessible by users with @builtmighty.com or @littlerhino.io email addresses.
-
-`define( 'BUILT_LOCKDOWN', true );`
-If set to true, then only approved IPs (approved by two-factor authentication, other admins, or CLI commands) can access the site.
 ## 3.0.5
-🔖 Bump Version of Plugin
+* 🔖 Bump Version of Plugin
 
 ## 3.0.4
-🐛 Add Guard Clauses to Lock Down Logging functions
+* 🐛 Add Guard Clauses to Lock Down Logging functions
 
 ## 3.0.3
 * 🐛 Disable data generation entirely.

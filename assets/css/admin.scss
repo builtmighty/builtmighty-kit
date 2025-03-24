@@ -1,0 +1,223 @@
+div#builtmighty_dashboard_widget {
+    background: #1b222c;
+    color: #fff;
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 5px 10px -5px rgb(0 0 0);
+    border-bottom: 1px solid rgb(255 255 255 / 40%);
+
+    .postbox-header {
+        border-bottom: 1px solid rgb(255 255 255 / 5%);
+
+        h2 {
+            color: #fff;
+        }
+    }
+}
+
+.built-panel {
+    background: #12151c;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 0 0 5px 0;
+    display: flex;
+    flex-direction: column;
+    grid-gap: 5px;
+
+    p {
+        margin: 0;
+    }
+
+    a {
+        color: #e42029;
+    }
+        
+    .built-panel-heading {
+        background: #191d26;
+        padding: 5px;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+
+    .built-panel-content {
+        padding: 10px;
+        background: #191d26;
+        border-radius: 8px;
+    }
+
+    .built-panel-single {
+        display: flex;
+        margin: 0 0 5px;
+    }
+
+    .built-panel-single:last-child {
+        margin: 0;
+    }
+
+    .built-panel-single.built-panel-text {
+        display: block;
+    }
+
+    .built-panel-single.built-panel-text p {
+        margin: 0 0 7.5px 0;
+    }
+
+    .built-panel-single p {
+        flex: 1;
+    }
+
+    p.built-panel-label {
+        max-width: 60px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+
+    .built-panel-heading p {
+        font-size: 15px;
+    }
+
+    p.built-panel-value {
+        background: #191d26;
+        border: 1px solid rgb(255 255 255 / 10%);
+        border-radius: 8px;
+        padding: 2.5px 10px;
+    }
+
+    p.built-panel-value-PHP {
+        background: #4f5b93;
+    }
+    
+    p.built-panel-value-MySQL {
+        background: #00758f;
+    }
+    
+    p.built-panel-value-WordPress {
+        background: #016087;
+    }
+    
+    p.built-panel-value-WooCommerce {
+        background: #96588a;
+    }
+    
+    p.built-panel-label.built-panel-label-PHP,
+    p.built-panel-label.built-panel-label-MySQL,
+    p.built-panel-label.built-panel-label-WordPress,
+    p.built-panel-label.built-panel-label-WooCommerce {
+        max-width: 120px;
+    }
+}
+
+.built-panel:last-child {
+    margin: 0;
+}
+
+.built-panel-heading.built-panel-logo img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+}
+
+.built-panel-welcome {
+    flex-direction: row;
+}
+
+.built-panel-heading.built-panel-logo {
+    max-width: 90px;
+}
+
+.built-panel-welcome .built-panel-content {
+    display: flex;
+    align-items: center;
+}
+
+.built-panel-content textarea {
+    background: #12151c;
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 10%);
+    width: 100%;
+    margin: 0 0 5px 0;
+    border-radius: 8px;
+}
+
+div#slack_screenshot {
+    background: #12151c;
+    color: rgb(255 255 255 / 50%);
+    text-align: center;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 10px 0;
+    border-radius: 8px;
+    border: 2px dotted rgb(255 255 255 / 20%);
+}
+
+.built-panel-content > p {
+    margin: 0 0 10px 0;
+}
+
+.built-panel-content input[type="submit"] {
+    background: #d5111f;
+    color: #fff;
+    border-radius: 8px;
+    border: none;
+    display: inline-block;
+    padding: 5px 35px;
+}
+
+div#slack_screenshot.has-image {
+    height: 250px;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    background-position: center !important;
+}
+
+.built-panel-header, .built-panel-feature {
+    display: grid;
+    grid: auto-flow dense / 4fr 2fr;
+    padding: 2.5px 10px;
+    grid-gap: 5px;
+}
+
+.built-panel-header {
+    background: #12151c;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.built-panel-feature {
+    padding: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.built-panel-feature:last-child {
+    border-bottom: 0;
+}
+
+.built-panel-feature-value.status-active p,
+.built-panel-feature-value.status-inactive p {
+    background: #238b45;
+    color: #114121;
+    font-weight: bold;
+    border-radius: 25px;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 2px 10px;
+}
+
+.built-panel-feature-label {
+    border-right: 1px solid rgb(255 255 255 / 10%);
+    padding: 7.5px 10px;
+}
+
+.built-panel-feature-value {
+    padding: 7.5px 2.5px;
+}
+
+.built-panel-feature-value.status-inactive p {
+    background: #e42029;
+    color: #7c1419;
+}

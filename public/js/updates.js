@@ -1,0 +1,2 @@
+jQuery(document).ready((function(i){i("div#builtmighty-kit-modal").show(),i("span.builtmighty-kit-modal-close, button#builtmighty-kit-modal-continue").on("click",(function(){i("div#builtmighty-kit-modal").hide()})),i("button#builtmighty-kit-modal-leave").on("click",(function(){window.location.href=kit_updates.admin_url}))}));
+//# sourceMappingURL=updates.js.map

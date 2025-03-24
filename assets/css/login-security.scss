@@ -1,0 +1,10 @@
+/* login-security.css */
+p.submit input[type=submit],
+button.woocommerce-form-login__submit {
+    display: none;
+}
+
+input#authenticator_code {
+    width: 100%;
+}
+

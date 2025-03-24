@@ -1,0 +1,83 @@
+div#builtmighty-kit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999999;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.builtmighty-kit-modal {
+    max-width: 100%;
+    width: 500px;
+    background: #12151c;
+    color: #fff;
+    padding: 15px 25px 25px;
+    box-sizing: border-box;
+    border-radius: 8px;
+}
+
+.builtmighty-kit-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+span.builtmighty-kit-modal-close {
+    background: #1b222c;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+    border-radius: 100%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+}
+
+span.builtmighty-kit-modal-close svg {
+    width: 13px;
+}
+
+span.builtmighty-kit-modal-close svg path {
+    fill: #fff;
+}
+
+span.builtmighty-kit-modal-close:hover {
+    background: #e42029;
+}
+
+.builtmighty-kit-modal-content h2 {
+    color: #fff;
+    margin-top: 0;
+}
+
+.builtmighty-kit-modal-content p {
+    opacity: 0.9;
+}
+
+.builtmighty-kit-modal-content p a {
+    color: #e42029;
+}
+
+button#builtmighty-kit-modal-continue {
+    background: #e42029;
+    border-color: #e42029;
+    border-radius: 25px 0 0 25px;
+}
+
+button#builtmighty-kit-modal-leave {
+    color: #e42029;
+    border-color: #e42029;
+    border-radius: 0 25px 25px 0;
+    margin-left: -5px;
+    padding: 0px 15px;
+}
