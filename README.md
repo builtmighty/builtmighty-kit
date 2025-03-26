@@ -29,7 +29,6 @@ This plugin is the all around kit for Built Mighty client sites. From defining a
 * Adds "🔨 Proudly developed by Built Mighty" to wp-admin footer.
 * Adds a Built Mighty developer dashboard widget with: PHP version, MySQL version, WordPress verison, and current Git branch.
 * Adds a Built Mighty client dashboard widget with welcome information, as well as a Slack message form.
-=======
 
 ## Installation on All Sites
 It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variable should be set within wp-config.php. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production`, to set the plugin to production mode.
