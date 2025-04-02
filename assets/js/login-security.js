@@ -53,7 +53,7 @@ jQuery(document).ready(function($) {
                         // Hide the check button.
                         $('span#check-2fa').css('display', 'none');
                         // Show the submit button.
-                        $('input#wp-submit').css('display', 'block');
+                        $('input#wp-submit').addClass('active');
                         $('button.woocommerce-form-login__submit').addClass('active');
                     }
                 }
