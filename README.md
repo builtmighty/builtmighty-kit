@@ -1,38 +1,36 @@
 <p align="center" style="font-size:42px !important;">🚀 Built Mighty Kit</p>
 
 ## About
-This plugin is the all around kit for Built Mighty client sites. From defining a new login endpoint for security, to protect wp-login from bot attacks, to adding two-factor authentication for admins, to disabling email sending on development sites, this plugin should provide you with the tools for a happy, healthy environment. If you have additional tools you'd like to see added, please either open an issue or contact one of the lead devs by tagging '@lead-dev-team' on Slack.
+This plugin is the all-around kit for Built Mighty client sites. From defining a new login endpoint for security, to protecting wp-login from bot attacks, adding two-factor authentication for admins, and disabling email sending on development sites, this plugin should provide you with the tools for a happy, healthy environment. If you have additional tools you'd like to see added, please either open an issue or contact one of the lead devs by tagging '@lead-dev-team' on Slack.
 
 ## Tools/Features
 #### Security
-* (optional) 2FA authentication for admin logins.
-* (optional) Blocks access to the site if not logged in.
-* (optional) Creates a custom login URL and blocks access to default login.
-* Removes WordPress version from the head.
-* Prevents user enumeration via API.
+* **Two-Factor Authentication** &mdash; *(optional)* Adds Two-Factor Authentication for `administrators` when enabled, but can be applied to other user roles. Uses email authentication by default, but also provides app-based authentication options.
+* **Site Access** &mdash; *(optional)* Blocks access to the site when not logged in as an administrator, by redirecting non-logged in users to builtmighty.com.
+* **Login URL** &mdash; *(optional)* Creates a custom login URL, while making the default WordPress login inaccessible. Trying to access the default login will redirect you to the homepage.
+* **WordPress Version** &mdash; Removes the WordPress version from the head to better obfuscate from attackers.
+* **User Enumeration** &mdash; Blocks WordPress user enumeration via the WordPress API.
+* **Theme/Plugin Editor** &mdash; *(optional)* Disables the theme and plugin editors on the backend of WordPress.
 
 #### Development Environments
-* (optional) Blocks outgoing emails by setting the "to" email as "developers@builtmighty.com".
-* (optional) Blocks external API requests.
-* (optional) Disables indexing for development environment sites.
-* (optional) Adds CLI tool to remove all WooCommerce customer data.
-* (optional) Adds CLI tool to remove all WooCommerce order data.
+* **WP Mail** &mdash; *(optional)* Blocks outgoing emails by setting the "to" email address as `developers@builtmighty.com`. Enabled by default on development and staging environments.
+* **External Requests** &mdash; *(optional)* Blocks external API requests, but with the feature to allow connections to specific domains. Enabled by default on development and staging environments, but with default access to: `api.wordpress.org`, `downloads.wordpress.org`, `github.com`, `github.dev`, `github.io`, `githubusercontent.com`, `slack.com`, and `builtmighty.com`.
+* **Action Scheduler** &mdash; *(optional)* Disables the Action Scheduler from running. Enabled by default on development and staging environments.
 
 #### Misc.
-* Disables theme/plugin file editor.
-* Adds update plugin/theme warning message on production sites.
-* Adds install plugin/theme warning message on production sites.
-* Adjusts WordPress' heartbeat settings.
-* Adjusts WordPress' post revisions.
-* Removes junk dashboard widgets.
-* Sets action scheduler retention period to five (5) days.
-* Adds "🔨 Proudly developed by Built Mighty" to wp-admin footer.
-* Adds a Built Mighty developer dashboard widget with: PHP version, MySQL version, WordPress verison, and current Git branch.
-* Adds a Built Mighty client dashboard widget with welcome information, as well as a Slack message form.
-=======
+* **Slack Connection** &mdash; *(optional)* Adds a Slack integration that allows both clients to contact us via their Slack channel and allows us to create WordPress settings notifications.
+* **Plugin/Theme Updates** &mdash; Adds a warning message about updating themes and plugins on production sites.
+* **Plugin/Theme Installs** &mdash; Adds a warning message about installing themes and plugins on production sites.
+* **WordPress Heartbeat** &mdash; Adjusts WordPress' heartbeat settings for more efficiency.
+* **Post Revisions** &mdash; Adjusts the number of saved post revisions for more efficiency and less bloat.
+* **Dashboard Widgets** &mdash; Removes junk dashboard widgets, which slow the backend of WordPress.
+* **Action Scheduler** &mdash; Adjusts the Action Scheduler log retention period to five (5) days, for less bloat.
+* **Development Footer** &mdash; Adds `🔨 Proudly developed by Built Mighty` to the wp-admin footer.
+* **Developer Widget** &mdash; Adds a Built Mighty developer dashboard widget, with: PHP version, MySQL version, WordPress version, WooCommerce version (if installed), enabled services, and the current Git branch.
+* **Client Widget** &mdash; Adds a client dashboard widget with welcome information, as well as a Slack message form.
 
 ## Installation on All Sites
-It is highly recommended that no matter the site, the WP_ENVIRONMENT_TYPE variable should be set within wp-config.php. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production`, to set the plugin to production mode.
+It is highly recommended that, no matter the site, the `WP_ENVIRONMENT_TYPE` variable should be set within `wp-config.php`. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production` to set the plugin to production mode.
 
 ## Settings
 To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
@@ -41,6 +39,7 @@ To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?p
 * ✨ Restructured plugin files and methods.
 * ✨ Updated admin UI and centralized settings.
 * ✨ Updated dashboard widget information and output.
+* ✨ Added Email Two-Factor Authentication as default.
 * 🐛 Fixed login errors.
 
 ## 3.0.5
