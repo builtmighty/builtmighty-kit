@@ -1,7 +1,12 @@
 /* login-security.css */
 p.submit input[type=submit],
 button.woocommerce-form-login__submit {
-    display: none;
+    display: none !important;
+}
+
+p.submit input.active[type=submit],
+button.woocommerce-form-login__submit.active {
+    display: block !important;
 }
 
 input#authenticator_code {

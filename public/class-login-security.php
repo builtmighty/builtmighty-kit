@@ -35,8 +35,7 @@ class login_security {
         $this->auth = new \BuiltMightyKit\Utility\authentication();
 
         // Verify 2FA code.
-        add_filter( 'wp_authenticate_user', [ $this, 'verify_wp' ], 10, 2 );
-        add_filter( 'woocommerce_process_login_errors', [ $this, 'verify_woo' ], 10, 3 );
+        add_filter( 'wp_authenticate_user', [ $this, 'verify_login' ], 10, 2 );
 
         // Check user.
         add_action( 'wp_ajax_check_user', [ $this, 'check_user' ] );
@@ -70,30 +69,19 @@ class login_security {
     }
 
     /**
-     * Verify WordPress.
+     * Verify login.
      * 
-     * On WordPress login, check if the user requires 2FA. If 2FA is required, authenticate the code.
+     * On login, check if the user requires 2FA. If 2FA is required, authenticate the code.
      * 
      * @param   object  $user
      * @param   string  $password
      * 
      * @since   1.0.0
      */
-    public function verify_wp( $user, $password ) {
+    public function verify_login( $user, $password ) {
 
         // Check if user requires 2FA.
         if( ! $this->auth->is_required( $user ) ) return $user;
-
-        // Check if this user has 2FA setup.
-        if( ! $this->auth->is_enabled( $user ) ) {
-
-            // Send 2FA setup email.
-            $this->auth->send_setup( $user );
-
-            // Return error.
-            return new \WP_Error( 'authentication_failed', __( 'Two-Factor Authentication is required for your account. Please check your email to start setup.' ) );
-
-        }
 
         // Check if 2FA code is set.
         if( ! $this->auth->get_code( $_POST ) ) {
@@ -108,60 +96,6 @@ class login_security {
 
         // Return error.
         return new \WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
-
-    }
-
-    /**
-     * Verify WooCommerce.
-     * 
-     * On WooCommerce login, check if the user requires 2FA. If 2FA is required, authenticate the code.
-     * 
-     * @param   mixed   $error
-     * @param   mixed   $username
-     * @param   mixed   $password
-     * 
-     * @since   1.0.0
-     */
-    public function verify_woo( $error, $username, $password ) {
-
-        // Get user.
-        $user = ( get_user_by( 'login', $username ) ) ? get_user_by( 'login', $username ) : get_user_by( 'email', $username );
-
-        // Check for user.
-        if( ! $user ) {
-
-            // Return error.
-            return new \WP_Error( 'authentication_failed', __( 'Invalid user.' ) );
-
-        }
-
-        // Check if user requires 2FA.
-        if( ! $this->auth->is_required( $user ) ) return $user;
-
-        // Check if this user has 2FA setup.
-        if( ! $this->auth->is_enabled( $user ) ) {
-
-            // Add validation error and return.
-            $error->add( 'authentication_failed', __( 'Two-Factor Authentication is required for your account. Please check your email to start setup.' ) );
-            return $error;
-
-        }
-
-        // Check if authentication code is set.
-        if( ! $this->auth->get_code( $_POST ) ) {
-
-            // Add validation error.
-            $error->add( 'authentication_failed', __( 'Authetication code missing. Please try again.' ) );
-            return $error;
-
-        }
-
-        // Authenticate.
-        if( $this->auth->authenticate( $user->ID, $this->auth->get_code( $_POST ) ) ) return $error;
-
-        // Add validation error.
-        $error->add( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
-        return $error;
 
     }
 
@@ -195,22 +129,37 @@ class login_security {
         // Check if 2FA is required.
         if( ! $this->auth->is_required( $user ) ) $status = false;
 
-        // Check if 2FA is setup.
-        if( ! $this->auth->is_enabled( $user ) ) $status = false;
-
         // Check status.
         if( ! $status ) { 
 
             // Error, but continue and submit form to let WordPress handle.
-            echo 'continue';
-            wp_die();
+            wp_send_json( [
+                'status'    => 'error',
+                'message'   => '',
+            ] );
 
         } else {
 
-            // 2FA is required.
-            echo 'confirm';
-            wp_die();
+            // Check if app 2FA is setup.
+            if( ! $this->auth->is_enabled( $user ) ) {
 
+                // Send email code.
+                $this->auth->send_code( $user );
+                wp_send_json( [
+                    'status'    => 'success',
+                    'message'   => '🔒Authentication Code (Email)',
+                ] );
+
+            } else {
+
+                // Respond.
+                wp_send_json( [
+                    'status'    => 'success',
+                    'message'   => '🔒Authentication Code (App)',
+                ] );
+
+            }
+            
         }
 
     }
@@ -304,29 +253,33 @@ class login_security {
         // Check user role.
         if( ! current_user_can( 'administrator' ) ) return;
 
-        echo '<h1>Two-Factor Authentication</h1>';
-
         // Check if this user requires 2FA.
         if( ! $this->auth->is_required( $user ) ) return;
 
         // Administration. ?>
-        <h3>Two-Factor Authentication</h3>
+        <h2>Two-Factor Authentication</h2>
         <table class="form-table">
             <tr>
-                <th>Status: <?php
+                <th><span style="width:40px;display:inline-block;">Email</span><span style="background:green;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Active</span></th>
+                <td>
+                    <input type="text" value="<?php echo $user->user_email; ?>" readonly/>
+                </td>
+            </tr>
+            <tr>
+                <th><span style="width:40px;display:inline-block;">App</span><?php
                 
-                // Check status.
-                if( $this->auth->is_enabled( $user ) ) {
+                    // Check status.
+                    if( $this->auth->is_enabled( $user ) ) {
 
-                    // Active.
-                    echo ' <span style="color:green;">Active</span>';
+                        // Active.
+                        echo '<span style="background:green;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Active</span>';
 
-                } else {
+                    } else {
 
-                    // Not active.
-                    echo ' <span style="color:red;">Inactive</span>';
+                        // Not active.
+                        echo '<span style="background:red;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Inactive</span>';
 
-                } ?></th>
+                    } ?>
                 </th>
                 <td><?php
 
@@ -338,8 +291,35 @@ class login_security {
 
                     } else {
 
-                        // Button. ?>
-                        <button name="authentication_setup" class="button button-primary">Send Setup Email</button><?php
+                        // Check if profile is ours.
+                        if( $user->ID == get_current_user_id() ) { 
+
+                            // Check if set.
+                            if( ! empty( get_user_meta( $user->ID, 'authentication_setup', true ) ) ) {
+
+                                // Get.
+                                $key = get_user_meta( $user->ID, 'authentication_setup', true );
+                                $key = base64_encode( $user->ID . ':' . $key );
+
+                            } else {
+
+                                // Generate key.
+                                $key = $this->auth->generate_key( $user, true );
+
+                            }
+
+                            // Generate secret.
+                            $this->auth->generate_secret( $user );
+
+                            // Button. ?>
+                            <a href="<?php echo site_url( '/security?key=' . $key ); ?>" class="button button-primary">Setup App</a><?php
+
+                        } else {
+
+                            // Button. ?>
+                            <button name="authentication_setup" class="button button-primary">Send App Setup Email</button><?php
+
+                        }
 
                     } ?>
 
@@ -437,7 +417,8 @@ class login_security {
         // Header. ?>
         <h2>Two-Factor Authentication</h2>
         <p>For account security, we recommend two-factor authentication.</p>
-        <p>Status: <?php
+        <p>Email Status: <span style="color:white;display:inline-block;background:green;line-height:1;padding:5px 10px;border-radius:6px;">Active</span></p>
+        <p>App Status: <?php
 
             // Check if setup.
             if( $this->auth->is_enabled( $user ) && ! isset( $_GET['setup'] ) ) {
@@ -477,12 +458,12 @@ class login_security {
             <p>Two-Factor Authentication has been reset.</p><?php
 
             // Button. ?>
-            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup</a><?php
+            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup App</a><?php
 
         } else {
 
             // Button. ?>
-            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup</a><?php
+            <a href="<?php echo wc_get_account_endpoint_url( 'security' ); ?>?setup=true" class="button">Setup App</a><?php
 
         }
 

@@ -29,7 +29,7 @@ class login {
         if( empty( get_option( 'permalink_structure' ) ) ) return;
 
         // Check if enabled.
-        if( ! get_option( 'kit_enable_login' ) && ! empty( get_option( 'kit_login_url' ) ) ) return;
+        if( get_option( 'kit_enable_login' ) !== 'enable' && ! empty( get_option( 'kit_login_url' ) ) ) return;
 
         // Set login URL.
         $this->url = ( defined( 'BUILT_ENDPOINT' ) ) ? '/' . ltrim( BUILT_ENDPOINT, '/' ) . '/' : '/' . ltrim( (string)get_option( 'kit_login_url' ), '/' ) . '/';

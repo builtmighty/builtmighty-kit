@@ -39,7 +39,7 @@ class block_external {
 
         // Get allowed.
         $allowed = [
-            $_SERVER['SERVER_NAME'],
+            'localhost',
             'api.wordpress.org',
             'downloads.wordpress.org',
             'github.com',
@@ -59,7 +59,7 @@ class block_external {
         }
 
         // Check if not allowed.
-        if( ! in_array( $host, (array)$allowed ) ) return new \WP_Error( 'http_request_blocked', __( 'External HTTP requests are disabled via the Built Mighty Kit.' ) );
+        if( ! in_array( $host, (array)$allowed ) ) return new \WP_Error( 'http_request_blocked', __( 'External HTTP requests are disabled via the Built Mighty Kit. Blocked: ' . $host ) );
 
         // Return.
         return $pre;

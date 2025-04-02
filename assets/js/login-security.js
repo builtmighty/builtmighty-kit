@@ -32,14 +32,16 @@ jQuery(document).ready(function($) {
                 },
                 success: function(response) {
                     // Check response.
-                    if(response == 'continue') {
+                    if(response.status == 'error') {
                         // Submit the form.
                         if($('form#loginform').length > 0) {
                             $('form#loginform').submit();
                         } else if($('form.woocommerce-form-login').length > 0) {
                             $('form.woocommerce-form-login button[type=submit]').click();
                         }
-                    } else if(response == 'confirm') {
+                    } else if(response.status == 'success') {
+                        // Label.
+                        $('span#authentication_code_text').text(response.message);
                         // Reveal the 2FA field.
                         $('p#authentication-code').css('display', 'block');
                         $('p#authentication-code').css('height', 'auto');
@@ -52,7 +54,7 @@ jQuery(document).ready(function($) {
                         $('span#check-2fa').css('display', 'none');
                         // Show the submit button.
                         $('input#wp-submit').css('display', 'block');
-                        $('button.woocommerce-form-login__submit').css('display', 'block');
+                        $('button.woocommerce-form-login__submit').addClass('active');
                     }
                 }
             });

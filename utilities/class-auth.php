@@ -22,20 +22,48 @@ class authentication {
         // Check for code.
         if( ! isset( $code ) || empty( $code ) ) return false;
 
-        // Get secret.
-        $secret = get_user_meta( $user_id, 'authentication_secret', true );
+        // Get user.
+        $user = get_user_by( 'id', $user_id );
 
-        // Get Google Authenticator.
-        $google_auth = new GoogleAuthenticator();
+        // Check if App is enabled.
+        if( ! $this->is_enabled( $user ) ) {
 
-        // Sanitize code.
-        $code = sanitize_text_field( $code );
+            // Get code.
+            $user_code = get_user_meta( $user_id, 'email_code', true );
 
-        // Check the code.
-        if( ! $google_auth->checkCode( $secret, $code ) ) return false;
+            // Check if code is set.
+            if( empty( $user_code ) ) return false;
 
-        // Return true.
-        return true;
+            // Check code.
+            if( $user_code['code'] !== $code ) return false;
+
+            // Check time.
+            if( ( time() - $user_code['time'] ) > 300 ) return false;
+
+            // Delete code.
+            delete_user_meta( $user_id, 'email_code' );
+
+            // Return true.
+            return true;
+
+        } else {
+
+            // Get secret.
+            $secret = get_user_meta( $user_id, 'authentication_secret', true );
+
+            // Get Google Authenticator.
+            $google_auth = new GoogleAuthenticator();
+
+            // Sanitize code.
+            $code = sanitize_text_field( $code );
+
+            // Check the code.
+            if( ! $google_auth->checkCode( $secret, $code ) ) return false;
+
+            // Return true.
+            return true;
+
+        }
 
     }
 
@@ -65,6 +93,66 @@ class authentication {
         Two-Factor Authentication is required for your account on <?php echo get_bloginfo( 'name' ); ?>.<br><br>
         Please click the link below to set up Two-Factor Authentication:<br><br>
         <a href="<?php echo site_url( '/security?key=' . $key ); ?>">Setup Two-Factor Authentication</a><br><br>
+        If you did not trigger this email, please ignore it.<br><br>
+        Thank you,<br>
+        <?php echo get_bloginfo( 'name' );
+
+        // Set message.
+        $message = ob_get_clean();
+
+        // Set headers.
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: ' . get_bloginfo( 'name' ) . '<' . get_bloginfo( 'admin_email' ) . '>',
+        ];
+
+        // Check if WC Mailer is available.
+        if( function_exists( 'WC' ) ) {
+
+            // Get WooCommerce Mailer.
+            $mailer = WC()->mailer();
+
+            // Wrap message using WooCommerce HTML.
+            $wrapped_message = $mailer->wrap_message( $subject, $message );
+
+            // New email.
+            $wc_email = new \WC_Email;
+
+            // Style the wrapped message.
+            $message = $wc_email->style_inline( $wrapped_message );
+
+        }
+
+        // Send.
+        wp_mail( $user->user_email, $subject, $message, $headers );
+
+    }
+
+    /** 
+     * Send code.
+     * 
+     * Send an email with the authentication code.
+     * 
+     * @param   object  $user
+     * 
+     * @since   1.0.0
+     */
+    public function send_code( $user ) {
+
+        // Get code.
+        $code = $this->generate_code( $user );
+
+        // Set subject. 
+        $subject = 'Authentication Code | ' . get_bloginfo( 'name' );
+
+        // Start output buffering.
+        ob_start();
+
+        // Compose. ?>
+        Hello <?php echo $user->display_name; ?>,<br><br>
+        Your authentication code is:<br><br>
+        <code style="font-size:20px;text-align:center"><?php echo $code['code']; ?></code><br><br>
+        This code is valid for 5 minutes.<br><br>
         If you did not trigger this email, please ignore it.<br><br>
         Thank you,<br>
         <?php echo get_bloginfo( 'name' );
@@ -168,6 +256,45 @@ class authentication {
     
     }
 
+    /** 
+     * Generate code.
+     * 
+     * Generate an authentication code for email.
+     * 
+     * @param   object  $user
+     * 
+     * @since   1.0.0
+     */
+    public function generate_code( $user ) {
+
+        // Generate code.
+        $code = [
+            'code'  => str_pad( random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT ),
+            'time'  => time(),
+        ];
+
+        // Set.
+        update_user_meta( $user->ID, 'email_code', $code );
+
+        // Return.
+        return $code;
+
+    }
+
+    /**
+     * Check code.
+     * 
+     * @param   object  $user
+     * @param   string  $code
+     * 
+     * @since   1.0.0
+     */
+    public function check_code( $user, $code ) {
+
+        
+
+    }
+
     /**
      * Get key.
      * 
@@ -231,8 +358,6 @@ class authentication {
 
         // Get key.
         $key = $this->get_key( $key );
-
-        error_log( print_r( $key, true ) );
 
         // Confirm key is valid.
         if( $key['key'] !== get_user_meta( $key['user_id'], 'authentication_setup', true ) ) return false;

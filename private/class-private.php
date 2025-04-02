@@ -26,6 +26,9 @@ class core {
         add_action( 'admin_init', [ $this, 'site_check' ] );
         add_action( 'admin_init', [ $this, 'settings' ] );
 
+        // On save.
+        add_action( 'updated_option', [ $this, 'save' ], 10, 3 );
+
     }
 
     /**
@@ -64,7 +67,12 @@ class core {
             // Update site URL.
             update_option( 'built_siteurl', site_url() );
 
-            // Run setup.
+            // Check if class Kinsta\Cache_Purge exists.
+            if( ! class_exists( '\Kinsta\Cache_Purge' ) ) return;
+
+            // Purge cache.
+            $cache = new \Kinsta\Cache_Purge();
+            $cache->purge_complete_caches();
 
         }
 
@@ -225,7 +233,7 @@ class core {
                 'Action Scheduler', // Field label.
                 'builtmighty_kit', // The section ID this field will be placed into.
                 [ 'enable' => 'Block', 'disable' => 'Enable' ], // Options.
-                'Enabled by default on non-production environments. Blocks the Action Scheduler from running.' // Description.
+                'Blocked by default on non-production environments. Blocks the Action Scheduler from running.' // Description.
             );
 
         }
@@ -236,7 +244,7 @@ class core {
             'External Requests', // Field label.
             'builtmighty_kit', // The section ID this field will be placed into.
             [ 'enable' => 'Block', 'disable' => 'Enable' ], // Options.
-            'Enabled by default on non-production environments. Blocks external API requests. Allowed by default: ' . $_SERVER['SERVER_NAME'] . ', api.wordpress.org, downloads.wordpress.org, github.com, github.dev, github.io, githubusercontent.com, slack.com, builtmighty.com.' // Description.
+            'Blocked by default on non-production environments. Blocks external API requests. Allowed by default: ' . $_SERVER['SERVER_NAME'] . ', api.wordpress.org, downloads.wordpress.org, github.com, github.dev, github.io, githubusercontent.com, slack.com, builtmighty.com.' // Description.
         );
 
         // Allowed.
@@ -278,6 +286,50 @@ class core {
             [ 'enable' => 'Block', 'disable' => 'Enable' ], // Options.
             'Blocks access to the site for non-logged in users. Can be bypassed without logging in by appending ?bypass=true to a URL.' // Description.
         );
+
+    }
+
+    /**
+     * Save.
+     * 
+     * @since   1.0.0
+     */
+    public function save( $option, $old, $new ) {
+
+        // Check.
+        if( ! in_array( $option, (array)$this->option_keys() ) ) return;
+
+        // Check if class Kinsta\Cache_Purge exists.
+        if( ! class_exists( '\Kinsta\Cache_Purge' ) ) return;
+
+        // Purge cache.
+        $cache = new \Kinsta\Cache_Purge();
+        $cache->purge_complete_caches();
+
+    }
+
+    /**
+     * Set option keys.
+     * 
+     * @since   1.0.0
+     */
+    public function option_keys() {
+
+        // Return.
+        return [
+            'kit_enable_login',
+            'kit_login_url',
+            'kit_enable_2fa',
+            'kit_2fa_users',
+            'kit_block_email',
+            'kit_block_access',
+            'kit_block_external',
+            'kit_allowed_external',
+            'kit_disable_editor',
+            'kit_actionscheduler',
+            'slack-channel',
+            'slack-notifications'
+        ];
 
     }
 
