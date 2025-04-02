@@ -61,29 +61,19 @@ class widgets {
      */
     public function dashboard_content() {
 
-        // Check if we're on a dev site.
-        if( is_kit_mode() ) {
+        // Get current user.
+        $user = wp_get_current_user();
+
+        // Check if user email is @builtmighty.
+        if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
 
             // Display developer content.
             echo $this->developer_content();
 
         } else {
 
-            // Get current user.
-            $user = wp_get_current_user();
-
-            // Check if user email is @builtmighty.
-            if( strpos( $user->user_email, '@builtmighty.com' ) !== false ) {
-
-                // Display developer content.
-                echo $this->developer_content();
-
-            } else {
-
-                // Display client content.
-                echo $this->client_content();
-
-            }
+            // Display client content.
+            echo $this->client_content();
 
         }
 
