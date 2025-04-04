@@ -361,6 +361,28 @@ class CLI {
     }
 
     /**
+     * Get login.
+     * 
+     * Get login URL for users.
+     * 
+     * wp kit get_login
+     * 
+     * @since   1.0.0
+     */
+    public function get_login( $args, $assoc_args ) {
+
+        // Check if custom login is active.
+        if( empty( get_option( 'kit_enable_login' ) ) ) \WP_CLI::success( 'Login: ' . site_url( '/wp-login.php' ) );
+
+        // Check if custom login URL is set.
+        if( empty( get_option( 'kit_login_url' ) ) ) \WP_CLI::success( 'Login: ' . site_url( '/wp-login.php' ) );
+
+        // Get login URL.
+        \WP_CLI::success( 'Login: ' . site_url( '/' . get_option( 'kit_login_url' ) ) );
+
+    }
+
+    /**
      * Payment.
      * 
      * @since   1.0.0
