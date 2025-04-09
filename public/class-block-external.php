@@ -20,7 +20,7 @@ class block_external {
     public function __construct() {
 
         // Check.
-        if( ( empty( get_option( 'kit_block_external' ) ) && is_kit_mode() ) || get_option( 'kit_block_external' ) == 'disable' ) return;
+        if( empty( get_option( 'kit_block_external' ) && is_kit_mode() ) || get_option( 'kit_block_external' ) == 'disable' ) return;
 
         // Filter.
         add_filter( 'pre_http_request', [ $this, 'block' ], 10, 3 );
