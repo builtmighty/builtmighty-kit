@@ -20,7 +20,7 @@ class block_email {
     public function __construct() {
 
         // Check.
-        if( ( empty( get_option( 'kit_block_email' ) ) && is_kit_mode() ) || get_option( 'kit_block_external' ) == 'disable' ) return;
+        if( empty( get_option( 'kit_block_email' ) && is_kit_mode() ) || get_option( 'kit_block_external' ) == 'disable' ) return;
 
         // Filter.
         add_filter( 'wp_mail', [ $this, 'to_mail' ], 99999 );
