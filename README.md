@@ -35,6 +35,10 @@ It is highly recommended that, no matter the site, the `WP_ENVIRONMENT_TYPE` var
 ## Settings
 To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
 
+## 4.0.2
+* 🐛 Fixing logic around external API requests.
+* 🐛 Fixing logic around login security.
+
 ## 4.0.0 
 * ✨ Restructured plugin files and methods.
 * ✨ Updated admin UI and centralized settings.
