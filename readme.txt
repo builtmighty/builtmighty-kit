@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 4.0.2 =
+* Updated logic around external API requests and login security.
+
 = 4.0.0 =
 * Restructured plugin for generalized templating.
 * Fixed issues with login.
