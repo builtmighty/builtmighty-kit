@@ -314,8 +314,8 @@ class widgets {
                     <div class="built-panel-feature-label">
                         <p>💽 Theme/Plugin Editor</p>
                     </div>
-                    <div class="built-panel-feature-value status-<?php echo ( is_kit_mode() && get_option( 'kit_disable_editor' ) !== 'disable' ) ? 'inactive' : 'active'; ?>">
-                        <p><?php echo ( is_kit_mode() && get_option( 'kit_disable_editor' ) !== 'disable' ) ? 'Blocked' : 'Active'; ?></p>
+                    <div class="built-panel-feature-value status-<?php echo ( get_option( 'kit_disable_editor' ) !== 'enable' ) ? 'active' : 'inactive'; ?>">
+                        <p><?php echo ( get_option( 'kit_disable_editor' ) !== 'enable' ) ? 'Active' : 'Blocked'; ?></p>
                     </div>
                 </div>
                 <div class="built-panel-feature">
