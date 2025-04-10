@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 4.0.4 =
+* Update 2FA authentication method to detect login.
+
 = 4.0.3 =
 * Widget styling tweak.
 
