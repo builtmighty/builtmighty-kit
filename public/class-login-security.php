@@ -92,7 +92,7 @@ class login_security {
         }
 
         // Authenticate, and if valid, allow the user in.
-        if( $this->auth->authenticate( $user->ID, $this->auth->get_code( $_POST ) ) ) return $user;
+        if( $this->auth->authenticate( $user->ID, $this->auth->get_code( $_POST ), 'login' ) ) return $user;
 
         // Return error.
         return new \WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
