@@ -17,7 +17,7 @@ class authentication {
      * 
      * @since   1.0.0
      */
-    public function authenticate( $user_id, $code ) {
+    public function authenticate( $user_id, $code, $type = null ) {
 
         // Check for code.
         if( ! isset( $code ) || empty( $code ) ) return false;
@@ -26,7 +26,7 @@ class authentication {
         $user = get_user_by( 'id', $user_id );
 
         // Check if App is enabled.
-        if( ! $this->is_enabled( $user ) ) {
+        if( ! $this->is_enabled( $user ) && $type == 'login' ) {
 
             // Get code.
             $user_code = get_user_meta( $user_id, 'email_code', true );
