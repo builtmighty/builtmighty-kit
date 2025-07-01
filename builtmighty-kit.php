@@ -35,6 +35,7 @@ define( 'KIT_VERSION', '4.1.0' );
 define( 'KIT_NAME', 'builtmighty-kit' );
 define( 'KIT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'KIT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
+defined( 'KIT_FILE' ) || define( 'KIT_FILE', __FILE__ );
 
 /**
  * On activation.
@@ -110,6 +111,7 @@ function load() {
     require_once KIT_PATH . 'private/class-actionscheduler.php';
     require_once KIT_PATH . 'private/class-notifications.php';
     require_once KIT_PATH . 'private/class-speed.php';
+    require_once KIT_PATH . 'private/class-active-site-logger.php';
 
     /**
      * Initiate.
