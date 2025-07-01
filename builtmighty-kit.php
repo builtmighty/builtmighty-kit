@@ -61,6 +61,9 @@ function deactivation() {
     // Flush rewrite rules.
     flush_rewrite_rules();
 
+    // Call logger deactivation.
+    \BuiltMightyKit\Private\active_site_logger::deactivate();
+
 }
 
 /**

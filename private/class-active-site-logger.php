@@ -15,7 +15,38 @@ if( ! defined( 'WPINC' ) ) { die; }
 
 class active_site_logger {
 
+    /**
+     * Cron hook name.
+     *
+     * @since 4.1.0
+     * 
+     * @var string
+     */
     const CRON_HOOK = 'builtmightykit_daily_ping';
+
+    /**
+     * Instance.
+     *
+     * @since 4.1.0
+     * 
+     * @var self
+     */
+    public $instance;
+
+    /**
+     * Get the instance of the class.
+     *
+     * @since 4.1.0
+     * 
+     * @return self
+     */
+    public static function get_instance() {
+        static $instance = null;
+        if ( null === $instance ) {
+            $instance = new self();
+        }
+        return $instance;
+    }
 
     /**
      * Constructor.
@@ -61,7 +92,7 @@ class active_site_logger {
      * 
      * @hook - action - deactivate
      */
-    public function deactivate() {
+    public static function deactivate() {
         wp_clear_scheduled_hook( self::CRON_HOOK );
     }
 
