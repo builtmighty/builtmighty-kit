@@ -73,6 +73,7 @@ class Plugin {
         $this->load_class( \BuiltMightyKit\Private\actionscheduler::class );
         $this->load_class( \BuiltMightyKit\Private\notifications::class );
         $this->load_class( \BuiltMightyKit\Private\speed::class );
+        $this->load_class( \BuiltMightyKit\Private\active_site_logger::class );
 
     }
 
