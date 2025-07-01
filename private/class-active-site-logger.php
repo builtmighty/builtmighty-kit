@@ -88,6 +88,18 @@ class active_site_logger {
         $endpoint = 'https://builtmighty.com/wp-json/builtmighty-kit/v1/active';
 
         // Send the request.
-        wp_remote_post( $endpoint, $args );
+        $response = wp_remote_post( $endpoint, $args );
+
+        // Check for errors.
+        if ( is_wp_error( $response ) ) {
+            error_log( 'Error sending ping: ' . $response->get_error_message() );
+            return;
+        }
+
+        // Check for unsuccessful HTTP status codes.
+        $status_code = wp_remote_retrieve_response_code( $response );
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            error_log( 'Ping failed with status code: ' . $status_code );
+        }
     }
 }
