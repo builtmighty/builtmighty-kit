@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A kit for Built Mighty clients and developers.
-Version: 4.1.0
+Version: 4.2.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
