@@ -433,7 +433,7 @@ class core {
      */
     public function builtmighty_save_admin_color_mode( $user_id ) {
         if ( ! current_user_can( 'edit_user', $user_id ) ) return;
-        $mode = $_POST['builtmighty_admin_color_mode'] ?? 'system';
+        $mode = sanitize_text_field( $_POST['builtmighty_admin_color_mode'] ?? 'system' );
         if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
             update_user_meta( $user_id, 'builtmighty_admin_color_mode', $mode );
         }
