@@ -145,7 +145,7 @@ class core {
             isset( $_POST['builtmighty_admin_color_mode'] ) &&
             is_user_logged_in()
         ) {
-            $mode = $_POST['builtmighty_admin_color_mode'];
+            $mode = sanitize_text_field( $_POST['builtmighty_admin_color_mode'] );
             if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
                 update_user_meta(
                     get_current_user_id(),
