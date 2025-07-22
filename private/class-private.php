@@ -426,8 +426,8 @@ class core {
      *
      * @return  void
      *
-     * @hook    builtmighty_user_profile_update
-     * @hook    builtmighty_user_register
+     * @hook    personal_options_update
+     * @hook    edit_user_profile_update
      *
      * @since   4.2.0
      */
