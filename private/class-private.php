@@ -126,7 +126,7 @@ class core {
         // Get settings.
         $settings = \BuiltMighty\GlobalSettings\settings::get_instance();
 
-        // System color mode.
+        // Add admin color mode setting field to Built Mighty Kit admin screens.
         
         $settings->select_field(
             'builtmighty_admin_color_mode',
