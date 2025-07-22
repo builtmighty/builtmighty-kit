@@ -22,6 +22,9 @@ div#builtmighty_dashboard_widget {
     }
 }
 
+.builtmighty-field {
+  max-width: 60rem;
+}
 
 .built-panel {
     background: #12151c;
@@ -237,7 +240,16 @@ div#slack_screenshot.has-image {
     }
 }
 
-body:not(.builtmighty-admin-dark-mode) {
+
+#builtmighty_kit {
+    select {
+        max-width: 25em;
+        text-overflow: ellipsis;
+    }
+}
+
+
+@mixin built-mighty-kit-light-mode {
     &.toplevel_page_builtmighty {
         background: #f0f0f0;
     }
@@ -308,5 +320,12 @@ body:not(.builtmighty-admin-dark-mode) {
     .built-panel-feature-label {
         border-color: rgba(0, 0, 0, .1);
     }
-
+}
+body.builtmighty-admin-light-mode {
+    @include built-mighty-kit-light-mode;
+}
+@media (prefers-color-scheme: light) {
+    body:not(.builtmighty-admin-dark-mode) {
+        @include built-mighty-kit-light-mode;
+    }
 }

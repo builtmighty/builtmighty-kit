@@ -29,6 +29,14 @@ class core {
         // On save.
         add_action( 'updated_option', [ $this, 'save' ], 10, 3 );
 
+        // User profile.
+        add_action( 'show_user_profile', [ $this, 'builtmighty_admin_color_mode_field' ] );
+        add_action( 'edit_user_profile', [ $this, 'builtmighty_admin_color_mode_field' ] );
+
+        // Save user profile.
+        add_action( 'personal_options_update', [ $this, 'builtmighty_save_admin_color_mode' ] );
+        add_action( 'edit_user_profile_update', [ $this, 'builtmighty_save_admin_color_mode' ] );
+
     }
 
     /**
@@ -38,8 +46,25 @@ class core {
      */
     public function enqueue() {
 
+        // Determine color mode
+        $color_mode = 'system';
+        if ( is_user_logged_in() ) {
+            $user_mode = get_user_meta( get_current_user_id(), 'builtmighty_admin_color_mode', true );
+            if ( in_array( $user_mode, [ 'dark', 'light', 'system' ] ) ) {
+                $color_mode = $user_mode;
+            }
+        }
+
         // CSS.
         wp_enqueue_style( 'builtmighty-kit-admin', KIT_URI . 'public/css/admin.css', [], KIT_VERSION );
+
+         // Add a body class for user override
+        if ( $color_mode !== 'system' ) {
+            add_filter( 'admin_body_class', function( $classes ) use ( $color_mode ) {
+                return "$classes builtmighty-admin-$color_mode-mode";
+            });
+        }
+
 
         // JS.
         wp_enqueue_script( 'builtmighty-kit-admin', KIT_URI . 'public/js/admin.js', [ 'jquery' ], KIT_VERSION, true );
@@ -100,6 +125,35 @@ class core {
 
         // Get settings.
         $settings = \BuiltMighty\GlobalSettings\settings::get_instance();
+
+        // System color mode.
+        
+        $settings->select_field(
+            'builtmighty_admin_color_mode',
+            'Admin Color Mode',
+            'builtmighty_kit',
+            [
+                'system' => 'System Default',
+                'light'  => 'Light',
+                'dark'   => 'Dark'
+            ],
+            'Choose your preferred color mode for Built Mighty Kit admin screens. <strong>This setting is unique to your admin account and does not affect other users.</strong>'
+        );
+
+        // Save the value as user meta when the settings form is submitted.
+        if (
+            isset( $_POST['builtmighty_admin_color_mode'] ) &&
+            is_user_logged_in()
+        ) {
+            $mode = $_POST['builtmighty_admin_color_mode'];
+            if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+                update_user_meta(
+                    get_current_user_id(),
+                    'builtmighty_admin_color_mode',
+                    $mode
+                );
+            }
+        }
 
         // Register a section.
         $settings->add_settings_section(
@@ -331,6 +385,58 @@ class core {
             'slack-notifications'
         ];
 
+    }
+
+    /**
+     * Add Built Mighty Admin Color Mode field to user profile.
+     * 
+     * @param   \WP_User $user - The user object.
+     *
+     * @return  void
+     *
+     * @hook    edit_user_profile
+     * @hook    show_user_profile
+     *
+     * @since   4.2.0
+     */
+    public function builtmighty_admin_color_mode_field( $user ) {
+        $value = get_user_meta( $user->ID, 'builtmighty_admin_color_mode', true ) ?: 'system';
+        ?>
+        <h3>Built Mighty Admin Color Mode</h3>
+        <table class="form-table">
+            <tr>
+                <th><label for="builtmighty_admin_color_mode">Color Mode</label></th>
+                <td>
+                    <select name="builtmighty_admin_color_mode" id="builtmighty_admin_color_mode">
+                        <option value="system" <?php selected( $value, 'system' ); ?>>System Default</option>
+                        <option value="light" <?php selected( $value, 'light' ); ?>>Light</option>
+                        <option value="dark" <?php selected( $value, 'dark' ); ?>>Dark</option>
+                    </select>
+                    <p class="description">Choose your preferred color mode for Built Mighty Kit admin screens.</p>
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+
+    /**
+     * Save Built Mighty Admin Color Mode.
+     * 
+     * @param   int $user_id - The user ID.
+     *
+     * @return  void
+     *
+     * @hook    builtmighty_user_profile_update
+     * @hook    builtmighty_user_register
+     *
+     * @since   4.2.0
+     */
+    public function builtmighty_save_admin_color_mode( $user_id ) {
+        if ( ! current_user_can( 'edit_user', $user_id ) ) return;
+        $mode = $_POST['builtmighty_admin_color_mode'] ?? 'system';
+        if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+            update_user_meta( $user_id, 'builtmighty_admin_color_mode', $mode );
+        }
     }
 
 }

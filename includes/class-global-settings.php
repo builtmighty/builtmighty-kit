@@ -54,13 +54,6 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
             add_action( 'admin_init', [ $this, 'register_settings' ], 999 );
             add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 
-            add_action( 'show_user_profile', [ $this, 'builtmighty_admin_color_mode_field' ] );
-            add_action( 'edit_user_profile', [ $this, 'builtmighty_admin_color_mode_field' ] );
-
-            add_action( 'personal_options_update', [ $this, 'builtmighty_save_admin_color_mode' ] );
-            add_action( 'edit_user_profile_update', [ $this, 'builtmighty_save_admin_color_mode' ] );
-
-
         }
 
         /**
@@ -138,26 +131,10 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
          */
         public function enqueue() {
 
-            // Determine color mode
-            $color_mode = 'system';
-            if ( is_user_logged_in() ) {
-                $user_mode = get_user_meta( get_current_user_id(), 'builtmighty_admin_color_mode', true );
-                if ( in_array( $user_mode, [ 'dark', 'light', 'system' ] ) ) {
-                    $color_mode = $user_mode;
-                }
-            }
-
             // CSS.
             wp_enqueue_style( 'builtmighty-admin', KIT_URI . 'includes/builtmighty-settings.css', [], date( 'YmdHis' ) );
             wp_enqueue_media();
             wp_enqueue_style( 'wp-color-picker' );
-
-            // Add a body class for user override
-            if ( $color_mode !== 'system' ) {
-                add_filter( 'admin_body_class', function( $classes ) use ( $color_mode ) {
-                    return "$classes builtmighty-admin-$color_mode-mode";
-                });
-            }
 
             // JS.
             wp_enqueue_script( 'wp-color-picker' );
@@ -925,58 +902,6 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
             // Return.
             return ( in_array( $user_email[1], (array)$valid ) ) ? true : false;
 
-        }
-
-        /**
-         * Add Built Mighty Admin Color Mode field to user profile.
-         * 
-         * @param   \WP_User $user - The user object.
-         *
-         * @return  void
-         *
-         * @hook    edit_user_profile
-         * @hook    show_user_profile
-         *
-         * @since   4.2.0
-         */
-        public function builtmighty_admin_color_mode_field( $user ) {
-            $value = get_user_meta( $user->ID, 'builtmighty_admin_color_mode', true ) ?: 'system';
-            ?>
-            <h3>Built Mighty Admin Color Mode</h3>
-            <table class="form-table">
-                <tr>
-                    <th><label for="builtmighty_admin_color_mode">Color Mode</label></th>
-                    <td>
-                        <select name="builtmighty_admin_color_mode" id="builtmighty_admin_color_mode">
-                            <option value="system" <?php selected( $value, 'system' ); ?>>System Default</option>
-                            <option value="light" <?php selected( $value, 'light' ); ?>>Light</option>
-                            <option value="dark" <?php selected( $value, 'dark' ); ?>>Dark</option>
-                        </select>
-                        <p class="description">Choose your preferred color mode for Built Mighty Kit admin screens.</p>
-                    </td>
-                </tr>
-            </table>
-            <?php
-        }
-
-        /**
-         * Save Built Mighty Admin Color Mode.
-         * 
-         * @param   int $user_id - The user ID.
-         *
-         * @return  void
-         *
-         * @hook    builtmighty_user_profile_update
-         * @hook    builtmighty_user_register
-         *
-         * @since   4.2.0
-         */
-        public function builtmighty_save_admin_color_mode( $user_id ) {
-            if ( ! current_user_can( 'edit_user', $user_id ) ) return;
-            $mode = $_POST['builtmighty_admin_color_mode'] ?? 'system';
-            if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
-                update_user_meta( $user_id, 'builtmighty_admin_color_mode', $mode );
-            }
         }
 
     }
