@@ -58,7 +58,7 @@ class core {
         // CSS.
         wp_enqueue_style( 'builtmighty-kit-admin', KIT_URI . 'public/css/admin.css', [], KIT_VERSION );
 
-         // Add a body class for user override
+        // Add a body class for user override
         if ( $color_mode !== 'system' ) {
             add_filter( 'admin_body_class', function( $classes ) use ( $color_mode ) {
                 return "$classes builtmighty-admin-$color_mode-mode";
