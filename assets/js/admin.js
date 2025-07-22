@@ -35,4 +35,39 @@ jQuery(document).ready(function($) {
         }
     });
 
+    function builtmightyToggleDarkMode() {
+        // Toggle dark mode class.
+        var $body = $('body'),
+            $select = $('[name="builtmighty_admin_color_mode"]');
+
+        // On change
+        $select.on('change', function() {
+            var val = $(this).val();
+            if (val === 'dark') {
+                $body.addClass('builtmighty-admin-dark-mode').removeClass('builtmighty-admin-light-mode');
+                localStorage.setItem('builtmighty_admin_color_mode', 'dark');
+            } else if (val === 'light') {
+                $body.addClass('builtmighty-admin-light-mode').removeClass('builtmighty-admin-dark-mode');
+                localStorage.setItem('builtmighty_admin_color_mode', 'light');
+            } else {
+                $body.removeClass('builtmighty-admin-dark-mode').removeClass('builtmighty-admin-light-mode');
+                localStorage.removeItem('builtmighty_admin_color_mode');
+                // Let CSS handle system mode
+            }
+        });
+
+        // On page load, apply mode if not system
+        var saved = $select.val() || localStorage.getItem('builtmighty_admin_color_mode');
+        if (saved === 'dark') {
+            $body.addClass('builtmighty-admin-dark-mode').removeClass('builtmighty-admin-light-mode');
+        } else if (saved === 'light') {
+            $body.removeClass('builtmighty-admin-dark-mode').addClass('builtmighty-admin-light-mode');
+        } else {
+            $body.removeClass('builtmighty-admin-dark-mode').removeClass('builtmighty-admin-light-mode');
+            // Let CSS handle system mode
+        }
+    }
+
+    builtmightyToggleDarkMode();
+
 });
