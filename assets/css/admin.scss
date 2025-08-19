@@ -17,6 +17,10 @@ div#builtmighty_dashboard_widget {
 
 .builtmighty-wrap {
     color: #7a8089;
+    .builtmighty-logo {
+        // Converts the black text to white in the image without affecting the Icon's Color.
+        filter: invert(100%) hue-rotate(180deg) saturate(1000%) brightness(2);
+    }
     .description {
         color: inherit;
     }
@@ -274,6 +278,9 @@ div#slack_screenshot.has-image {
     }
     .builtmighty-wrap {
         color: inherit;
+        .builtmighty-logo {
+            filter: none;
+        }
         input,
         select,
         select:focus,
