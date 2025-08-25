@@ -15,6 +15,21 @@ div#builtmighty_dashboard_widget {
     }
 }
 
+.builtmighty-wrap {
+    color: #7a8089;
+    .builtmighty-logo {
+        // Converts the black text to white in the image without affecting the Icon's Color.
+        filter: invert(100%) hue-rotate(180deg) saturate(1000%) brightness(2);
+    }
+    .description {
+        color: inherit;
+    }
+}
+
+.builtmighty-field {
+  max-width: 60rem;
+}
+
 .built-panel {
     background: #12151c;
     color: #fff;
@@ -199,7 +214,7 @@ div#slack_screenshot.has-image {
 .built-panel-feature-value.status-active p,
 .built-panel-feature-value.status-inactive p {
     background: #238b45;
-    color: #114121;
+    color: #030c06;
     font-weight: bold;
     border-radius: 25px;
     text-align: center;
@@ -219,5 +234,105 @@ div#slack_screenshot.has-image {
 
 .built-panel-feature-value.status-inactive p {
     background: #e42029;
-    color: #7c1419;
+    color: #000;
+}
+.wp-core-ui {
+    .builtmighty-wrap {
+        .button-primary {
+            color: #fff;
+        }
+    }
+}
+
+
+#builtmighty_kit {
+    select {
+        max-width: 25em;
+        text-overflow: ellipsis;
+    }
+}
+
+
+@mixin built-mighty-kit-light-mode {
+    &.toplevel_page_builtmighty {
+        background: #f0f0f0;
+    }
+    .builtmighty-tab-content {
+        background: #fff;
+        color: #333;
+    }
+    .builtmighty-field-label {
+        color: inherit;
+    }
+    div#builtmighty_dashboard_widget {
+        background: #f9f9f9;
+        color: inherit;
+        box-shadow: 0 5px 10px -5px rgba(0, 0, 0, .1);
+        border-color: rgba(0, 0, 0, .1);
+        .postbox-header {
+            border-color: rgba(0, 0, 0, .05);
+            h2 {
+                color: inherit;
+            }
+        }
+    }
+    .builtmighty-wrap {
+        color: inherit;
+        .builtmighty-logo {
+            filter: none;
+        }
+        input,
+        select,
+        select:focus,
+        select:hover,
+        textarea {
+            background: initial;
+            color: inherit;
+            border-color: rgba(0, 0, 0, .1);
+        }
+    }
+    .built-panel {
+        background: #fff;
+        color: inherit;
+        border-color: rgba(0, 0, 0, .1);
+        box-shadow: 0 2px 5px -2px rgba(0, 0, 0, .1);
+    }
+    .built-panel-content {
+        background: #fff;
+        color: inherit;
+        textarea {
+            background: #fff;
+            color: inherit;
+            border-color: rgba(0, 0, 0, .1);
+        }
+    }
+    p.built-panel-value {
+        background: #f0f0f0;
+        color: inherit;
+        border: 1px solid rgba(0, 0, 0, .1);
+    }
+    div#slack_screenshot {
+        background: #f0f0f0;
+        color: rgba(0, 0, 0, .5);
+        border-color: rgba(0, 0, 0, .2);
+    }
+    .built-panel-heading,
+    .built-panel-header {
+        background: #f0f0f0;
+        color: inherit;
+    }
+    .built-panel-feature {
+        border-color: rgba(0, 0, 0, .1);
+    }
+    .built-panel-feature-label {
+        border-color: rgba(0, 0, 0, .1);
+    }
+}
+body.builtmighty-admin-light-mode {
+    @include built-mighty-kit-light-mode;
+}
+@media (prefers-color-scheme: light) {
+    body:not(.builtmighty-admin-dark-mode) {
+        @include built-mighty-kit-light-mode;
+    }
 }

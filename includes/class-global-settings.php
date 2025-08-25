@@ -903,7 +903,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
             return ( in_array( $user_email[1], (array)$valid ) ) ? true : false;
 
         }
-        
+
     }
 
     // Get instance.
