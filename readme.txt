@@ -21,6 +21,9 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 4.2.1 =
+* Fix some deprecation warnings.
+
 = 4.2.0 =
 * Added admin dark/light color options.
 
