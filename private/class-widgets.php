@@ -499,7 +499,7 @@ class widgets {
      * 
      * @since   1.0.0
      */
-    public function get_panel( $title, $type = 'array', $data ) {
+    public function get_panel( $title, $data, $type = 'array' ) {
 
         // Start output buffering.
         ob_start();
