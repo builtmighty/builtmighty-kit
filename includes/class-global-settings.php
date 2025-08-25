@@ -277,7 +277,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
          * 
          * @since   1.0.0
          */
-        public function message( $id, $label = '', $content = '', $section, $access = false ) {
+        public function message( $id, $section, $label = '', $content = '', $access = false ) {
 
             // Check user.
             if( $access == false && ! $this->is_builtmighty() ) return;
