@@ -35,6 +35,12 @@ It is highly recommended that, no matter the site, the `WP_ENVIRONMENT_TYPE` var
 ## Settings
 To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
 
+## 4.3.0
+* ✨ Added plugin stale/outdated/recent detection based on last update, tested up to WooCommerce version, PHP version, and WordPress version.
+
+## 4.2.0
+* ✨ Added light/dark mode for admin panel.
+
 ## 4.1.0
 * ✨ Added active site monitoring.
 
