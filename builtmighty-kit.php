@@ -110,6 +110,7 @@ function load() {
     require_once KIT_PATH . 'private/class-private.php';
     require_once KIT_PATH . 'private/class-widgets.php';
     require_once KIT_PATH . 'private/class-updates.php';
+    require_once KIT_PATH . 'private/class-plugins.php';
     require_once KIT_PATH . 'private/class-disable-editor.php';
     require_once KIT_PATH . 'private/class-actionscheduler.php';
     require_once KIT_PATH . 'private/class-notifications.php';
