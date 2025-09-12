@@ -69,6 +69,7 @@ class Plugin {
         $this->load_class( \BuiltMightyKit\Private\core::class );
         $this->load_class( \BuiltMightyKit\Private\widgets::class );
         $this->load_class( \BuiltMightyKit\Private\updates::class );
+        $this->load_class( \BuiltMightyKit\Private\plugins::class );
         $this->load_class( \BuiltMightyKit\Private\disable_editor::class );
         $this->load_class( \BuiltMightyKit\Private\actionscheduler::class );
         $this->load_class( \BuiltMightyKit\Private\notifications::class );
