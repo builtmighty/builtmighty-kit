@@ -204,18 +204,6 @@ function is_kit_mode() {
 }
 
 /**
- * Get production URL.
- * 
- * @since   1.0.0
- */
-function get_production() {
-
-    // Return.
-    return trailingslashit( base64_decode( get_option( 'kit_production_url' ) ) );
-
-}
-
-/**
  * Plugin Updates. 
  * 
  * @since   1.0.0
