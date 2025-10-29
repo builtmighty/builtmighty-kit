@@ -163,6 +163,14 @@ class core {
             }
         }
 
+        // Production URL.
+        $settings->text_field(
+            'kit_production_url', // Field ID.
+            'Production URL', // Field label.
+            'builtmighty_kit', // The section ID this field will be placed into.
+            'Enter the production URL. No slash required.' // Description.
+        );
+
         // Enable custom login.
         $settings->radio_field(
             'kit_enable_login', // Field ID.
