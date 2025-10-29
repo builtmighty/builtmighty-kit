@@ -163,6 +163,17 @@ function register_cli() {
  */
 function is_kit_mode() {
 
+    // Save production URL.
+    if( empty( get_option( 'kit_production_url' ) ) ) {
+
+        // Site URL.
+        $site_url = base64_encode( trailingslashit( site_url() ) );
+
+        // Save.
+        update_option( 'kit_production_url', $site_url );
+
+    }
+
     // Check if production environment.
     if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
 
@@ -189,6 +200,18 @@ function is_kit_mode() {
 
     // Return false.
     return false;
+
+}
+
+/**
+ * Get production URL.
+ * 
+ * @since   1.0.0
+ */
+function get_production() {
+
+    // Return.
+    return trailingslashit( base64_decode( get_option( 'kit_production_url' ) ) );
 
 }
 
