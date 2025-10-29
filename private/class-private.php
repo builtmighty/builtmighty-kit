@@ -196,6 +196,15 @@ class core {
             '<strong>Only set if you need to explicitly disable/enable kit mode.</strong> Allow the system to determine mode based on above production URL, if possible.'
         );
 
+        // Stale plugin display.
+        $settings->radio_field(
+            'kit_stale_plugins', // Field ID.
+            'Stale Plugins', // Field label.
+            'builtmighty_kit', // The section ID this field will be placed into.
+            [ 'developers' => 'Developers Only', 'all' => 'All', 'disabled' => 'Disabled' ], // Options.
+            'Enable a custom WordPress login URL, instead of the default /wp-login.php.' // Description.
+        );
+
         // Enable custom login.
         $settings->radio_field(
             'kit_enable_login', // Field ID.
