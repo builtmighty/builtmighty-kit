@@ -149,18 +149,23 @@ class core {
         );
 
         // Save the value as user meta when the settings form is submitted.
-        if (
-            isset( $_POST['builtmighty_admin_color_mode'] ) &&
-            is_user_logged_in()
-        ) {
+        if ( isset( $_POST['builtmighty_admin_color_mode'] ) && is_user_logged_in() ) {
+
+            // Sanitize the text field.
             $mode = sanitize_text_field( $_POST['builtmighty_admin_color_mode'] );
-            if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+
+            // Update the user meta.
+            if( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+
+                // Update the user meta.
                 update_user_meta(
                     get_current_user_id(),
                     'builtmighty_admin_color_mode',
                     $mode
                 );
+
             }
+            
         }
 
         // Production URL.
