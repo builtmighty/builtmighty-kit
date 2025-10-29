@@ -374,7 +374,7 @@ class core {
         if( $option === 'kit_production_url' && ! $this->is_base64( $new ) ) {
 
             // Encode and save.
-            $new = base64_encode( $new );
+            $new = base64_encode( trailingslashit( $new ) );
             update_option( $option, $new );
 
         }
