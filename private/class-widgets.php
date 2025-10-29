@@ -560,7 +560,7 @@ class widgets {
                 $default = strtolower( WP_ENVIRONMENT_TYPE );
             }
             // Display dev content.
-            echo '<div class="notice notice-warning"><p>NOTICE &mdash; This is a Built Mighty ' . $default . ' site.</p></div>';
+            echo '<div class="notice notice-warning"><p>NOTICE &mdash; This is a Built Mighty ' . esc_html( $default ) . ' site.</p></div>';
 
         }
 
