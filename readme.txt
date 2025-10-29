@@ -21,6 +21,12 @@ This plugin allows you to define a new login endpoint within wp-config to protec
 
 == Changelog ==
 
+= 4.4.0 =
+* Added updated kit mode detection.
+* Added updated kit mode fields.
+* Added production URL kit field for kit mode detection.
+* Fixed bug with blocking of Action Scheduler.
+
 = 4.3.0 =
 * Added plugin stale/outdated/recent detection based on last update, tested up to WooCommerce version, PHP version, and WordPress version.
 
