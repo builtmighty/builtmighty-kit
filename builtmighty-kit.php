@@ -181,7 +181,7 @@ function is_kit_mode() {
     $current_url = base64_encode( trailingslashit( site_url() ) );
 
     // Check if the site is production.
-    if( get_option( 'kit_production_url' ) === $current_url ) $status = false;
+    if( get_option( 'kit_production_url' ) !== $current_url ) $status = true;
 
     // Check for override.
     if( ! empty( get_option( 'kit_environment' ) ) && get_option( 'kit_environment' ) === 'production' ) $status = false;
