@@ -193,7 +193,7 @@ class core {
                 'development'   => 'Development',
                 'local'         => 'Local'
             ],
-            'Only set if you need to explicitly disable/enable kit mode. Allow the system to determine mode based on above production URL, if possible.'
+            '<strong>Only set if you need to explicitly disable/enable kit mode.</strong> Allow the system to determine mode based on above production URL, if possible.'
         );
 
         // Enable custom login.
