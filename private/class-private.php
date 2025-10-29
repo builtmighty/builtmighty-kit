@@ -165,16 +165,21 @@ class core {
                 );
 
             }
-            
+
         }
 
         // Production URL.
-        $settings->text_field(
-            'kit_production_url', // Field ID.
-            'Production URL', // Field label.
-            'builtmighty_kit', // The section ID this field will be placed into.
-            'Enter the production URL. No slash required.' // Description.
-        );
+        $settings->add_settings_field( 'kit_production_url', '', function() {
+            $value = get_option( 'kit_production_url', '' );
+            if( $this->is_base64( $value ) ) $value = base64_decode( $value ); ?>
+            <div class="builtmighty-field builtmighty-text-field">
+                <span class="builtmighty-field-label"><?php echo esc_html( 'Production URL' ); ?></span>
+                <div class="builtmighty-field_inner">
+                    <input type="text" name="<?php echo esc_attr( 'kit_production_url' ); ?>" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+                </div>
+                <p class="description">Enter the production URL. No slash required.</p>
+            </div><?php
+        }, 'builtmighty_kit' );
 
         // Enable custom login.
         $settings->radio_field(
@@ -365,6 +370,15 @@ class core {
         // Check.
         if( ! in_array( $option, (array)$this->option_keys() ) ) return;
 
+        // Check production URL encoding.
+        if( $option === 'kit_production_url' && ! $this->is_base64( $new ) ) {
+
+            // Encode and save.
+            $new = base64_encode( $new );
+            update_option( $option, $new );
+
+        }
+
         // Check if class Kinsta\Cache_Purge exists.
         if( ! class_exists( '\Kinsta\Cache_Purge' ) ) return;
 
@@ -372,6 +386,28 @@ class core {
         $cache = new \Kinsta\Cache_Purge();
         $cache->purge_complete_caches();
 
+    }
+
+    /**
+     * Is Base64?
+     * 
+     * @since   1.0.0
+     */
+    public function is_base64( string $string ){
+
+        // Check if the string is a valid base64 string.
+        if( ! preg_match( '/^[a-zA-Z0-9\/\r\n+]*={0,2}$/', $string ) ) return false;
+
+        // Decode the string in strict mode and check the results.
+        $decoded = base64_decode( $string, true );
+        if( false === $decoded ) return false;
+
+        // Encode the string again and check if it's the same.
+        if( base64_encode( $decoded ) != $string ) return false;
+
+        // It's a valid base64 string.
+        return true;
+        
     }
 
     /**
@@ -383,6 +419,7 @@ class core {
 
         // Return.
         return [
+            'kit_production_url',
             'kit_enable_login',
             'kit_login_url',
             'kit_enable_2fa',
