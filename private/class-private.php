@@ -201,7 +201,7 @@ class core {
             'kit_stale_plugins', // Field ID.
             'Stale Plugins', // Field label.
             'builtmighty_kit', // The section ID this field will be placed into.
-            [ 'developers' => 'Developers Only', 'all' => 'All', 'disabled' => 'Disabled' ], // Options.
+            [ 'developers' => 'Developers Only', 'all' => 'All', 'disable' => 'Disable' ], // Options.
             'Enable a custom WordPress login URL, instead of the default /wp-login.php.' // Description.
         );
 
