@@ -126,8 +126,16 @@ class core {
         // Get settings.
         $settings = \BuiltMighty\GlobalSettings\settings::get_instance();
 
+        // Register a section.
+        $settings->add_settings_section(
+            'builtmighty_kit',   // ID.
+            'Built Mighty Kit',  // Title.
+            function() {
+                echo '<p>Settings for the Built Mighty Kit.</p>'; // Description.
+            }
+        );
+
         // Add admin color mode setting field to Built Mighty Kit admin screens.
-        
         $settings->select_field(
             'builtmighty_admin_color_mode',
             'Admin Color Mode',
@@ -154,15 +162,6 @@ class core {
                 );
             }
         }
-
-        // Register a section.
-        $settings->add_settings_section(
-            'builtmighty_kit',   // ID.
-            'Built Mighty Kit',  // Title.
-            function() {
-                echo '<p>Settings for the Built Mighty Kit.</p>'; // Description.
-            }
-        );
 
         // Enable custom login.
         $settings->radio_field(
