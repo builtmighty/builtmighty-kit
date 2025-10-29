@@ -556,8 +556,9 @@ class widgets {
             $default = 'development';
 
             // If WP_ENVIRONMENT_TYPE is set.
-            if( defined( 'WP_ENVIRONMENT_TYPE' ) $default = strtolower( WP_ENVIRONMENT_TYPE );
-
+            if( defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+                $default = strtolower( WP_ENVIRONMENT_TYPE );
+            }
             // Display dev content.
             echo '<div class="notice notice-warning"><p>NOTICE &mdash; This is a Built Mighty ' . $default . ' site.</p></div>';
 
