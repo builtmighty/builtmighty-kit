@@ -36,8 +36,17 @@ class actionscheduler {
      */
     public function disable_actionscheduler() {
 
+        // Block.
+        $block = false;
+
+        // Check.
+        if( is_kit_mode() && empty( get_option( 'kit_actionscheduler' ) ) ) $block = true;
+
+        // Check for settings.
+        if( ! $block && get_option( 'kit_actionscheduler' ) == 'enable' ) $block = true;
+
         // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
-        if( is_kit_mode() && empty( get_option( 'kit_actionscheduler' ) || get_option( 'kit_actionscheduler' ) == 'disable' ) ) {
+        if( $block ) {
 
             // Disable the ActionScheduler.
             remove_action( 'action_scheduler_run_queue', [ \ActionScheduler::runner(), 'run' ] );
