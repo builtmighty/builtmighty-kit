@@ -126,8 +126,16 @@ class core {
         // Get settings.
         $settings = \BuiltMighty\GlobalSettings\settings::get_instance();
 
+        // Register a section.
+        $settings->add_settings_section(
+            'builtmighty_kit',   // ID.
+            'Built Mighty Kit',  // Title.
+            function() {
+                echo '<p>Settings for the Built Mighty Kit.</p>'; // Description.
+            }
+        );
+
         // Add admin color mode setting field to Built Mighty Kit admin screens.
-        
         $settings->select_field(
             'builtmighty_admin_color_mode',
             'Admin Color Mode',
@@ -141,27 +149,60 @@ class core {
         );
 
         // Save the value as user meta when the settings form is submitted.
-        if (
-            isset( $_POST['builtmighty_admin_color_mode'] ) &&
-            is_user_logged_in()
-        ) {
+        if ( isset( $_POST['builtmighty_admin_color_mode'] ) && is_user_logged_in() ) {
+
+            // Sanitize the text field.
             $mode = sanitize_text_field( $_POST['builtmighty_admin_color_mode'] );
-            if ( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+
+            // Update the user meta.
+            if( in_array( $mode, [ 'dark', 'light', 'system' ] ) ) {
+
+                // Update the user meta.
                 update_user_meta(
                     get_current_user_id(),
                     'builtmighty_admin_color_mode',
                     $mode
                 );
+
             }
+
         }
 
-        // Register a section.
-        $settings->add_settings_section(
-            'builtmighty_kit',   // ID.
-            'Built Mighty Kit',  // Title.
-            function() {
-                echo '<p>Settings for the Built Mighty Kit.</p>'; // Description.
-            }
+        // Production URL.
+        $settings->add_settings_field( 'kit_production_url', '', function() {
+            $value = get_option( 'kit_production_url', '' );
+            if( $this->is_base64( $value ) ) $value = base64_decode( $value ); ?>
+            <div class="builtmighty-field builtmighty-text-field">
+                <span class="builtmighty-field-label"><?php echo esc_html( 'Production URL' ); ?></span>
+                <div class="builtmighty-field_inner">
+                    <input type="text" name="<?php echo esc_attr( 'kit_production_url' ); ?>" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+                </div>
+                <p class="description">Enter the production URL. No slash required.</p>
+            </div><?php
+        }, 'builtmighty_kit' );
+
+        // Environment type.
+        $settings->select_field(
+            'kit_environment',
+            'Environment',
+            'builtmighty_kit',
+            [
+                'default'       => 'Default',
+                'production'    => 'Production',
+                'staging'       => 'Staging',
+                'development'   => 'Development',
+                'local'         => 'Local'
+            ],
+            '<strong>Only set if you need to explicitly disable/enable kit mode.</strong> Allow the system to determine mode based on above production URL, if possible.'
+        );
+
+        // Stale plugin display.
+        $settings->radio_field(
+            'kit_stale_plugins', // Field ID.
+            'Stale Plugins', // Field label.
+            'builtmighty_kit', // The section ID this field will be placed into.
+            [ 'developers' => 'Developers Only', 'all' => 'All', 'disable' => 'Disable' ], // Options.
+            'Enable a custom WordPress login URL, instead of the default /wp-login.php.' // Description.
         );
 
         // Enable custom login.
@@ -353,6 +394,15 @@ class core {
         // Check.
         if( ! in_array( $option, (array)$this->option_keys() ) ) return;
 
+        // Check production URL encoding.
+        if( $option === 'kit_production_url' && ! $this->is_base64( $new ) ) {
+
+            // Encode and save.
+            $new = base64_encode( trailingslashit( $new ) );
+            update_option( $option, $new );
+
+        }
+
         // Check if class Kinsta\Cache_Purge exists.
         if( ! class_exists( '\Kinsta\Cache_Purge' ) ) return;
 
@@ -360,6 +410,28 @@ class core {
         $cache = new \Kinsta\Cache_Purge();
         $cache->purge_complete_caches();
 
+    }
+
+    /**
+     * Is Base64?
+     * 
+     * @since   1.0.0
+     */
+    public function is_base64( string $string ){
+
+        // Check if the string is a valid base64 string.
+        if( ! preg_match( '/^[a-zA-Z0-9\/\r\n+]*={0,2}$/', $string ) ) return false;
+
+        // Decode the string in strict mode and check the results.
+        $decoded = base64_decode( $string, true );
+        if( false === $decoded ) return false;
+
+        // Encode the string again and check if it's the same.
+        if( base64_encode( $decoded ) != $string ) return false;
+
+        // It's a valid base64 string.
+        return true;
+        
     }
 
     /**
@@ -371,6 +443,7 @@ class core {
 
         // Return.
         return [
+            'kit_production_url',
             'kit_enable_login',
             'kit_login_url',
             'kit_enable_2fa',

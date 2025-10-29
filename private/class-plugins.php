@@ -32,6 +32,25 @@ class plugins {
      */
     public function __construct() {
 
+        // Get user.
+        $user = wp_get_current_user();
+        
+        // Check settings.
+        if( empty( get_option( 'kit_stale_plugins' ) ) || get_option( 'kit_stale_plugins' ) == 'developers' ) {
+
+            // Get email.
+            $host = explode( '@', $user->user_email )[1];
+
+            // Check array.
+            if( ! in_array( $host, [ 'builtmighty.com', 'littlerhino.io'] ) ) return;
+
+        } elseif( get_option( 'kit_stale_plugins' ) == 'disable' ) {
+
+            // Stop.
+            return;
+
+        }
+
         // Actions.
         add_action( 'after_plugin_row', [ $this, 'view' ], 10, 3 );
         add_action( 'load-plugins.php', [ $this, 'snapshot' ], 1 );

@@ -163,32 +163,49 @@ function register_cli() {
  */
 function is_kit_mode() {
 
-    // Check if production environment.
-    if( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'production' ) return false;
+    // Set status.
+    $status = false;
 
-    // Check environment type.
-    if( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'development', 'local', 'staging' ] ) ) return true;
+    // Save production URL.
+    if( empty( get_option( 'kit_production_url' ) ) ) {
+
+        // Site URL.
+        $site_url = base64_encode( trailingslashit( site_url() ) );
+
+        // Save.
+        update_option( 'kit_production_url', $site_url );
+
+    }
+
+    // Get site URL.
+    $current_url = base64_encode( trailingslashit( site_url() ) );
+
+    // Check if the site is production.
+    if( get_option( 'kit_production_url' ) !== $current_url ) $status = true;
+
+    // Check for override.
+    if( ! empty( get_option( 'kit_environment' ) ) && get_option( 'kit_environment' ) === 'production' ) $status = false;
 
     // Check if site is mightyrhino.net.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) $status = true;
 
     // Check if site is builtmighty.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) $status = true;
 
     // Check if site is github.dev.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'github.dev' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'github.dev' ) !== false ) $status = true;
 
     // Check if site is kinsta.cloud.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'kinsta.cloud' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'kinsta.cloud' ) !== false ) $status = true;
 
     // Check if site is wpengine.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'wpengine.com' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'wpengine.com' ) !== false ) $status = true;
 
     // Check if site is cloudwaysapps.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'cloudwaysapps.com' ) !== false ) return true;
+    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'cloudwaysapps.com' ) !== false ) $status = true;
 
-    // Return false.
-    return false;
+    // Return status.
+    return $status;
 
 }
 
