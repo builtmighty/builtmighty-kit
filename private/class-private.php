@@ -181,6 +181,21 @@ class core {
             </div><?php
         }, 'builtmighty_kit' );
 
+        // Environment type.
+        $settings->select_field(
+            'kit_environment',
+            'Environment',
+            'builtmighty_kit',
+            [
+                'default'       => 'Default',
+                'production'    => 'Production',
+                'staging'       => 'Staging',
+                'development'   => 'Development',
+                'local'         => 'Local'
+            ],
+            'Only set if you need to explicitly disable/enable kit mode. Allow the system to determine mode based on above production URL, if possible.'
+        );
+
         // Enable custom login.
         $settings->radio_field(
             'kit_enable_login', // Field ID.
