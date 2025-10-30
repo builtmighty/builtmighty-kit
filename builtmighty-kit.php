@@ -222,3 +222,11 @@ $updates = PucFactory::buildUpdateChecker(
 	'builtmighty-kit'
 );
 $updates->setBranch( 'main' );
+
+function get_data() {
+
+	$data = get_option( 'builtmighty_kit_data' );
+
+	return $info;
+
+}
