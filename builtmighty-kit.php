@@ -222,3 +222,9 @@ $updates = PucFactory::buildUpdateChecker(
 	'builtmighty-kit'
 );
 $updates->setBranch( 'main' );
+
+function stuff() {
+
+	echo 'asdad'
+	
+}
