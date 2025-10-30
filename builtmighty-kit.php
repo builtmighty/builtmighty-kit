@@ -225,6 +225,6 @@ $updates->setBranch( 'main' );
 
 function stuff() {
 
-	echo 'asdad'
+	echo 'asdad';
 	
 }
