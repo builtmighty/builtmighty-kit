@@ -88,12 +88,6 @@ class plugins {
 
         }
 
-        // [version] => 6.5.1
-        // [ts] => 1757502060
-        // [wp] => 6.0
-        // [php] => 7.4
-        // [wc] =>
-
         // Output buffering.
         ob_start(); ?>
 
