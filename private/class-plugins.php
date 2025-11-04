@@ -38,6 +38,9 @@ class plugins {
         // Check settings.
         if( empty( get_option( 'kit_stale_plugins' ) ) || get_option( 'kit_stale_plugins' ) == 'developers' ) {
 
+            // Check for user email.
+            if( empty( $user->user_email ) ) return;
+
             // Get email.
             $host = explode( '@', $user->user_email )[1];
 
@@ -87,6 +90,12 @@ class plugins {
             $store[ $plugin_file ]['ts'] = strtotime( $org->last_updated );
 
         }
+
+        // [version] => 6.5.1
+        // [ts] => 1757502060
+        // [wp] => 6.0
+        // [php] => 7.4
+        // [wc] =>
 
         // Output buffering.
         ob_start(); ?>
