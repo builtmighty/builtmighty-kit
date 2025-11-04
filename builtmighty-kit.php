@@ -156,56 +156,100 @@ function register_cli() {
 
 }
 
-/**
- * Check mode.
+/** 
+ * Kit Mode.
  * 
  * @since   1.0.0
+ * @version 4.5.0
  */
-function is_kit_mode() {
+function is_kit_mode(): bool {
 
-    // Set status.
-    $status = false;
+    // Cached.
+    static $cached = null;
+    if( $cached !== null ) return $cached;
 
-    // Save production URL.
-    if( empty( get_option( 'kit_production_url' ) ) ) {
+    // Key.
+    $key = 'kit_production_url';
 
-        // Site URL.
-        $site_url = base64_encode( trailingslashit( site_url() ) );
+    // Get scheme.
+    $scheme = ( is_ssl() ) ? 'https' : 'http';
 
-        // Save.
-        update_option( 'kit_production_url', $site_url );
+    // Get option.
+    $production = ( is_multisite() ) ? get_site_option( $key ) : get_option( $key );
+    if( ! empty( $production ) ) {
+
+        // Get current site scheme.
+        $production = trailingslashit( $scheme . '://' . wp_parse_url( base64_decode( $production ), PHP_URL_HOST ) );
+        
+    }
+
+    // Get host.
+    $host = trailingslashit( $scheme . '://' . wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+    // Base.
+    $base = explode( '.', $host );
+    $end  = array_pop( $base );
+    $name = array_pop( $base );
+    $base = implode( '.', [ $name, $end ] );
+
+    // Host-based kit mode.
+    $host_kit = function( $base ): bool {
+        
+        // Force suffixes.
+        $force = apply_filters( 'kit_mode_suffixes', [
+            'mightyrhino.net',
+            'builtmighty.com',
+            'github.dev',
+            'kinsta.cloud',
+            'wpengine.com',
+            'cloudwaysapps.com',
+        ] );
+
+        // Check.
+        return in_array( $base, $force );
+
+    };
+
+    // Filter override.
+    $filter = apply_filters( 'is_kit_mode', null );
+    if( $filter !== null ) return $cached = (bool) $filter;
+
+    // Constant override.
+    if( defined( 'KIT_MODE' ) ) return $cached = (bool) KIT_MODE;
+
+    // Get environment.
+    $environment = get_option( 'kit_environment', '' );
+    if( $environment === 'production' ) return $cached = false;
+    if( in_array( $environment, [ 'staging', 'development', 'local' ] ) ) return $cached = true;
+
+    // Get WordPress environment.
+    $wp_environment = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : null;
+    if( $wp_environment === 'production' ) return $cached = false;
+    if( in_array( $wp_environment, [ 'staging', 'development', 'local' ] ) ) return $cached = true;
+
+    // Compare host against production.
+    if( $production ) {
+
+        // Check if different.
+        $is_diff = ( $host !== $production );
+        return $cached = ( $is_diff || $host_kit( $host ) );
+
+    } elseif( ! $host_kit( $host ) ) {
+
+        // Set production.
+        $production = base64_encode( trailingslashit( home_url() ) );
+
+        // Update.
+        if( is_multisite() ) {
+            update_site_option( $key, $production );
+        } else {
+            update_option( $key, $production );
+        }
 
     }
 
-    // Get site URL.
-    $current_url = base64_encode( trailingslashit( site_url() ) );
-
-    // Check if the site is production.
-    if( get_option( 'kit_production_url' ) !== $current_url ) $status = true;
-
-    // Check for override.
-    if( ! empty( get_option( 'kit_environment' ) ) && get_option( 'kit_environment' ) === 'production' ) $status = false;
-
-    // Check if site is mightyrhino.net.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) $status = true;
-
-    // Check if site is builtmighty.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) $status = true;
-
-    // Check if site is github.dev.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'github.dev' ) !== false ) $status = true;
-
-    // Check if site is kinsta.cloud.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'kinsta.cloud' ) !== false ) $status = true;
-
-    // Check if site is wpengine.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'wpengine.com' ) !== false ) $status = true;
-
-    // Check if site is cloudwaysapps.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'cloudwaysapps.com' ) !== false ) $status = true;
-
-    // Return status.
-    return $status;
+    // Fallback to suffix rules.
+    return $cached = $host_kit( $host );
 
 }
 
