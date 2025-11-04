@@ -379,7 +379,7 @@ class core {
             'Site Access', // Field label.
             'builtmighty_kit', // The section ID this field will be placed into.
             [ 'enable' => 'Block', 'disable' => 'Enable' ], // Options.
-            'Blocks access to the site for non-logged in users. Can be bypassed without logging in by appending ?bypass=true to a URL.' // Description.
+            'Redirects non-logged in users to https://builtmighty.com. Can be bypassed without logging in by appending <code style="border:1px solid;border-radius:6px;">?bypass=true</code> to a URL.' // Description.
         );
 
     }
