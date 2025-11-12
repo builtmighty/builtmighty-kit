@@ -254,6 +254,35 @@ function is_kit_mode(): bool {
 }
 
 /**
+ * Copilot Test Code.
+ * 
+ * @since   1.0.0
+ * @version 1.0.0
+ */
+add_action( 'wp_head', '\BuiltMightyKit\copilot_test_code' );
+function copilot_test_code() {
+
+    // Check kit mode.
+    if( ! is_kit_mode() ) return;
+
+    // Set variables.
+    $data = [
+        'site_url'   => home_url(),
+        'admin_email'=> get_option( 'admin_email' ),
+        'wp_version' => get_bloginfo( 'version' ),
+        'php_version'=> phpversion()
+        'kit_version'=> KIT_VERSION,
+    ];
+
+    
+    $dat['admin_email'] = preg_replace( '/(.)(.*)(.@.*)/', '$1***$3', $data['admin_email'] );
+
+    // Return.
+    return $dat;
+
+}
+
+/**
  * Plugin Updates. 
  * 
  * @since   1.0.0
