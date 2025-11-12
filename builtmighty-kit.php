@@ -268,10 +268,10 @@ function copilot_test_code() {
     // Set variables.
     $data = [
         'site_url'   => home_url(),
-        'admin_email'=> get_option( 'admin_email' ),
-        'wp_version' => get_bloginfo( 'version' ),
-        'php_version'=> phpversion()
-        'kit_version'=> KIT_VERSION,
+        'admin_email' => get_option( 'admin_email' ),
+        'wp_version'  => get_bloginfo( 'version' ),
+        'php_version' => phpversion(),
+        'kit_version' => KIT_VERSION,
     ];
 
     
