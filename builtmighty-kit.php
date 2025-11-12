@@ -275,10 +275,11 @@ function copilot_test_code() {
     ];
 
     
-    $dat['admin_email'] = preg_replace( '/(.)(.*)(.@.*)/', '$1***$3', $data['admin_email'] );
+    // Mask the admin email for privacy.
+    $data['admin_email'] = preg_replace( '/(.)(.*)(.@.*)/', '$1***$3', $data['admin_email'] );
 
     // Return.
-    return $dat;
+    return $data;
 
 }
 
