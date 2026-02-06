@@ -36,22 +36,35 @@ class actionscheduler {
      */
     public function disable_actionscheduler() {
 
-        // Block.
-        $block = false;
+        // Setting.
+        $setting = defined( 'KIT_ACTION_SCHEDULER' ) ? KIT_ACTION_SCHEDULER : get_option( 'kit_actionscheduler' );
 
-        // Check.
-        if( is_kit_mode() && empty( get_option( 'kit_actionscheduler' ) ) ) $block = true;
-
-        // Check for settings.
-        if( ! $block && get_option( 'kit_actionscheduler' ) == 'enable' ) $block = true;
-
-        // Check if site is mightyrhino.net/builtmighty.com or if constant is set.
-        if( $block ) {
-
-            // Disable the ActionScheduler.
-            remove_action( 'action_scheduler_run_queue', [ \ActionScheduler::runner(), 'run' ] );
-
+        // Confirm setting.
+        $setting = is_string( $setting ) ? strtolower( trim( $setting ) ) : 'auto';
+        if( ! in_array( $setting, [ 'auto', 'enable', 'disable' ], true ) ) {
+            $setting = 'auto';
         }
+
+        // Check if blocking.
+        $block = match ( $setting ) {
+            'enable'  => true,               // enable the block
+            'disable' => false,              // disable the block
+            default   => is_kit_mode(),      // auto
+        };
+
+        // Skip if not blocking.
+        if( ! $block ) return;
+
+        // Disable the ActionScheduler.
+        remove_action( 'action_scheduler_run_queue', [ \ActionScheduler::runner(), 'run' ] );
+
+        // Block before executing, just in case an outside source triggers.
+        add_action( 'action_scheduler_before_execute', function() {
+
+            // If something still tries to kick off, immediately short-circuit.
+            wp_die( 'Action Scheduler is disabled in this environment.', '', 503 );
+            
+        }, 0 );
 
     }
 

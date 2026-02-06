@@ -81,7 +81,7 @@ class widgets {
 
     /**
      * Developer Content.
-     * 
+     *
      * @since   1.0.0
      */
     public function developer_content() {
@@ -94,6 +94,9 @@ class widgets {
 
         // Git Information.
         echo $this->git_information();
+
+        // Login Activity (developers only).
+        echo $this->login_activity();
 
         // Systems.
         echo $this->systems();
@@ -383,8 +386,94 @@ class widgets {
     }
 
     /**
+     * Login Activity.
+     *
+     * Display recent login activity for developers.
+     *
+     * @since   5.0.0
+     */
+    public function login_activity() {
+
+        // Check if login logging is enabled.
+        if ( get_option( 'kit_login_logging' ) !== 'enable' ) {
+            return '';
+        }
+
+        // Start output buffering.
+        ob_start();
+
+        // Get recent logs.
+        $logs = \BuiltMightyKit\Public\login_logging::get_logs( 10 );
+        $stats = \BuiltMightyKit\Public\login_logging::get_stats( 7 );
+
+        ?>
+        <div class="built-panel">
+            <div class="built-panel-heading">
+                <p>🔐 Login Activity</p>
+            </div>
+            <div class="built-panel-content">
+                <div class="built-panel-stats" style="display:flex;gap:15px;margin-bottom:15px;">
+                    <div style="flex:1;text-align:center;padding:10px;background:#f0f0f1;border-radius:4px;">
+                        <strong style="font-size:20px;color:#00a32a;"><?php echo esc_html( $stats['success'] ); ?></strong>
+                        <div style="font-size:11px;color:#666;">Successful (7d)</div>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:10px;background:#f0f0f1;border-radius:4px;">
+                        <strong style="font-size:20px;color:#d63638;"><?php echo esc_html( $stats['failed'] ); ?></strong>
+                        <div style="font-size:11px;color:#666;">Failed (7d)</div>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:10px;background:#f0f0f1;border-radius:4px;">
+                        <strong style="font-size:20px;color:#2271b1;"><?php echo esc_html( $stats['unique_ips'] ); ?></strong>
+                        <div style="font-size:11px;color:#666;">Unique IPs</div>
+                    </div>
+                </div>
+                <?php if ( ! empty( $logs ) ) : ?>
+                    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:1px solid #ddd;">
+                                <th style="text-align:left;padding:5px 0;">User</th>
+                                <th style="text-align:left;padding:5px 0;">IP</th>
+                                <th style="text-align:left;padding:5px 0;">Status</th>
+                                <th style="text-align:right;padding:5px 0;">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $logs as $log ) : ?>
+                                <tr style="border-bottom:1px solid #f0f0f1;">
+                                    <td style="padding:5px 0;"><?php echo esc_html( $log['user_login'] ?? 'Unknown' ); ?></td>
+                                    <td style="padding:5px 0;font-family:monospace;font-size:11px;"><?php echo esc_html( $log['ip'] ?? '' ); ?></td>
+                                    <td style="padding:5px 0;">
+                                        <?php if ( ( $log['type'] ?? '' ) === 'success' ) : ?>
+                                            <span style="color:#00a32a;">✓</span>
+                                        <?php else : ?>
+                                            <span style="color:#d63638;">✗</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding:5px 0;text-align:right;color:#666;">
+                                        <?php
+                                        if ( isset( $log['timestamp'] ) ) {
+                                            echo esc_html( human_time_diff( $log['timestamp'], current_time( 'timestamp' ) ) . ' ago' );
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else : ?>
+                    <p style="color:#666;font-style:italic;">No login activity recorded yet.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+
+        // Return.
+        return ob_get_clean();
+
+    }
+
+    /**
      * Readme.
-     * 
+     *
      * @since   1.0.0
      */
     public function readme() {
@@ -496,10 +585,14 @@ class widgets {
 
     /**
      * Get panel.
-     * 
+     *
+     * @param   string       $title  Panel title.
+     * @param   string       $type   Type of panel content ('array' or 'text').
+     * @param   array|string $data   Data to display (array for key-value pairs, string for text).
+     *
      * @since   1.0.0
      */
-    public function get_panel( $title, $data, $type = 'array' ) {
+    public function get_panel( $title, $type, $data ) {
 
         // Start output buffering.
         ob_start();
@@ -507,29 +600,29 @@ class widgets {
         // Output. ?>
         <div class="built-panel">
             <div class="built-panel-heading">
-                <p><?php echo $title; ?></p>
+                <p><?php echo esc_html( $title ); ?></p>
             </div>
             <div class="built-panel-content"><?php
 
                 // Check type.
-                if( $type == 'array' ) {
+                if( $type === 'array' && is_array( $data ) ) {
 
                     // Data.
                     foreach( $data as $key => $value ) {
 
-                        // Output. ?> 
-                        <div class="built-panel-single built-panel-<?php echo strtolower( $key ); ?>">
-                            <p class="built-panel-label built-panel-label-<?php echo $key; ?>"><?php echo $key; ?></p>
-                            <p class="built-panel-value built-panel-value-<?php echo $key; ?>"><?php echo $value; ?></p>
+                        // Output. ?>
+                        <div class="built-panel-single built-panel-<?php echo esc_attr( strtolower( $key ) ); ?>">
+                            <p class="built-panel-label built-panel-label-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $key ); ?></p>
+                            <p class="built-panel-value built-panel-value-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $value ); ?></p>
                         </div><?php
-    
+
                     }
-                    
+
                 } else {
 
                     // Content. ?>
                     <div class="built-panel-single built-panel-text">
-                        <?php echo $data; ?>
+                        <?php echo wp_kses_post( $data ); ?>
                     </div><?php
 
                 } ?>

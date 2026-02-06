@@ -37,15 +37,6 @@
             'reference' => '6faf451159fb8ba4126b925ed2d78acfce0dc016',
             'dev_requirement' => false,
         ),
-        'endroid/qr-code' => array(
-            'pretty_version' => '5.0.9',
-            'version' => '5.0.9.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../endroid/qr-code',
-            'aliases' => array(),
-            'reference' => '3dcdfab4c9122874f3915d8bf80a43b9df11852d',
-            'dev_requirement' => false,
-        ),
         'sonata-project/google-authenticator' => array(
             'pretty_version' => '2.3.1',
             'version' => '2.3.1.0',

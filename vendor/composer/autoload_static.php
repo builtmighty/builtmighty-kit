@@ -15,11 +15,7 @@ class ComposerStaticInitea1d17908a709bf3a6cd2d38eb87b45f
         array (
             'Google\\Authenticator\\' => 21,
         ),
-        'E' => 
-        array (
-            'Endroid\\QrCode\\' => 15,
-        ),
-        'D' => 
+        'D' =>
         array (
             'DASPRiD\\Enum\\' => 13,
         ),
@@ -37,10 +33,6 @@ class ComposerStaticInitea1d17908a709bf3a6cd2d38eb87b45f
         'Google\\Authenticator\\' => 
         array (
             0 => __DIR__ . '/..' . '/sonata-project/google-authenticator/src',
-        ),
-        'Endroid\\QrCode\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/endroid/qr-code/src',
         ),
         'DASPRiD\\Enum\\' => 
         array (
