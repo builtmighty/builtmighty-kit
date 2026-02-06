@@ -91,7 +91,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                 'manage_options',
                 'builtmighty',
                 [ $this, 'render_settings_page' ],
-                'dashicons-admin-generic'
+                'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDIwIDIwIiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPGc+Cgk8cGF0aCBmaWxsPSIjRDQyMDI3IiBkPSJNMTguMDk0LDEzLjgzNmwtMy43NzgtMy43ODFsMy43NzgtMy43NzZWMEgxLjkwNXY0LjM1N2gxMS45NDNsLTIuNjEzLDIuNjE3bC0wLjg0NywwLjg0NWwtMi4yMzEsMi4yMzUKCQlsMi4xMiwyLjEyNmwwLjk1OCwwLjk1OGwyLjUwMiwyLjUwNEgxLjkwNVYyMGgxNi4xODhWMTMuODM2eiIvPgoJPHBhdGggZmlsbD0iI0Q0MjAyNyIgZD0iTTQuNDIsMTAuMDU4bDIuMjM2LTIuMjM4SDEuOTA1djQuMzYxaDQuNjM0bC0xLjExNy0xLjEyTDQuNDIsMTAuMDU4eiIvPgo8L2c+Cjwvc3ZnPg=='
             );
 
         }

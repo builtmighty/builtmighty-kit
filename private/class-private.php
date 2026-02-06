@@ -129,7 +129,7 @@ class core {
         // Register a section.
         $settings->add_settings_section(
             'builtmighty_kit',   // ID.
-            'Built Mighty Kit',  // Title.
+            '🔨 Built Mighty Kit',  // Title.
             function() {
                 echo '<p>Settings for the Built Mighty Kit.</p>'; // Description.
             }
@@ -379,8 +379,461 @@ class core {
             'Site Access', // Field label.
             'builtmighty_kit', // The section ID this field will be placed into.
             [ 'enable' => 'Block', 'disable' => 'Enable' ], // Options.
-            'Blocks access to the site for non-logged in users. Can be bypassed without logging in by appending ?bypass=true to a URL.' // Description.
+            'Redirects non-logged in users to https://builtmighty.com. Can be bypassed without logging in by appending <code style="border:1px solid;border-radius:6px;">?bypass=true</code> to a URL.' // Description.
         );
+
+        // ============================================
+        // SECURITY HEADERS
+        // ============================================
+
+        // Enable security headers.
+        $settings->radio_field(
+            'kit_security_headers',
+            'Security Headers',
+            'builtmighty_kit',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Enable HTTP security headers for enhanced protection.'
+        );
+
+        if ( get_option( 'kit_security_headers' ) === 'enable' ) {
+
+            // X-Frame-Options.
+            $settings->select_field(
+                'kit_header_x_frame',
+                'X-Frame-Options',
+                'builtmighty_kit',
+                [
+                    'SAMEORIGIN' => 'SAMEORIGIN (Recommended)',
+                    'DENY'       => 'DENY',
+                    'disable'    => 'Disable',
+                ],
+                'Prevents clickjacking attacks by controlling if your site can be embedded in frames.'
+            );
+
+            // X-Content-Type-Options.
+            $settings->radio_field(
+                'kit_header_x_content_type',
+                'X-Content-Type-Options',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Prevents MIME type sniffing. Recommended to enable.'
+            );
+
+            // Referrer-Policy.
+            $settings->select_field(
+                'kit_header_referrer_policy',
+                'Referrer-Policy',
+                'builtmighty_kit',
+                [
+                    'strict-origin-when-cross-origin' => 'strict-origin-when-cross-origin (Recommended)',
+                    'no-referrer'                     => 'no-referrer',
+                    'no-referrer-when-downgrade'      => 'no-referrer-when-downgrade',
+                    'same-origin'                     => 'same-origin',
+                    'strict-origin'                   => 'strict-origin',
+                    'disable'                         => 'Disable',
+                ],
+                'Controls how much referrer information is sent with requests.'
+            );
+
+            // Permissions-Policy.
+            $settings->radio_field(
+                'kit_header_permissions_policy',
+                'Permissions-Policy',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Restricts browser features like camera, microphone, geolocation. Recommended to enable.'
+            );
+
+            // X-XSS-Protection (legacy).
+            $settings->radio_field(
+                'kit_header_x_xss',
+                'X-XSS-Protection',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Legacy XSS protection for older browsers.'
+            );
+
+            // HSTS.
+            $settings->radio_field(
+                'kit_header_hsts',
+                'Strict-Transport-Security (HSTS)',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Forces HTTPS connections. Only enable if your site fully supports HTTPS.'
+            );
+
+            // Content-Security-Policy.
+            $settings->radio_field(
+                'kit_header_csp',
+                'Content-Security-Policy',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Advanced XSS protection. May require customization for your site. Start with Report-Only mode.'
+            );
+
+            if ( get_option( 'kit_header_csp' ) === 'enable' ) {
+                $settings->radio_field(
+                    'kit_header_csp_report_only',
+                    'CSP Report-Only Mode',
+                    'builtmighty_kit',
+                    [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                    'Report violations without blocking. Recommended when first enabling CSP.'
+                );
+            }
+        }
+
+        // ============================================
+        // LOGIN ACTIVITY
+        // ============================================
+
+        // Enable login logging.
+        $settings->radio_field(
+            'kit_login_logging',
+            'Login Logging',
+            'builtmighty_kit',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Log all login attempts (successful and failed) with IP addresses and timestamps.'
+        );
+
+        if ( get_option( 'kit_login_logging' ) === 'enable' ) {
+            // Email notification for new IP.
+            $settings->radio_field(
+                'kit_login_notify_new_ip',
+                'New IP Login Alerts',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Email administrators when they log in from a new IP address.'
+            );
+        }
+
+        // ============================================
+        // SESSION MANAGEMENT
+        // ============================================
+
+        // Enable session management.
+        $settings->radio_field(
+            'kit_session_management',
+            'Session Management',
+            'builtmighty_kit',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Enable advanced session management features.'
+        );
+
+        if ( get_option( 'kit_session_management' ) === 'enable' ) {
+
+            // Logout on password change.
+            $settings->radio_field(
+                'kit_session_logout_on_password_change',
+                'Logout on Password Change',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Force logout from all other devices when a user changes their password.'
+            );
+
+            // Concurrent session limit.
+            $settings->select_field(
+                'kit_session_limit',
+                'Concurrent Session Limit',
+                'builtmighty_kit',
+                [
+                    '0' => 'Unlimited',
+                    '1' => '1 Session',
+                    '2' => '2 Sessions',
+                    '3' => '3 Sessions',
+                    '5' => '5 Sessions',
+                ],
+                'Limit how many devices a user can be logged in on simultaneously.'
+            );
+
+            // Session timeout.
+            $settings->select_field(
+                'kit_session_timeout',
+                'Idle Session Timeout',
+                'builtmighty_kit',
+                [
+                    '0'    => 'Disabled',
+                    '15'   => '15 minutes',
+                    '30'   => '30 minutes',
+                    '60'   => '1 hour',
+                    '120'  => '2 hours',
+                    '480'  => '8 hours',
+                    '1440' => '24 hours',
+                ],
+                'Automatically log out users after a period of inactivity.'
+            );
+        }
+
+        // ============================================
+        // REST API SECURITY
+        // ============================================
+
+        // Enable REST API security.
+        $settings->radio_field(
+            'kit_rest_api_security',
+            'REST API Security',
+            'builtmighty_kit',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Enable REST API security features.'
+        );
+
+        if ( get_option( 'kit_rest_api_security' ) === 'enable' ) {
+
+            // Require authentication.
+            $settings->radio_field(
+                'kit_rest_require_auth',
+                'Require Authentication',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Require authentication for most REST API endpoints. Public content endpoints are whitelisted.'
+            );
+
+            // Remove REST API link.
+            $settings->radio_field(
+                'kit_rest_remove_link',
+                'Remove REST API Link',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Remove the REST API discovery link from the HTML head.'
+            );
+
+            // API logging.
+            $settings->radio_field(
+                'kit_rest_logging',
+                'API Request Logging',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Log REST API requests for security monitoring.'
+            );
+
+            // Rate limiting.
+            $settings->radio_field(
+                'kit_rest_rate_limit',
+                'Rate Limiting',
+                'builtmighty_kit',
+                [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                'Limit REST API requests from unauthenticated users (60 requests per minute).'
+            );
+        }
+
+        // ============================================
+        // SPAM PROTECTION
+        // ============================================
+
+        // Enable spam protection.
+        $settings->radio_field(
+            'kit_spam_protection',
+            'Spam Protection',
+            'builtmighty_kit',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Enable comment spam protection features.'
+        );
+
+        if ( get_option( 'kit_spam_protection' ) === 'enable' ) {
+
+            // Disable comments globally.
+            $settings->radio_field(
+                'kit_disable_comments',
+                'Disable Comments',
+                'builtmighty_kit',
+                [ 'enable' => 'Disable Comments', 'disable' => 'Allow Comments' ],
+                'Completely disable comments site-wide.'
+            );
+
+            if ( get_option( 'kit_disable_comments' ) !== 'enable' ) {
+
+                // Honeypot.
+                $settings->radio_field(
+                    'kit_comment_honeypot',
+                    'Honeypot Field',
+                    'builtmighty_kit',
+                    [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                    'Add a hidden honeypot field to catch bots.'
+                );
+
+                // Time-based check.
+                $settings->radio_field(
+                    'kit_comment_time_check',
+                    'Time-Based Check',
+                    'builtmighty_kit',
+                    [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                    'Block comments submitted too quickly (indicates bot behavior).'
+                );
+
+                // Block spam IPs.
+                $settings->radio_field(
+                    'kit_block_spam_ips',
+                    'Block Spam IPs',
+                    'builtmighty_kit',
+                    [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+                    'Automatically block IPs that submit multiple spam comments.'
+                );
+
+                // Max links.
+                $settings->select_field(
+                    'kit_comment_max_links',
+                    'Maximum Links in Comments',
+                    'builtmighty_kit',
+                    [
+                        '0' => 'Disabled',
+                        '1' => '1 Link',
+                        '2' => '2 Links',
+                        '3' => '3 Links',
+                        '5' => '5 Links',
+                    ],
+                    'Block comments with too many links.'
+                );
+            }
+
+            // Disable pingbacks.
+            $settings->radio_field(
+                'kit_disable_pingbacks',
+                'Disable Pingbacks',
+                'builtmighty_kit',
+                [ 'enable' => 'Disable Pingbacks', 'disable' => 'Allow Pingbacks' ],
+                'Disable pingbacks and trackbacks (often used for spam).'
+            );
+        }
+
+        // ============================================
+        // SPEED/PERFORMANCE OPTIMIZATION
+        // ============================================
+
+        // Register Speed tab.
+        $settings->add_settings_section(
+            'builtmighty_speed',
+            '⚡️ Speed',
+            function() {
+                echo '<p>Performance and speed optimization settings.</p>';
+            }
+        );
+
+        // Disable Cart Fragments.
+        $settings->radio_field(
+            'kit_disable_cart_fragments',
+            'Disable Cart Fragments AJAX',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Disables WooCommerce cart fragments AJAX which polls every 5 seconds. Can significantly improve performance.'
+        );
+
+        if ( get_option( 'kit_disable_cart_fragments' ) === 'enable' ) {
+            $settings->text_field(
+                'kit_cart_fragments_exclude',
+                'Cart Fragments - Exclude Pages',
+                'builtmighty_speed',
+                'Enter page slugs to exclude (comma-separated). Example: cart,checkout,shop. Cart fragments will still work on these pages.'
+            );
+        }
+
+        // Disable WC Scripts on Non-WC Pages.
+        $settings->radio_field(
+            'kit_disable_wc_scripts',
+            'Disable WC Scripts on Non-WC Pages',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Dequeues WooCommerce scripts and styles on non-WooCommerce pages to reduce page weight.'
+        );
+
+        if ( get_option( 'kit_disable_wc_scripts' ) === 'enable' ) {
+            $settings->text_field(
+                'kit_wc_scripts_exclude',
+                'WC Scripts - Exclude Pages',
+                'builtmighty_speed',
+                'Enter page slugs to exclude (comma-separated). WooCommerce scripts will still load on these pages.'
+            );
+        }
+
+        // Disable jQuery Migrate.
+        $settings->radio_field(
+            'kit_disable_jquery_migrate',
+            'Disable jQuery Migrate',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Removes the jQuery Migrate script. Only enable if you are sure your theme/plugins do not require it.'
+        );
+
+        // Remove Query Strings.
+        $settings->radio_field(
+            'kit_remove_query_strings',
+            'Remove Query Strings',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Removes version query strings from CSS/JS files for better caching. Example: style.css?ver=1.0 becomes style.css'
+        );
+
+        // Disable WC Admin Features.
+        $settings->radio_field(
+            'kit_disable_wc_admin',
+            'Disable WC Admin Features',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Disables WooCommerce Admin features (analytics, inbox, activity panels) to reduce admin overhead.'
+        );
+
+        // Disable Marketing Hub.
+        $settings->radio_field(
+            'kit_disable_marketing_hub',
+            'Disable Marketing Hub',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Disables the WooCommerce Marketing Hub to reduce admin overhead.'
+        );
+
+        // Cleanup Head Tags.
+        $settings->radio_field(
+            'kit_cleanup_head',
+            'Cleanup Head Tags',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Removes unnecessary meta tags from the head section (WP generator, RSD, wlwmanifest, shortlinks, etc.).'
+        );
+
+        // DNS Prefetch.
+        $settings->radio_field(
+            'kit_dns_prefetch',
+            'DNS Prefetch',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Adds DNS prefetch hints for common third-party domains to speed up external resource loading.'
+        );
+
+        if ( get_option( 'kit_dns_prefetch' ) === 'enable' ) {
+            $settings->text_field(
+                'kit_dns_prefetch_domains',
+                'Custom Prefetch Domains',
+                'builtmighty_speed',
+                'Enter additional domains to prefetch (comma-separated). Example: cdn.example.com,fonts.googleapis.com'
+            );
+        }
+
+        // Disable Password Strength Meter.
+        $settings->radio_field(
+            'kit_disable_password_meter',
+            'Disable Password Strength Meter',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Removes the password strength meter script on account pages. Reduces page weight by ~400KB.'
+        );
+
+        // ============================================
+        // CSS/JS BUNDLER
+        // ============================================
+
+        // Enable bundler.
+        $settings->radio_field(
+            'kit_bundle_enabled',
+            'CSS/JS Bundler',
+            'builtmighty_speed',
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
+            'Automatically detects enqueued CSS/JS, lets you select which to bundle, and serves minified combined files. Rebuilds every 24 hours.'
+        );
+
+        // Asset list and rebuild button (only when enabled).
+        if ( get_option( 'kit_bundle_enabled' ) === 'enable' ) {
+            $settings->add_settings_field( 'kit_bundled_assets', '', function() {
+                \BuiltMightyKit\Private\performance::render_asset_settings();
+            }, 'builtmighty_speed' );
+        }
 
     }
 
@@ -455,7 +908,59 @@ class core {
             'kit_disable_editor',
             'kit_actionscheduler',
             'slack-channel',
-            'slack-notifications'
+            'slack-notifications',
+            // Security Headers.
+            'kit_security_headers',
+            'kit_header_x_frame',
+            'kit_header_x_content_type',
+            'kit_header_referrer_policy',
+            'kit_header_permissions_policy',
+            'kit_header_x_xss',
+            'kit_header_hsts',
+            'kit_header_csp',
+            'kit_header_csp_report_only',
+            // Login Activity.
+            'kit_login_logging',
+            'kit_login_notify_new_ip',
+            // Session Management.
+            'kit_session_management',
+            'kit_session_logout_on_password_change',
+            'kit_session_limit',
+            'kit_session_timeout',
+            // REST API Security.
+            'kit_rest_api_security',
+            'kit_rest_require_auth',
+            'kit_rest_remove_link',
+            'kit_rest_logging',
+            'kit_rest_rate_limit',
+            // Spam Protection.
+            'kit_spam_protection',
+            'kit_disable_comments',
+            'kit_comment_honeypot',
+            'kit_comment_time_check',
+            'kit_block_spam_ips',
+            'kit_comment_max_links',
+            'kit_disable_pingbacks',
+            // Speed Optimization.
+            'kit_disable_cart_fragments',
+            'kit_cart_fragments_exclude',
+            'kit_disable_wc_scripts',
+            'kit_wc_scripts_exclude',
+            'kit_disable_jquery_migrate',
+            'kit_remove_query_strings',
+            'kit_disable_wc_admin',
+            'kit_disable_marketing_hub',
+            'kit_cleanup_head',
+            'kit_dns_prefetch',
+            'kit_dns_prefetch_domains',
+            'kit_disable_password_meter',
+            // CSS/JS Bundler.
+            'kit_bundle_enabled',
+            'kit_bundled_js_handles',
+            'kit_bundled_css_handles',
+            'kit_bundle_js_file',
+            'kit_bundle_css_file',
+            'kit_bundle_version',
         ];
 
     }

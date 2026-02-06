@@ -38,6 +38,9 @@ class plugins {
         // Check settings.
         if( empty( get_option( 'kit_stale_plugins' ) ) || get_option( 'kit_stale_plugins' ) == 'developers' ) {
 
+            // Check for user email.
+            if( empty( $user->user_email ) ) return;
+
             // Get email.
             $host = explode( '@', $user->user_email )[1];
 

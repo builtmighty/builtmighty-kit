@@ -66,6 +66,11 @@ class Plugin {
         $this->load_class( \BuiltMightyKit\Public\block_external::class );
         $this->load_class( \BuiltMightyKit\Public\block_email::class );
         $this->load_class( \BuiltMightyKit\Public\block_access::class );
+        $this->load_class( \BuiltMightyKit\Public\security_headers::class );
+        $this->load_class( \BuiltMightyKit\Public\login_logging::class );
+        $this->load_class( \BuiltMightyKit\Public\session_management::class );
+        $this->load_class( \BuiltMightyKit\Public\rest_api_security::class );
+        $this->load_class( \BuiltMightyKit\Public\spam_protection::class );
         $this->load_class( \BuiltMightyKit\Private\core::class );
         $this->load_class( \BuiltMightyKit\Private\widgets::class );
         $this->load_class( \BuiltMightyKit\Private\updates::class );
@@ -74,7 +79,12 @@ class Plugin {
         $this->load_class( \BuiltMightyKit\Private\actionscheduler::class );
         $this->load_class( \BuiltMightyKit\Private\notifications::class );
         $this->load_class( \BuiltMightyKit\Private\speed::class );
+        $this->load_class( \BuiltMightyKit\Private\performance::class );
         $this->load_class( \BuiltMightyKit\Private\active_site_logger::class );
+
+        // CRM Analytics.
+        $this->load_class( \BuiltMightyKit\CRM\crm_analytics::class );
+        $this->load_class( \BuiltMightyKit\CRM\crm_rum::class );
 
     }
 
