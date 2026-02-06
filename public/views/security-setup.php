@@ -15,7 +15,7 @@
             <input type="text" name="authentication_secret" id="authentication_secret" value="<?php echo esc_attr( $secret ); ?>" class="regular-text" readonly />
         </div>
         <div class="built-security-actions">
-            <a href="<?php echo site_url( '/security?key=' . $_GET['key'] . '&confirm=true' ); ?>" class="button button-primary">Confirm</a>
+            <a href="<?php echo esc_url( site_url( '/security?key=' . rawurlencode( sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) . '&confirm=true' ) ); ?>" class="button button-primary">Confirm</a>
         </div>
     </div>
     <div class="built-security-download">

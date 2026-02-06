@@ -23,11 +23,14 @@
         // Check for a key.
         if( isset( $_GET['key'] ) ) {
 
+            // Sanitize the key parameter.
+            $key_param = sanitize_text_field( wp_unslash( $_GET['key'] ) );
+
             // Get auth.
             $auth = new \BuiltMightyKit\Utility\authentication();
 
             // Get key.
-            $key = $auth->get_key( $_GET['key'] );
+            $key = $auth->get_key( $key_param );
 
             // Get current user.
             $user = get_user_by( 'ID', $key['user_id'] ); 
@@ -39,12 +42,12 @@
                 include KIT_PATH . 'public/views/security-header.php';
 
                 // Check for keys.
-                if( isset( $_GET['confirm'] ) && $_GET['confirm'] == 'true' ) {
+                if( isset( $_GET['confirm'] ) && sanitize_text_field( wp_unslash( $_GET['confirm'] ) ) === 'true' ) {
 
                     // Load confirm.
                     include KIT_PATH . 'public/views/security-confirm.php';
 
-                } elseif( isset( $_GET['status'] ) && $_GET['status'] == 'confirmed' ) {
+                } elseif( isset( $_GET['status'] ) && sanitize_text_field( wp_unslash( $_GET['status'] ) ) === 'confirmed' ) {
 
                     // Load confirmed.
                     include KIT_PATH . 'public/views/security-confirmed.php';

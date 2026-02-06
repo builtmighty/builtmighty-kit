@@ -1,25 +1,43 @@
 === Built Mighty Kit ===
 Contributors: tylerjohnsondesign
 Donate link: https://builtmighty.com
-Tags: kit, sitekit, development
+Tags: kit, sitekit, development, security, performance
 Requires at least: 6.0
 Tested up to: 10
-Stable tag: 6.4.2
+Stable tag: 5.0.0
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin allows you to define a new login endpoint within wp-config to protect wp-login from bot attacks, as well as additional security and development features.
+A comprehensive toolkit for Built Mighty clients and developers, providing security hardening, performance optimization, development tools, and CRM analytics.
 
 == Description ==
 
-This plugin allows you to define a new login endpoint within wp-config to protect wp-login from bot attacks. It can also be used on development sites to stop bots from visiting.
+The Built Mighty Kit provides a suite of tools for WordPress site management, security, and performance optimization. Features include custom login endpoints, two-factor authentication, CSS/JS asset bundling, security headers, spam protection, session management, REST API security, and CRM analytics integration.
 
 == Frequently Asked Questions ==
 
 == Screenshots ==
 
 == Changelog ==
+
+= 5.0.0 =
+* Added CSS/JS Asset Bundler — auto-detects enqueued assets, allows selective bundling/minification with admin UI, 24-hour auto-rebuild, and admin bar rebuild button.
+* Added CRM Analytics integration with RUM (Real User Monitoring) and WooCommerce event tracking.
+* Added Speed Optimization tab with dedicated settings (Disable Cart Fragments, WC Scripts, jQuery Migrate, Query Strings, WC Admin, Marketing Hub, Head Cleanup, DNS Prefetch, Password Meter).
+* Added Security Headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS, CSP).
+* Added Login Activity logging with new IP alerts.
+* Added Session Management (concurrent session limits, idle timeout, logout on password change).
+* Added REST API Security (authentication requirement, rate limiting, logging).
+* Added Spam Protection (honeypot, time-based checks, spam IP blocking, disable comments/pingbacks).
+* Improved 2FA — switched to BaconQrCode, added encrypted secret storage, backup codes, 8-digit TOTP codes, and CSRF nonce verification.
+* Improved kit mode detection with production URL comparison and host suffix matching.
+* Updated admin menu with custom Built Mighty icon.
+* Fixed XSS vulnerabilities in security setup views.
+* Fixed insecure cookie settings in block-access.
+* Added rate limiting to login security.
+* Fixed developer widget panels not displaying content.
+* Removed endroid/qr-code dependency (17MB size reduction).
 
 = 4.4.0 =
 * Added updated kit mode detection.

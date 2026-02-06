@@ -44,10 +44,16 @@ class block_access {
         if( isset( $_COOKIE['builtmighty_bypass'] ) ) return;
 
         // Check if get parameter is set to bypass.
-        if( isset( $_GET['bypass'] ) && $_GET['bypass'] == 'true' ) {
+        if( isset( $_GET['bypass'] ) && sanitize_text_field( wp_unslash( $_GET['bypass'] ) ) === 'true' ) {
 
-            // Set cookie.
-            setcookie( 'builtmighty_bypass', 'true', time() + 3600, '/' );
+            // Set cookie with security flags (HttpOnly, Secure when on HTTPS).
+            setcookie( 'builtmighty_bypass', 'true', [
+                'expires'  => time() + 3600,
+                'path'     => '/',
+                'secure'   => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ] );
             return;
 
         }

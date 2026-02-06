@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A kit for Built Mighty clients and developers.
-Version: 4.4.0
+Version: 5.0.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -31,7 +31,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  *
  * @since   1.0.0
  */
-define( 'KIT_VERSION', '4.3.0' );
+define( 'KIT_VERSION', '5.0.0' );
 define( 'KIT_NAME', 'builtmighty-kit' );
 define( 'KIT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'KIT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -63,6 +63,11 @@ function deactivation() {
 
     // Call logger deactivation.
     \BuiltMightyKit\Private\active_site_logger::deactivate();
+
+    // Call CRM analytics deactivation.
+    if ( class_exists( '\BuiltMightyKit\CRM\crm_analytics' ) ) {
+        \BuiltMightyKit\CRM\crm_analytics::deactivate();
+    }
 
 }
 
@@ -107,6 +112,11 @@ function load() {
     require_once KIT_PATH . 'public/class-block-external.php';
     require_once KIT_PATH . 'public/class-block-email.php';
     require_once KIT_PATH . 'public/class-block-access.php';
+    require_once KIT_PATH . 'public/class-security-headers.php';
+    require_once KIT_PATH . 'public/class-login-logging.php';
+    require_once KIT_PATH . 'public/class-session-management.php';
+    require_once KIT_PATH . 'public/class-rest-api-security.php';
+    require_once KIT_PATH . 'public/class-spam-protection.php';
     require_once KIT_PATH . 'private/class-private.php';
     require_once KIT_PATH . 'private/class-widgets.php';
     require_once KIT_PATH . 'private/class-updates.php';
@@ -115,7 +125,18 @@ function load() {
     require_once KIT_PATH . 'private/class-actionscheduler.php';
     require_once KIT_PATH . 'private/class-notifications.php';
     require_once KIT_PATH . 'private/class-speed.php';
+    require_once KIT_PATH . 'private/class-performance.php';
     require_once KIT_PATH . 'private/class-active-site-logger.php';
+
+    /**
+     * CRM Analytics.
+     *
+     * @since   5.0.0
+     */
+    require_once KIT_PATH . 'crm/class-crm-api.php';
+    require_once KIT_PATH . 'crm/class-crm-woocommerce.php';
+    require_once KIT_PATH . 'crm/class-crm-rum.php';
+    require_once KIT_PATH . 'crm/class-crm-analytics.php';
 
     /**
      * Initiate.
@@ -156,56 +177,109 @@ function register_cli() {
 
 }
 
-/**
- * Check mode.
+/** 
+ * Kit Mode.
  * 
  * @since   1.0.0
+ * @version 5.0.0
  */
-function is_kit_mode() {
+function is_kit_mode(): bool {
 
-    // Set status.
-    $status = false;
+    // Cached.
+    static $cached = null;
+    if( $cached !== null ) return $cached;
 
-    // Save production URL.
-    if( empty( get_option( 'kit_production_url' ) ) ) {
+    // Key.
+    $key = 'kit_production_url';
 
-        // Site URL.
-        $site_url = base64_encode( trailingslashit( site_url() ) );
+    // Get scheme.
+    $scheme = ( is_ssl() ) ? 'https' : 'http';
 
-        // Save.
-        update_option( 'kit_production_url', $site_url );
+    // Get option.
+    $production = ( is_multisite() ) ? get_site_option( $key ) : get_option( $key );
+    if( ! empty( $production ) ) {
+
+        // Get current site scheme.
+        $production = trailingslashit( $scheme . '://' . wp_parse_url( base64_decode( $production ), PHP_URL_HOST ) );
+        
+    }
+
+    // Get host.
+    $host = trailingslashit( $scheme . '://' . wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+    // Extract base domain (e.g., "mightyrhino.net" from "staging.mightyrhino.net").
+    $host_only = wp_parse_url( home_url(), PHP_URL_HOST );
+    $parts = explode( '.', $host_only );
+    $base = ( count( $parts ) >= 2 )
+        ? implode( '.', array_slice( $parts, -2 ) )
+        : $host_only;
+
+    // Host-based kit mode check.
+    $host_kit = function( $domain ): bool {
+
+        // Force suffixes.
+        $force = apply_filters( 'kit_mode_suffixes', [
+            'mightyrhino.net',
+            'builtmighty.com',
+            'github.dev',
+            'kinsta.cloud',
+            'wpengine.com',
+            'cloudwaysapps.com',
+        ] );
+
+        // Check.
+        return in_array( $domain, $force, true );
+
+    };
+
+    // Filter override.
+    $filter = apply_filters( 'is_kit_mode', null );
+    if( $filter !== null ) return $cached = (bool) $filter;
+
+    // Constant override.
+    if( defined( 'KIT_MODE' ) ) return $cached = (bool) KIT_MODE;
+
+    // Get environment.
+    $environment = get_option( 'kit_environment', '' );
+    if( $environment === 'production' ) return $cached = false;
+    if( in_array( $environment, [ 'staging', 'development', 'local' ], true ) ) return $cached = true;
+
+    // Get WordPress environment.
+    $wp_environment = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : null;
+    if( $wp_environment === 'production' ) return $cached = false;
+    if( in_array( $wp_environment, [ 'staging', 'development', 'local' ], true ) ) return $cached = true;
+
+    // Compare host against production.
+    if( $production ) {
+
+        // If current host matches production, we're on production (not kit mode).
+        if( $host === $production ) {
+            return $cached = false;
+        }
+
+        // Different from production, so we're in kit mode.
+        return $cached = true;
 
     }
 
-    // Get site URL.
-    $current_url = base64_encode( trailingslashit( site_url() ) );
+    // No production URL set yet.
+    // If on a kit suffix domain, we're in kit mode.
+    if( $host_kit( $base ) ) {
+        return $cached = true;
+    }
 
-    // Check if the site is production.
-    if( get_option( 'kit_production_url' ) !== $current_url ) $status = true;
+    // Not on a kit suffix and no production set - assume this is production.
+    $production = base64_encode( trailingslashit( home_url() ) );
 
-    // Check for override.
-    if( ! empty( get_option( 'kit_environment' ) ) && get_option( 'kit_environment' ) === 'production' ) $status = false;
+    // Save as production URL.
+    if( is_multisite() ) {
+        update_site_option( $key, $production );
+    } else {
+        update_option( $key, $production );
+    }
 
-    // Check if site is mightyrhino.net.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'mightyrhino.net' ) !== false ) $status = true;
-
-    // Check if site is builtmighty.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'builtmighty.com' ) !== false ) $status = true;
-
-    // Check if site is github.dev.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'github.dev' ) !== false ) $status = true;
-
-    // Check if site is kinsta.cloud.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'kinsta.cloud' ) !== false ) $status = true;
-
-    // Check if site is wpengine.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'wpengine.com' ) !== false ) $status = true;
-
-    // Check if site is cloudwaysapps.com.
-    if( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], 'cloudwaysapps.com' ) !== false ) $status = true;
-
-    // Return status.
-    return $status;
+    // This is production, not kit mode.
+    return $cached = false;
 
 }
 
