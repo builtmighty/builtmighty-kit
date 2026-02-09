@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A kit for Built Mighty clients and developers.
-Version: 5.0.0
+Version: 5.0.1
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -31,7 +31,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  *
  * @since   1.0.0
  */
-define( 'KIT_VERSION', '5.0.0' );
+define( 'KIT_VERSION', '5.0.1' );
 define( 'KIT_NAME', 'builtmighty-kit' );
 define( 'KIT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'KIT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -205,10 +205,10 @@ function is_kit_mode(): bool {
     }
 
     // Get host.
-    $host = trailingslashit( $scheme . '://' . wp_parse_url( home_url(), PHP_URL_HOST ) );
+    $host_only = wp_parse_url( home_url(), PHP_URL_HOST ) ?? '';
+    $host = trailingslashit( $scheme . '://' . $host_only );
 
     // Extract base domain (e.g., "mightyrhino.net" from "staging.mightyrhino.net").
-    $host_only = wp_parse_url( home_url(), PHP_URL_HOST );
     $parts = explode( '.', $host_only );
     $base = ( count( $parts ) >= 2 )
         ? implode( '.', array_slice( $parts, -2 ) )
