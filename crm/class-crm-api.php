@@ -83,7 +83,7 @@ class crm_api extends API {
      * @return string
      */
     private function get_domain(): string {
-        return wp_parse_url( home_url(), PHP_URL_HOST );
+        return wp_parse_url( home_url(), PHP_URL_HOST ) ?? '';
     }
 
     /**
