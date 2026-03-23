@@ -42,7 +42,9 @@ class security {
      */
     public function rest_endpoints( $endpoints ) {
 
-        // Unset, if set.
+        // Unset, if set. Skip for authenticated users who can edit others' posts
+        // (needed by Gutenberg block editor to display and change the post author).
+        if( current_user_can( 'edit_others_posts' ) ) return $endpoints;
         if( isset( $endpoints['/wp/v2/users'] ) ) unset( $endpoints['/wp/v2/users'] );
         if( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
 
