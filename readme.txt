@@ -4,7 +4,7 @@ Donate link: https://builtmighty.com
 Tags: kit, sitekit, development, security, performance
 Requires at least: 6.0
 Tested up to: 10
-Stable tag: 5.0.0
+Stable tag: 5.0.2
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -20,6 +20,9 @@ The Built Mighty Kit provides a suite of tools for WordPress site management, se
 == Screenshots ==
 
 == Changelog ==
+
+= 5.0.2 =
+* Fixed user enumeration protection incorrectly blocking /wp/v2/users endpoints for authenticated editors, preventing post author from being editable in the Gutenberg block editor.
 
 = 5.0.0 =
 * Added CSS/JS Asset Bundler — auto-detects enqueued assets, allows selective bundling/minification with admin UI, 24-hour auto-rebuild, and admin bar rebuild button.

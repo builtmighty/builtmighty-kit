@@ -173,7 +173,9 @@ class rest_api_security {
         }
 
         // Always disable user enumeration if security class is active.
-        if ( get_option( 'kit_disable_user_enum', 'enable' ) === 'enable' ) {
+        // Skip for authenticated users who can edit others' posts (needed by Gutenberg block editor
+        // to display and change the post author in the Author panel).
+        if ( get_option( 'kit_disable_user_enum', 'enable' ) === 'enable' && ! current_user_can( 'edit_others_posts' ) ) {
             $disabled = array_merge( $disabled, [ 'users', 'users/(?P<id>[\\d]+)' ] );
         }
 
