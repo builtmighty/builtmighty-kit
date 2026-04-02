@@ -264,6 +264,10 @@ class login_security {
         // Get secret.
         $secret = $this->auth->generate_secret( $user );
 
+        // Load BaconQrCode dependencies only when needed to avoid
+        // autoloader conflicts with other plugins using older versions.
+        require_once KIT_PATH . 'vendor/autoload.php';
+
         // Create QR code using BaconQrCode (SVG).
         $renderer = new ImageRenderer(
             new RendererStyle( 200 ),
