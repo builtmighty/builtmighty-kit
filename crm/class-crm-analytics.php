@@ -69,11 +69,26 @@ class crm_analytics {
 
         add_action( 'init', [ $this, 'schedule_cron' ] );
         add_action( self::CRON_HOOK, [ $this, 'send_daily_report' ] );
+        add_action( self::CRON_HOOK, [ $this, 'send_inventory' ] );
         add_action( 'admin_init', [ $this, 'register_settings' ] );
         add_action( 'wp_ajax_kit_crm_register', [ $this, 'ajax_register' ] );
         add_action( 'wp_ajax_kit_crm_test_connection', [ $this, 'ajax_test_connection' ] );
         add_action( 'wp_ajax_kit_crm_run_backfill', [ $this, 'ajax_run_backfill' ] );
         add_action( 'wp_ajax_kit_crm_send_report_now', [ $this, 'ajax_send_report_now' ] );
+        add_filter( 'pre_update_option_kit_crm_api_key', [ $this, 'preserve_api_key' ], 10, 2 );
+    }
+
+    /**
+     * Keep the stored API key when the settings form posts an empty value —
+     * the key field intentionally renders blank.
+     *
+     * @since 5.1.0
+     * @param mixed $new New option value.
+     * @param mixed $old Existing option value.
+     * @return mixed
+     */
+    public function preserve_api_key( $new, $old ) {
+        return empty( $new ) ? $old : sanitize_text_field( $new );
     }
 
     /**
@@ -137,6 +152,29 @@ class crm_analytics {
     }
 
     /**
+     * Send the installed-software inventory (core, plugins, themes).
+     *
+     * Hooked to the daily cron alongside the report, so inventory still goes
+     * out even when report collection fails.
+     *
+     * @since 5.1.0
+     */
+    public function send_inventory(): void {
+        if ( ! $this->is_enabled() ) {
+            return;
+        }
+
+        $inventory = crm_inventory::get_instance()->collect();
+        $result    = $this->api->send_inventory( $inventory );
+
+        if ( ! $result['success'] ) {
+            error_log( 'Built Mighty Kit Performance: Failed to send inventory - ' . ( $result['error'] ?? 'Unknown error' ) );
+        } else {
+            update_option( 'kit_crm_last_inventory', current_time( 'mysql' ) );
+        }
+    }
+
+    /**
      * Get basic report data for non-WooCommerce sites.
      *
      * @since 5.0.0
@@ -192,6 +230,8 @@ class crm_analytics {
         } else {
             $this->render_connection_status( $settings );
         }
+
+        $this->render_api_key_field( $settings );
 
         $settings->text_field(
             'kit_crm_ga_property',
@@ -257,6 +297,29 @@ class crm_analytics {
                 });
             });
             </script>
+            <?php
+        }, 'builtmighty_crm' );
+    }
+
+    /**
+     * Render the manual API key field. Used when reconnecting a site after
+     * Built Mighty resets its key in the CRM. Renders blank on purpose —
+     * blank submissions keep the current key (see preserve_api_key()).
+     *
+     * @since 5.1.0
+     * @param object $settings Settings instance.
+     */
+    private function render_api_key_field( $settings ): void {
+        $settings->add_settings_field( 'kit_crm_api_key', '', function() {
+            $has_key = ! empty( get_option( 'kit_crm_api_key' ) );
+            ?>
+            <div class="builtmighty-field builtmighty-text-field">
+                <span class="builtmighty-field-label">API Key</span>
+                <div class="builtmighty-field_inner">
+                    <input type="password" name="kit_crm_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo esc_attr( $has_key ? 'Leave blank to keep the current key' : 'Paste the API key from the CRM' ); ?>" />
+                </div>
+                <p class="description">Only needed when connecting manually or after Built Mighty resets this site's key in the CRM. Leave blank to keep the current key.</p>
+            </div>
             <?php
         }, 'builtmighty_crm' );
     }
@@ -432,6 +495,7 @@ class crm_analytics {
 
         if ( $result['success'] ) {
             update_option( 'kit_crm_last_report', current_time( 'mysql' ) );
+            $this->send_inventory();
             wp_send_json_success();
         } else {
             wp_send_json_error( $result['error'] ?? 'Failed to send report' );

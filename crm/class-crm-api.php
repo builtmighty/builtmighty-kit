@@ -174,6 +174,19 @@ class crm_api extends API {
     }
 
     /**
+     * Send the installed-software inventory (core, plugins, themes).
+     *
+     * @since 5.1.0
+     * @param array $inventory The collected inventory.
+     * @return array
+     */
+    public function send_inventory( array $inventory ): array {
+        $body = array_merge( [ 'domain' => $this->get_domain() ], $inventory );
+
+        return $this->post( 'api/woo/inventory', $body );
+    }
+
+    /**
      * Get site information.
      *
      * @since 5.0.0

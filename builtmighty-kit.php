@@ -135,6 +135,7 @@ function load() {
     require_once KIT_PATH . 'crm/class-crm-api.php';
     require_once KIT_PATH . 'crm/class-crm-woocommerce.php';
     require_once KIT_PATH . 'crm/class-crm-rum.php';
+    require_once KIT_PATH . 'crm/class-crm-inventory.php';
     require_once KIT_PATH . 'crm/class-crm-analytics.php';
 
     /**
