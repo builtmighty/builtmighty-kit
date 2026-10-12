@@ -1,0 +1,112 @@
+/**
+ * Delete Users search.
+ *
+ * Styles for public/js/user-delete.js on the Delete Users screen.
+ *
+ * Standalone file: not built by laravel-mix. Edit it directly.
+ *
+ * @package Built Mighty Kit
+ * @since   5.2.0
+ */
+
+/* The native field stays in the form (it is what submits), but out of sight. */
+.kit-user-search-native {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip: rect( 0 0 0 0 );
+	clip-path: inset( 50% );
+	white-space: nowrap;
+}
+
+.kit-user-search {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+	margin: 6px 0 0;
+	vertical-align: top;
+}
+
+.kit-user-search .kit-user-search-input {
+	width: 25em;
+	max-width: 100%;
+}
+
+.kit-user-search-list {
+	position: absolute;
+	z-index: 1000;
+	top: 100%;
+	left: 0;
+	right: 0;
+	min-width: 18em;
+	max-height: 18em;
+	margin: 2px 0 0;
+	padding: 4px 0;
+	overflow-y: auto;
+	background: #fff;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.12 );
+}
+
+.kit-user-search-list[hidden] {
+	display: none;
+}
+
+.kit-user-search-option {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding: 6px 10px;
+	line-height: 1.4;
+	cursor: pointer;
+}
+
+.kit-user-search-option:hover {
+	background: #f0f0f1;
+}
+
+.kit-user-search-option[aria-selected="true"] {
+	background: var( --wp-admin-theme-color, #2271b1 );
+	color: #fff;
+}
+
+.kit-user-search-email {
+	font-size: 12px;
+	color: #646970;
+	word-break: break-all;
+}
+
+.kit-user-search-option[aria-selected="true"] .kit-user-search-email {
+	color: rgba( 255, 255, 255, 0.85 );
+}
+
+.kit-user-search-more {
+	margin-top: 4px;
+	border-top: 1px solid #dcdcde;
+	font-weight: 600;
+	color: var( --wp-admin-theme-color, #2271b1 );
+}
+
+.kit-user-search .kit-user-search-status {
+	margin: 4px 0 0;
+}
+
+.kit-user-search .kit-user-search-status:empty {
+	display: none;
+}
+
+.kit-user-delete-notice.notice.inline {
+	margin: 8px 0 12px;
+}
+
+@media screen and ( max-width: 782px ) {
+	.kit-user-search,
+	.kit-user-search .kit-user-search-input {
+		width: 100%;
+	}
+}
