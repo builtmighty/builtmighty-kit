@@ -28,12 +28,19 @@ This plugin is the all-around kit for Built Mighty client sites. From defining a
 * **Development Footer** &mdash; Adds `🔨 Proudly developed by Built Mighty` to the wp-admin footer.
 * **Developer Widget** &mdash; Adds a Built Mighty developer dashboard widget, with: PHP version, MySQL version, WordPress version, WooCommerce version (if installed), enabled services, and the current Git branch.
 * **Client Widget** &mdash; Adds a client dashboard widget with welcome information, as well as a Slack message form.
+* **Delete Users Search** &mdash; *(optional)* Replaces the "Attribute all content to" drop-down on the Delete Users screen, which loads every account on the site, with a capped list plus a paginated search, and explains what "Delete all content" would actually remove. Enabled by default.
 
 ## Installation on All Sites
 It is highly recommended that, no matter the site, the `WP_ENVIRONMENT_TYPE` variable should be set within `wp-config.php`. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production` to set the plugin to production mode.
 
 ## Settings
 To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
+
+## 5.2.0
+* ✨ Added Delete Users Search, replacing the unbounded "Attribute all content to" drop-down with a capped list plus an AJAX paginated search.
+* ✨ Added a per-user summary of what "Delete all content" would remove, so WooCommerce order placeholders are not attributed to staff accounts.
+* ⚡ Skipped role and capability queries on large sites, where they scan the whole user table.
+* 🔧 Added a Delete Users Search setting, enabled by default.
 
 ## 4.4.0
 * ✨ Added updated kit mode detection.

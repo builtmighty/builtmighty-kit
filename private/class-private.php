@@ -364,6 +364,15 @@ class core {
             'Disables the theme/plugin file editor.' // Description.
         );
 
+        // Delete Users search.
+        $settings->radio_field(
+            'kit_user_delete_search', // Field ID.
+            'Delete Users Search', // Field label.
+            'builtmighty_kit', // The section ID this field will be placed into.
+            [ 'enable' => 'Enable', 'disable' => 'Disable' ], // Options.
+            'Enabled by default. On the Delete Users screen, replaces the "Attribute all content to" drop-down, which loads every account on the site, with a paginated search, and explains what "Delete all content" would remove.' // Description.
+        );
+
         // Disable email.
         $settings->radio_field(
             'kit_block_email', // Field ID.
@@ -906,6 +915,7 @@ class core {
             'kit_block_external',
             'kit_allowed_external',
             'kit_disable_editor',
+            'kit_user_delete_search',
             'kit_actionscheduler',
             'slack-channel',
             'slack-notifications',

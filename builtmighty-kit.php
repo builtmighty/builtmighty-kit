@@ -3,7 +3,7 @@
 Plugin Name: 🔨 Built Mighty Kit
 Plugin URI: https://builtmighty.com
 Description: A kit for Built Mighty clients and developers.
-Version: 5.1.0
+Version: 5.2.0
 Author: Built Mighty
 Author URI: https://builtmighty.com
 Copyright: Built Mighty
@@ -31,7 +31,7 @@ if( ! defined( 'WPINC' ) ) { die; }
  *
  * @since   1.0.0
  */
-define( 'KIT_VERSION', '5.1.0' );
+define( 'KIT_VERSION', '5.2.0' );
 define( 'KIT_NAME', 'builtmighty-kit' );
 define( 'KIT_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'KIT_URI', trailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -121,6 +121,7 @@ function load() {
     require_once KIT_PATH . 'private/class-updates.php';
     require_once KIT_PATH . 'private/class-plugins.php';
     require_once KIT_PATH . 'private/class-disable-editor.php';
+    require_once KIT_PATH . 'private/class-user-delete.php';
     require_once KIT_PATH . 'private/class-actionscheduler.php';
     require_once KIT_PATH . 'private/class-notifications.php';
     require_once KIT_PATH . 'private/class-speed.php';
