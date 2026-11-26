@@ -9,6 +9,10 @@
  */
 namespace BuiltMightyKit\Public;
 
+use BuiltMightyKit\Utility\settings;
+
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
 class session_management {
 
     /**
@@ -19,9 +23,12 @@ class session_management {
     public function __construct() {
 
         // Check if enabled.
-        if ( get_option( 'kit_session_management' ) !== 'enable' ) {
+        if ( ! settings::is_on( 'kit_session_management' ) ) {
             return;
         }
+
+        // Explain an idle sign-out on the login screen.
+        add_filter( 'login_message', [ $this, 'expired_message' ] );
 
         // Force logout on password change.
         add_action( 'after_password_reset', [ $this, 'destroy_other_sessions_on_password_reset' ], 10, 2 );
@@ -33,7 +40,6 @@ class session_management {
         // Session timeout for idle users.
         add_action( 'init', [ $this, 'check_session_timeout' ] );
         add_action( 'wp_login', [ $this, 'record_last_activity' ], 10, 2 );
-        add_filter( 'heartbeat_received', [ $this, 'heartbeat_activity' ], 10, 2 );
 
         // Add "Log out everywhere" to profile.
         add_action( 'show_user_profile', [ $this, 'show_logout_everywhere_button' ] );
@@ -54,7 +60,7 @@ class session_management {
      */
     public function destroy_other_sessions_on_password_reset( $user, $new_pass ) {
 
-        if ( get_option( 'kit_session_logout_on_password_change' ) !== 'enable' ) {
+        if ( ! settings::is_on( 'kit_session_logout_on_password_change' ) ) {
             return;
         }
 
@@ -74,7 +80,7 @@ class session_management {
      */
     public function check_password_change( $user_id, $old_user_data ) {
 
-        if ( get_option( 'kit_session_logout_on_password_change' ) !== 'enable' ) {
+        if ( ! settings::is_on( 'kit_session_logout_on_password_change' ) ) {
             return;
         }
 
@@ -104,35 +110,29 @@ class session_management {
      */
     public function enforce_session_limit( $user_login, $user ) {
 
-        $limit = (int) get_option( 'kit_session_limit', 0 );
+        $limit = (int) settings::get( 'kit_session_limit' );
 
         if ( $limit <= 0 ) {
             return;
         }
 
-        // Get user's sessions.
-        $sessions = \WP_Session_Tokens::get_instance( $user->ID );
-        $all_sessions = $sessions->get_all();
-
-        // If we're at or over the limit, destroy oldest sessions.
-        if ( count( $all_sessions ) >= $limit ) {
-            // Sort by login time.
-            uasort( $all_sessions, function( $a, $b ) {
-                return ( $a['login'] ?? 0 ) - ( $b['login'] ?? 0 );
-            } );
-
-            // Destroy oldest sessions to make room.
-            $to_destroy = count( $all_sessions ) - $limit + 1;
-            $count = 0;
-
-            foreach ( $all_sessions as $token => $session ) {
-                if ( $count >= $to_destroy ) {
-                    break;
-                }
-                $sessions->destroy( $token );
-                $count++;
-            }
+        // Only the default token manager stores sessions where we can trim them.
+        $manager = \WP_Session_Tokens::get_instance( $user->ID );
+        if ( ! $manager instanceof \WP_User_Meta_Session_Tokens ) {
+            return;
         }
+
+        // Keyed by verifier. The new session already exists when wp_login fires.
+        $stored = get_user_meta( $user->ID, 'session_tokens', true );
+        if ( ! is_array( $stored ) || count( $stored ) <= $limit ) {
+            return;
+        }
+
+        // Keep the newest sessions.
+        uasort( $stored, function( $a, $b ) {
+            return ( $b['login'] ?? 0 ) <=> ( $a['login'] ?? 0 );
+        } );
+        update_user_meta( $user->ID, 'session_tokens', array_slice( $stored, 0, $limit, true ) );
 
     }
 
@@ -148,14 +148,14 @@ class session_management {
             return;
         }
 
-        $timeout = (int) get_option( 'kit_session_timeout', 0 );
+        $timeout = (int) settings::get( 'kit_session_timeout' );
 
         if ( $timeout <= 0 ) {
             return;
         }
 
         $user_id = get_current_user_id();
-        $last_activity = get_user_meta( $user_id, 'kit_last_activity', true );
+        $last_activity = (int) get_user_meta( $user_id, 'kit_last_activity', true );
 
         if ( empty( $last_activity ) ) {
             $this->record_activity( $user_id );
@@ -163,19 +163,29 @@ class session_management {
         }
 
         // Check if session has timed out.
-        $timeout_seconds = $timeout * MINUTE_IN_SECONDS;
-        if ( ( time() - $last_activity ) > $timeout_seconds ) {
-            // Log out the user.
+        if ( ( time() - $last_activity ) > $timeout * MINUTE_IN_SECONDS ) {
+
             wp_logout();
 
-            // Redirect to login page with message.
-            $redirect_url = add_query_arg( 'session_expired', '1', wp_login_url() );
-            wp_safe_redirect( $redirect_url );
+            // AJAX and REST clients get a 401 they can handle, not a redirect.
+            $is_rest = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+                || ! empty( $_GET['rest_route'] )
+                || strpos( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '/' . rest_get_url_prefix() . '/' ) !== false;
+            if ( wp_doing_ajax() || $is_rest ) {
+                wp_send_json( [ 'code' => 'kit_session_expired', 'message' => 'Signed out after inactivity.' ], 401 );
+            }
+
+            wp_safe_redirect( add_query_arg( 'session_expired', '1', wp_login_url() ) );
             exit;
         }
 
-        // Update activity timestamp.
-        $this->record_activity( $user_id );
+        // Heartbeat ticks keep an open tab alive; they aren't activity.
+        if ( wp_doing_ajax() && isset( $_POST['action'] ) && $_POST['action'] === 'heartbeat' ) {
+            return;
+        }
+
+        // Update activity timestamp (at most once a minute).
+        $this->record_activity( $user_id, $last_activity );
 
     }
 
@@ -202,13 +212,27 @@ class session_management {
      * @since   5.0.0
      */
     public function heartbeat_activity( $response, $data ) {
-
-        if ( is_user_logged_in() ) {
-            $this->record_activity( get_current_user_id() );
-        }
-
         return $response;
+    }
 
+    /**
+     * Login screen message after an idle sign-out.
+     *
+     * @param   string $message
+     * @return  string
+     */
+    public function expired_message( $message ) {
+        if ( empty( $_GET['session_expired'] ) ) {
+            return $message;
+        }
+        $minutes = (int) settings::get( 'kit_session_timeout' );
+        if ( $minutes >= 60 ) {
+            $hours = (int) ( $minutes / 60 );
+            $label = sprintf( _n( '%d hour', '%d hours', $hours, 'builtmighty-kit' ), $hours );
+        } else {
+            $label = sprintf( _n( '%d minute', '%d minutes', $minutes, 'builtmighty-kit' ), $minutes );
+        }
+        return $message . '<p class="message">' . esc_html( sprintf( 'You were signed out after %s without activity. Sign in again to continue.', $label ) ) . '</p>';
     }
 
     /**
@@ -218,7 +242,10 @@ class session_management {
      *
      * @since   5.0.0
      */
-    private function record_activity( $user_id ) {
+    private function record_activity( $user_id, $last = 0 ) {
+        if ( $last && ( time() - (int) $last ) < MINUTE_IN_SECONDS ) {
+            return;
+        }
         update_user_meta( $user_id, 'kit_last_activity', time() );
     }
 
@@ -237,7 +264,7 @@ class session_management {
         $count = count( $all_sessions );
 
         ?>
-        <h2><?php esc_html_e( 'Session Management', 'builtmighty-kit' ); ?></h2>
+        <h2 id="kit-session-management"><?php esc_html_e( 'Sign-in sessions', 'builtmighty-kit' ); ?></h2>
         <table class="form-table">
             <tr>
                 <th scope="row"><?php esc_html_e( 'Active Sessions', 'builtmighty-kit' ); ?></th>

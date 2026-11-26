@@ -48,6 +48,12 @@ class crm_rum {
      * @since 5.0.0
      */
     public function __construct() {
+        // One instance: the loader and get_instance() share it.
+        if ( self::$instance !== null ) {
+            return;
+        }
+        self::$instance = $this;
+
         if ( $this->is_enabled() ) {
             add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_rum_script' ] );
         }
@@ -63,8 +69,10 @@ class crm_rum {
      * @return bool
      */
     public function is_enabled(): bool {
-        return get_option( 'kit_crm_rum_enabled', '' ) === 'enable'
-            && get_option( 'kit_crm_enabled', '' ) === 'enable'
+        // Live store only: copies share its API key but not its visitors.
+        return ! \BuiltMightyKit\is_kit_mode()
+            && \BuiltMightyKit\Utility\settings::is_on( 'kit_crm_rum_enabled' )
+            && \BuiltMightyKit\Utility\settings::is_on( 'kit_crm_enabled' )
             && ! empty( get_option( 'kit_crm_api_key' ) );
     }
 
@@ -124,147 +132,169 @@ class crm_rum {
     }
 
     /**
+     * Histogram bucket edges. Fixed-size storage, whatever the traffic.
+     *
+     * @since 6.0.0
+     */
+    private static function edges( string $metric ): array {
+        if ( $metric === 'cls' ) {
+            // CLS is sent multiplied by 1000.
+            return [ 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000 ];
+        }
+        return [ 100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 8000, 10000, 15000, 20000 ];
+    }
+
+    /**
      * Process incoming RUM beacon data.
      *
      * @since 5.0.0
+     * @version 6.0.0
      */
     public function process_beacon(): void {
+
+        if ( ! $this->is_enabled() ) {
+            wp_die( '', '', 204 );
+        }
         if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'kit_rum_beacon' ) ) {
             wp_die( 'Invalid nonce', 403 );
         }
 
-        $metrics_json = sanitize_text_field( $_POST['metrics'] ?? '' );
-        if ( empty( $metrics_json ) ) {
-            wp_die( 'No metrics', 400 );
+        // A visitor sends at most one beacon a page view; cap per IP to keep bots out.
+        $hit = \BuiltMightyKit\Utility\request::hit( 'rum', \BuiltMightyKit\Utility\request::client_ip(), 30, HOUR_IN_SECONDS );
+        if ( ! $hit['allowed'] ) {
+            wp_die( '', '', 429 );
         }
 
-        $metrics = json_decode( $metrics_json, true );
+        $metrics = json_decode( wp_unslash( (string) ( $_POST['metrics'] ?? '' ) ), true );
         if ( ! is_array( $metrics ) ) {
             wp_die( 'Invalid metrics', 400 );
         }
 
         $this->store_metrics( $metrics );
 
-        wp_die( 'OK', 200 );
+        wp_die( '', '', 204 );
+
     }
 
     /**
-     * Store metrics for aggregation.
+     * Add one page view to today's histograms.
      *
      * @since 5.0.0
+     * @version 6.0.0
      * @param array $metrics The metrics to store.
      */
     private function store_metrics( array $metrics ): void {
-        $date = current_time( 'Y-m-d' );
-        $key  = 'kit_crm_rum_' . $date;
 
-        $existing = get_transient( $key );
-        if ( ! is_array( $existing ) ) {
-            $existing = [
-                'samples'    => [],
-                'device'     => [ 'mobile' => 0, 'desktop' => 0, 'tablet' => 0 ],
-                'connection' => [],
-            ];
+        $key  = 'kit_crm_rum_' . wp_date( 'Y-m-d' );
+        $data = get_option( $key, null );
+        if ( ! is_array( $data ) ) {
+            $data = [ 'n' => 0, 'hist' => [], 'device' => [ 'mobile' => 0, 'desktop' => 0, 'tablet' => 0 ], 'connection' => [] ];
         }
 
-        $sample = [
-            'lcp'  => isset( $metrics['lcp'] ) ? (int) $metrics['lcp'] : null,
-            'fid'  => isset( $metrics['fid'] ) ? (int) $metrics['fid'] : null,
-            'cls'  => isset( $metrics['cls'] ) ? (int) $metrics['cls'] : null,
-            'ttfb' => isset( $metrics['ttfb'] ) ? (int) $metrics['ttfb'] : null,
-            'fcp'  => isset( $metrics['fcp'] ) ? (int) $metrics['fcp'] : null,
-            'inp'  => isset( $metrics['inp'] ) ? (int) $metrics['inp'] : null,
-        ];
+        // Sane ranges only (ms, or CLS x 1000).
+        $limits = [ 'lcp' => 60000, 'fid' => 10000, 'inp' => 10000, 'ttfb' => 30000, 'fcp' => 60000, 'cls' => 5000 ];
+        $counted = false;
+        foreach ( $limits as $metric => $max ) {
+            if ( ! isset( $metrics[ $metric ] ) || ! is_numeric( $metrics[ $metric ] ) ) continue;
+            $value = (int) $metrics[ $metric ];
+            if ( $value < 0 || $value > $max ) continue;
+            $bucket = count( self::edges( $metric ) );
+            foreach ( self::edges( $metric ) as $b => $edge ) {
+                if ( $value <= $edge ) { $bucket = $b; break; }
+            }
+            $data['hist'][ $metric ][ $bucket ] = ( $data['hist'][ $metric ][ $bucket ] ?? 0 ) + 1;
+            $counted = true;
+        }
+        if ( ! $counted ) return;
 
-        $existing['samples'][] = $sample;
-
-        $device = sanitize_text_field( $metrics['device'] ?? 'desktop' );
-        if ( isset( $existing['device'][ $device ] ) ) {
-            $existing['device'][ $device ]++;
+        $data['n']++;
+        $device = sanitize_key( (string) ( $metrics['device'] ?? 'desktop' ) );
+        if ( isset( $data['device'][ $device ] ) ) $data['device'][ $device ]++;
+        $connection = substr( sanitize_key( (string) ( $metrics['connection'] ?? 'unknown' ) ), 0, 12 );
+        if ( count( $data['connection'] ) < 10 || isset( $data['connection'][ $connection ] ) ) {
+            $data['connection'][ $connection ] = ( $data['connection'][ $connection ] ?? 0 ) + 1;
         }
 
-        $connection = sanitize_text_field( $metrics['connection'] ?? 'unknown' );
-        if ( ! isset( $existing['connection'][ $connection ] ) ) {
-            $existing['connection'][ $connection ] = 0;
-        }
-        $existing['connection'][ $connection ]++;
+        update_option( $key, $data, false );
 
-        set_transient( $key, $existing, DAY_IN_SECONDS * 2 );
     }
 
     /**
-     * Get aggregated metrics for a date.
+     * Aggregated metrics for a date (p50, p75, p95 from the histograms).
      *
      * @since 5.0.0
+     * @version 6.0.0
      * @param string $date Date in Y-m-d format.
      * @return array|null
      */
     public function get_aggregated_metrics( string $date ): ?array {
-        $key = 'kit_crm_rum_' . $date;
-        $data = get_transient( $key );
 
-        if ( ! is_array( $data ) || empty( $data['samples'] ) ) {
+        $data = get_option( 'kit_crm_rum_' . $date, null );
+        if ( ! is_array( $data ) || empty( $data['n'] ) ) {
             return null;
         }
 
-        $samples = $data['samples'];
-        $count = count( $samples );
-
-        $metrics_to_aggregate = [ 'lcp', 'fid', 'cls', 'ttfb', 'fcp', 'inp' ];
         $aggregated = [];
-
-        foreach ( $metrics_to_aggregate as $metric ) {
-            $values = array_filter( array_column( $samples, $metric ), function( $v ) {
-                return $v !== null;
-            } );
-
-            if ( empty( $values ) ) {
-                $aggregated[ $metric ] = null;
-                continue;
-            }
-
-            sort( $values );
+        foreach ( [ 'lcp', 'fid', 'cls', 'ttfb', 'fcp', 'inp' ] as $metric ) {
+            $hist = (array) ( $data['hist'][ $metric ] ?? [] );
+            if ( ! $hist ) { $aggregated[ $metric ] = null; continue; }
             $aggregated[ $metric ] = [
-                'p50' => $this->percentile( $values, 50 ),
-                'p75' => $this->percentile( $values, 75 ),
-                'p95' => $this->percentile( $values, 95 ),
+                'p50' => $this->percentile( $metric, $hist, 50 ),
+                'p75' => $this->percentile( $metric, $hist, 75 ),
+                'p95' => $this->percentile( $metric, $hist, 95 ),
             ];
         }
 
-        $total_devices = array_sum( $data['device'] );
+        $total = array_sum( $data['device'] );
         $device_pct = [];
-        foreach ( $data['device'] as $type => $count_type ) {
-            $device_pct[ $type ] = $total_devices > 0 ? round( ( $count_type / $total_devices ) * 100 ) : 0;
+        foreach ( $data['device'] as $type => $n ) {
+            $device_pct[ $type ] = $total > 0 ? round( ( $n / $total ) * 100 ) : 0;
         }
 
         return [
-            'sample_count'    => $count,
-            'metrics'         => $aggregated,
+            'date'             => $date,
+            'sample_count'     => (int) $data['n'],
+            'metrics'          => $aggregated,
             'device_breakdown' => $device_pct,
             'connection_types' => $data['connection'],
         ];
+
     }
 
     /**
-     * Calculate percentile from sorted array.
+     * Percentile from a histogram (upper edge of the bucket that holds it).
      *
-     * @since 5.0.0
-     * @param array $sorted Sorted array of values.
-     * @param int   $percentile Percentile to calculate (0-100).
-     * @return int
+     * @since 6.0.0
      */
-    private function percentile( array $sorted, int $percentile ): int {
-        $count = count( $sorted );
-        $index = ( $percentile / 100 ) * ( $count - 1 );
-        $lower = (int) floor( $index );
-        $upper = (int) ceil( $index );
-
-        if ( $lower === $upper ) {
-            return (int) $sorted[ $lower ];
+    private function percentile( string $metric, array $hist, int $percentile ): int {
+        ksort( $hist );
+        $edges  = self::edges( $metric );
+        $total  = array_sum( $hist );
+        $target = max( 1, (int) ceil( $total * $percentile / 100 ) );
+        $seen   = 0;
+        foreach ( $hist as $bucket => $n ) {
+            $seen += $n;
+            if ( $seen >= $target ) {
+                return (int) ( $edges[ $bucket ] ?? end( $edges ) );
+            }
         }
+        return (int) end( $edges );
+    }
 
-        $fraction = $index - $lower;
-        return (int) round( $sorted[ $lower ] + ( $sorted[ $upper ] - $sorted[ $lower ] ) * $fraction );
+    /**
+     * Send yesterday's numbers to the CRM, then clear them.
+     *
+     * @since 6.0.0
+     */
+    public function send_yesterday( crm_api $api ): void {
+        $date = wp_date( 'Y-m-d', time() - DAY_IN_SECONDS );
+        $agg  = $this->get_aggregated_metrics( $date );
+        if ( $agg ) {
+            $result = $api->send_rum_beacon( $agg );
+            if ( ! empty( $result['success'] ) ) $this->clear_metrics( $date );
+        }
+        // Remove anything older than a week that was never sent.
+        $this->clear_metrics( wp_date( 'Y-m-d', time() - 8 * DAY_IN_SECONDS ) );
     }
 
     /**
@@ -274,6 +304,7 @@ class crm_rum {
      * @param string $date Date in Y-m-d format.
      */
     public function clear_metrics( string $date ): void {
+        delete_option( 'kit_crm_rum_' . $date );
         delete_transient( 'kit_crm_rum_' . $date );
     }
 

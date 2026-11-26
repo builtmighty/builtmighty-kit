@@ -1,566 +1,704 @@
 <?php
 /**
- * Two Factor Authentication.
+ * Two-factor sign-in.
  *
- * Enables two-factor authentication for logging in.
+ * The second step happens after WordPress accepts the password:
+ *
+ *  1. authenticate (priority 100): a correct password for someone who needs
+ *     two-factor is noted, and auth cookies are held back.
+ *  2. wp_login (first): the session WordPress just created is destroyed, a
+ *     pending sign-in starts (a short-lived HttpOnly cookie), and the person
+ *     goes to wp-login.php?action=kit_2fa.
+ *  3. The code screen checks an app, emailed or backup code (or a passkey),
+ *     then signs the person in and fires wp_login for everything else.
+ *
+ * Nobody can trigger a code email or a lockout without the password.
  *
  * @package Built Mighty Kit
  * @since   1.0.0
- * @version 5.0.0
+ * @version 6.0.0
  */
 namespace BuiltMightyKit\Public;
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Writer;
+
+use BuiltMightyKit\Utility\authentication;
+use BuiltMightyKit\Utility\settings;
+use BuiltMightyKit\Utility\activity;
+
+if( ! defined( 'ABSPATH' ) ) { exit; }
+
 class login_security {
 
-    /**
-     * Auth.
-     *
-     * @since   1.0.0
-     */
+    /** @var authentication */
     private $auth;
+
+    /** @var \WP_User|null User who passed the password step this request. */
+    private $challenge = null;
+
+    /** @var string Session token WordPress created for that user. */
+    private $session_token = '';
+
+    /** @var bool Completing a sign-in after the code step. */
+    private $completing = false;
+
+    /** @var string Method used to complete, for the sign-in log. */
+    private $method_used = '';
 
     /**
      * Construct.
-     *
-     * @since   1.0.0
      */
     public function __construct() {
 
-        // Check if enabled.
-        if( get_option( 'kit_enable_2fa' ) !== 'enable' ) return;
+        $this->auth = new authentication();
 
-        // Get auth.
-        $this->auth = new \BuiltMightyKit\Utility\authentication();
+        // Setup links and profile management work even if two-factor is later switched off.
+        add_action( 'login_form_kit_2fa_setup', [ $this, 'setup_screen' ] );
+        add_action( 'show_user_profile', [ $this, 'profile' ] );
+        add_action( 'edit_user_profile', [ $this, 'profile' ] );
+        add_action( 'personal_options_update', [ $this, 'profile_save' ] );
+        add_action( 'edit_user_profile_update', [ $this, 'profile_save' ] );
+        add_action( 'after_password_reset', [ $this, 'forget_devices_on_password' ] );
+        add_action( 'profile_update', [ $this, 'forget_devices_on_profile' ], 10, 2 );
 
-        // Verify 2FA code.
-        add_filter( 'wp_authenticate_user', [ $this, 'verify_login' ], 10, 2 );
+        if( ! settings::is_on( 'kit_enable_2fa' ) ) return;
 
-        // Check user.
-        add_action( 'wp_ajax_check_user', [ $this, 'check_user' ] );
-        add_action( 'wp_ajax_nopriv_check_user', [ $this, 'check_user' ] );
+        add_filter( 'authenticate', [ $this, 'after_password' ], 100, 3 );
+        add_action( 'set_logged_in_cookie', [ $this, 'capture_token' ], 10, 6 );
+        add_action( 'wp_login', [ $this, 'intercept' ], -1000, 2 );
+        add_action( 'login_form_kit_2fa', [ $this, 'challenge_screen' ] );
+        add_action( 'login_enqueue_scripts', [ $this, 'login_assets' ] );
+        add_action( 'admin_init', [ $this, 'enforce_enrollment' ], 1 );
+        add_action( 'template_redirect', [ $this, 'enforce_enrollment' ], 1 );
+        add_filter( 'rest_authentication_errors', [ $this, 'enrollment_rest' ], 99 );
+        add_filter( 'kit_login_method', [ $this, 'login_method' ] );
 
-        // Add to login form.
-        add_action( 'login_form', [ $this, 'login' ] );
-        add_action( 'woocommerce_login_form', [ $this, 'login' ] );
-
-        // Enqueue.
-        add_action( 'login_enqueue_scripts', [ $this, 'enqueue' ] );
-        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ] );
-
-        // Create setup page.
-        add_action( 'template_redirect', [ $this, 'setup' ] );
-
-        // Add user fields for administration.
-        add_action( 'show_user_profile', [ $this, 'user_administration' ] );
-        add_action( 'edit_user_profile', [ $this, 'user_administration' ] );
-        add_action( 'personal_options_update', [ $this, 'user_save' ] );
-        add_action( 'edit_user_profile_update', [ $this, 'user_save' ] );
-
-        // Check if WooCommerce is active.
-        if( ! in_array( 'woocommerce/woocommerce.php', (array)apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) return;
-
-        // Add tab and endpoint.
-        add_filter( 'woocommerce_account_menu_items', [ $this, 'woocommerce_account' ] );
-        add_action( 'woocommerce_account_security_endpoint', [ $this, 'security_endpoint' ] );
-        add_action( 'init', [ $this, 'security_rewrite' ] );
+        if( class_exists( 'WooCommerce' ) ) {
+            add_action( 'init', [ $this, 'account_endpoint' ] );
+            add_filter( 'woocommerce_account_menu_items', [ $this, 'account_menu' ] );
+            add_action( 'woocommerce_account_security_endpoint', [ $this, 'account_page' ] );
+            add_action( 'template_redirect', [ $this, 'account_actions' ] );
+        }
 
     }
 
-    /**
-     * Verify login.
-     *
-     * On login, check if the user requires 2FA. If 2FA is required, authenticate the code.
-     *
-     * @param   object  $user
-     * @param   string  $password
-     *
-     * @since   1.0.0
-     * @since   4.4.0  Added rate limiting
-     */
-    public function verify_login( $user, $password ) {
+    // ------------------------------------------------------------------
+    // Sign-in flow
+    // ------------------------------------------------------------------
 
-        // Check if user requires 2FA.
+    /**
+     * After WordPress checks the password.
+     */
+    public function after_password( $user, $username, $password ) {
+
+        if( ! $user instanceof \WP_User || $this->completing ) return $user;
+
+        // API clients (application passwords, XML-RPC) can't answer a second step.
+        if( ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || did_action( 'application_password_did_authenticate' ) ) return $user;
+
         if( ! $this->auth->is_required( $user ) ) return $user;
 
-        // Check rate limiting.
-        if ( $this->auth->is_rate_limited( $user->ID, 'auth_code' ) ) {
-            $remaining = $this->auth->get_lockout_remaining( $user->ID, 'auth_code' );
-            $minutes = ceil( $remaining / 60 );
-            /* translators: %d: Number of minutes until lockout expires */
-            return new \WP_Error( 'rate_limited', sprintf( __( 'Too many failed attempts. Please try again in %d minutes.' ), $minutes ) );
+        if( $this->auth->is_trusted( $user ) ) {
+            $this->method_used = 'Trusted device';
+            return $user;
         }
 
-        // Check if 2FA code is set.
-        if( ! $this->auth->get_code( $_POST ) ) {
-
-            // Return error.
-            return new \WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
-
+        // Not set up yet: sign in now, then enforce_enrollment() sends them to setup.
+        if( $this->auth->needs_enrollment( $user ) ) {
+            $this->method_used = 'Password (two-factor setup required)';
+            return $user;
         }
 
-        // Authenticate, and if valid, allow the user in.
-        if( $this->auth->authenticate( $user->ID, $this->auth->get_code( $_POST ), 'login' ) ) return $user;
-
-        // Return error.
-        return new \WP_Error( 'authentication_failed', __( 'Invalid authentication code. Please try again.' ) );
+        // Hold back cookies; the session is ended in intercept().
+        $this->challenge = $user;
+        add_filter( 'send_auth_cookies', '__return_false', PHP_INT_MAX );
+        return $user;
 
     }
 
     /**
-     * Check user.
-     *
-     * On login, check if user requires 2FA field.
-     * Returns consistent responses to prevent user enumeration.
-     *
-     * @since   1.0.0
-     * @since   4.4.0  Added rate limiting
-     * @since   5.0.0  Fixed user enumeration
+     * Remember the session token WordPress created, so it can be destroyed.
      */
-    public function check_user() {
-
-        // Get client IP for rate limiting.
-        $client_ip = $this->auth->get_client_ip();
-
-        // Check IP-based rate limiting to prevent enumeration.
-        if ( $this->auth->is_rate_limited( $client_ip, 'login_check' ) ) {
-            wp_send_json( [
-                'status'  => 'error',
-                'message' => '',
-            ] );
-        }
-
-        // Check for nonce.
-        if( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'built-twofactor' ) ) {
-            wp_send_json( [
-                'status'  => 'error',
-                'message' => '',
-            ] );
-        }
-
-        // Check for username.
-        if( ! isset( $_POST['login'] ) || empty( $_POST['login'] ) ) {
-            wp_send_json( [
-                'status'  => 'error',
-                'message' => '',
-            ] );
-        }
-
-        // Get user.
-        $login = sanitize_text_field( $_POST['login'] );
-        $user  = get_user_by( 'login', $login );
-        if ( ! $user ) {
-            $user = get_user_by( 'email', $login );
-        }
-
-        // Check for user and 2FA requirement.
-        // Use consistent timing to prevent enumeration via response time.
-        if( ! $user || ! $this->auth->is_required( $user ) ) {
-
-            // Add a small delay to match the timing of the success path.
-            usleep( random_int( 50000, 150000 ) );
-
-            // Record failed attempt for rate limiting.
-            $this->auth->record_failed_attempt( $client_ip, 'login_check' );
-
-            // Return generic error - same structure as success to prevent enumeration.
-            wp_send_json( [
-                'status'    => 'error',
-                'message'   => '',
-            ] );
-
-        }
-
-        // Check if app 2FA is setup.
-        if( ! $this->auth->is_enabled( $user ) ) {
-
-            // Send email code.
-            $this->auth->send_code( $user );
-            wp_send_json( [
-                'status'    => 'success',
-                'message'   => '🔒Authentication Code (Email)',
-            ] );
-
-        } else {
-
-            // Respond.
-            wp_send_json( [
-                'status'    => 'success',
-                'message'   => '🔒Authentication Code (App)',
-            ] );
-
-        }
-
+    public function capture_token( $cookie, $expire, $expiration, $user_id, $scheme, $token ) {
+        if( $this->challenge && (int) $user_id === (int) $this->challenge->ID ) $this->session_token = (string) $token;
     }
 
     /**
-     * Login form.
-     *
-     * Add authentication code to login form.
-     *
-     * @since   1.0.0
+     * Stop the sign-in and send the person to the code screen.
      */
-    public function login() {
-        include KIT_PATH . 'public/views/login.php';
-    }
+    public function intercept( $user_login, $user ) {
 
-    /**
-     * Setup form.
-     *
-     * Add setup form with CSRF protection.
-     *
-     * @since   1.0.0
-     * @since   5.0.0  Added CSRF nonce verification, replaced QR library
-     */
-    public function setup() {
+        if( ! $this->challenge || (int) $user->ID !== (int) $this->challenge->ID ) return;
 
-        // Is 2FA required?
-        if( ! get_option( 'kit_enable_2fa' ) ) return;
+        if( $this->session_token ) {
+            \WP_Session_Tokens::get_instance( $user->ID )->destroy( $this->session_token );
+        }
+        wp_set_current_user( 0 );
 
-        // Set request URI.
-        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
+        $methods  = $this->auth->methods( $user );
+        $method   = (string) key( $methods );
+        $redirect = isset( $_REQUEST['redirect_to'] ) ? wp_unslash( (string) $_REQUEST['redirect_to'] ) : '';
+        if( $redirect === '' && isset( $_POST['woocommerce-login-nonce'] ) ) {
+            // WooCommerce sends its target (e.g. checkout) as "redirect".
+            $redirect = isset( $_POST['redirect'] ) ? wp_unslash( (string) $_POST['redirect'] ) : '';
+            if( $redirect === '' && function_exists( 'wc_get_page_permalink' ) ) $redirect = wc_get_page_permalink( 'myaccount' );
+        }
+        $interim = ! empty( $_REQUEST['interim-login'] );
 
-        // Check request URI.
-        if( $request_uri !== '/security/' ) return;
-
-        // Check for required query string.
-        if( ! isset( $_GET['key'] ) ) return;
-
-        // Check key.
-        if( ! $this->auth->verify_key( $_GET['key'] ) ) return;
-
-        // Key.
-        $key    = $this->auth->get_key( $_GET['key'] );
-        $code   = $this->auth->get_code( $_POST );
-
-        // Check for authentication code.
-        if( $code ) {
-
-            // Verify CSRF nonce.
-            if ( ! isset( $_POST['_kit_2fa_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_kit_2fa_nonce'] ) ), 'kit_2fa_confirm' ) ) {
-                wp_redirect( site_url( '/security?key=' . rawurlencode( sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) . '&confirm=true&status=error' ) );
-                exit;
-            }
-
-            // Confirm setup.
-            $status = $this->auth->confirm( $_GET['key'], $code );
-
-            // Set redirect.
-            $redirect = ( ! $status )
-                ? site_url( '/security?key=' . rawurlencode( sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) . '&confirm=true&status=error' )
-                : site_url( '/security?key=' . rawurlencode( sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) . '&status=confirmed' );
-
-            // Redirect.
-            wp_redirect( $redirect );
-            exit;
-
+        $token = $this->auth->start_pending( $user, ! empty( $_POST['rememberme'] ), $redirect, $method );
+        if( $interim ) {
+            $pending = get_transient( 'kit_2fa_p_' . hash( 'sha256', $token ) );
+            if( is_array( $pending ) ) $this->auth->update_pending( $token, [ 'interim' => true ] + $pending );
+        }
+        $notice = '';
+        if( $method === 'email' ) {
+            $sent = $this->auth->send_code( $user );
+            if( is_wp_error( $sent ) ) $notice = 'limit';
+            elseif( ! $sent ) $notice = 'failed';
         }
 
-        // Get user.
-        $user = get_user_by( 'ID', $key['user_id'] );
-
-        // Get secret.
-        $secret = $this->auth->generate_secret( $user );
-
-        // Load BaconQrCode dependencies only when needed to avoid
-        // autoloader conflicts with other plugins using older versions.
-        require_once KIT_PATH . 'vendor/autoload.php';
-
-        // Create QR code using BaconQrCode (SVG).
-        $renderer = new ImageRenderer(
-            new RendererStyle( 200 ),
-            new SvgImageBackEnd()
-        );
-        $writer  = new Writer( $renderer );
-        $qrData  = 'otpauth://totp/WordPress:' . rawurlencode( $user->user_login ) . '?secret=' . $secret . '&issuer=' . rawurlencode( 'WordPress ' . get_bloginfo( 'name' ) );
-        $svg     = $writer->writeString( $qrData );
-        $dataUri = 'data:image/svg+xml;base64,' . base64_encode( $svg );
-
-        // Include.
-        include KIT_PATH . 'public/views/security.php';
+        $args = [ 'action' => 'kit_2fa' ];
+        if( $interim ) $args['interim-login'] = '1';
+        if( $notice ) $args['kit_sent'] = $notice;
+        wp_safe_redirect( add_query_arg( $args, wp_login_url() ) );
         exit;
 
     }
 
     /**
-     * User Administration.
+     * Send signed-in people who still need two-factor to setup.
      *
-     * Add user fields for administration.
-     *
-     * @param   object  $user
-     *
-     * @since   1.0.0
+     * Runs on every wp-admin and front-end page view. Background requests
+     * (AJAX, REST, cron, admin-post) are left alone so pages don't break.
      */
-    public function user_administration( $user ) {
+    public function enforce_enrollment() {
 
-        // Check user role.
-        if( ! current_user_can( 'administrator' ) ) return;
+        if( ! is_user_logged_in() ) return;
 
-        // Check if this user requires 2FA.
-        if( ! $this->auth->is_required( $user ) ) return;
-
-        // Administration. ?>
-        <h2>Two-Factor Authentication</h2>
-        <table class="form-table">
-            <tr>
-                <th><span style="width:40px;display:inline-block;">Email</span><span style="background:green;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Active</span></th>
-                <td>
-                    <input type="text" value="<?php echo esc_attr( $user->user_email ); ?>" readonly/>
-                </td>
-            </tr>
-            <tr>
-                <th><span style="width:40px;display:inline-block;">App</span><?php
-
-                    // Check status.
-                    if( $this->auth->is_enabled( $user ) ) {
-
-                        // Active.
-                        echo '<span style="background:green;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Active</span>';
-
-                    } else {
-
-                        // Not active.
-                        echo '<span style="background:red;color:#fff;display:inline-block;padding:2.5px 5px;border-radius:8px;width:60px;text-align:center;">Inactive</span>';
-
-                    } ?>
-                </th>
-                <td><?php
-
-                    // Check status.
-                    if( $this->auth->is_enabled( $user ) ) {
-
-                        // Backup code count.
-                        $backup_count = $this->auth->get_backup_code_count( $user->ID ); ?>
-                        <button name="authentication_reset" class="button button-secondary">Reset 2FA</button>
-                        <span style="margin-left:10px;">Backup codes remaining: <?php echo esc_html( $backup_count ); ?>/10</span><?php
-
-                    } else {
-
-                        // Check if profile is ours.
-                        if( $user->ID == get_current_user_id() ) {
-
-                            // Check if set.
-                            $setup = get_user_meta( $user->ID, 'authentication_setup', true );
-                            if( ! empty( $setup ) ) {
-
-                                // Get key from setup data.
-                                $setup_key = is_array( $setup ) ? $setup['key'] : $setup;
-                                $key = base64_encode( $user->ID . ':' . $setup_key );
-
-                            } else {
-
-                                // Generate key.
-                                $key = $this->auth->generate_key( $user, true );
-
-                            }
-
-                            // Generate secret.
-                            $this->auth->generate_secret( $user );
-
-                            // Button. ?>
-                            <a href="<?php echo esc_url( site_url( '/security?key=' . $key ) ); ?>" class="button button-primary">Setup App</a><?php
-
-                        } else {
-
-                            // Button. ?>
-                            <button name="authentication_setup" class="button button-primary">Send App Setup Email</button><?php
-
-                        }
-
-                    } ?>
-
-                </td>
-            </tr>
-        </table><?php
-
-    }
-
-    /**
-     * Save user fields.
-     *
-     * Save user fields.
-     *
-     * @param   int     $user_id
-     *
-     * @since   1.0.0
-     */
-   public function user_save( $user_id ) {
-
-        // Check user role.
-        if( ! current_user_can( 'administrator' ) ) return;
-
-        // Get user.
-        $user = get_user_by( 'ID', $user_id );
-
-        // Check for reset.
-        if( isset( $_POST['authentication_reset'] ) ) {
-
-            // Reset.
-            $this->auth->disable( $user );
-
-        } elseif( isset( $_POST['authentication_setup'] ) ) {
-
-            // Send setup.
-            $this->auth->send_setup( $user );
-
+        // Until setup is done, a password-only session can't use wp-admin AJAX either.
+        if( wp_doing_ajax() ) {
+            if( $this->auth->needs_enrollment( wp_get_current_user() ) ) wp_send_json_error( [ 'code' => 'kit_2fa_setup_required', 'message' => 'Set up two-factor sign-in first.' ], 403 );
+            return;
         }
 
+        if( wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) return;
+        if( basename( (string) ( $_SERVER['SCRIPT_NAME'] ?? '' ) ) === 'admin-post.php' ) return;
+        if( ! isset( $_SERVER['REQUEST_METHOD'] ) || $_SERVER['REQUEST_METHOD'] !== 'GET' ) return;
+
+        $user = wp_get_current_user();
+        if( ! $this->auth->needs_enrollment( $user ) ) return;
+
+        // Remember where they were going.
+        $scheme = is_ssl() ? 'https://' : 'http://';
+        $here   = $scheme . ( $_SERVER['HTTP_HOST'] ?? '' ) . ( $_SERVER['REQUEST_URI'] ?? '' );
+        update_user_meta( $user->ID, 'kit_2fa_return', esc_url_raw( $here ) );
+
+        if( ! get_user_meta( $user->ID, 'kit_2fa_enroll_logged', true ) ) {
+            update_user_meta( $user->ID, 'kit_2fa_enroll_logged', time() );
+            activity::log( '2fa', 'setup_required', $user->user_login . ' signed in and was sent to set up two-factor', [ 'user_id' => $user->ID, 'level' => 'warning' ] );
+        }
+
+        nocache_headers();
+        wp_safe_redirect( self::setup_url() );
+        exit;
+
     }
 
     /**
-     * WooCommerce Account items.
-     *
-     * Add 2FA to WooCommerce account items.
-     *
-     * @param   array   $items
-     *
-     * @since   1.0.0
+     * Cookie-authenticated REST calls from someone who still has to set up two-factor are refused.
      */
-    public function woocommerce_account( $items ) {
+    public function enrollment_rest( $result ) {
+        if( ! empty( $result ) || ! is_user_logged_in() ) return $result;
+        if( did_action( 'application_password_did_authenticate' ) ) return $result;
+        if( $this->auth->needs_enrollment( wp_get_current_user() ) ) {
+            return new \WP_Error( 'kit_2fa_setup_required', 'Set up two-factor sign-in first.', [ 'status' => 403 ] );
+        }
+        return $result;
+    }
 
-       // Get current user.
-       $user = get_user_by( 'ID', get_current_user_id() );
+    /**
+     * Method name for the sign-in log.
+     */
+    public function login_method( $method ) {
+        return $this->method_used ?: $method;
+    }
 
-       // Check if 2FA is required.
-       if( ! $this->auth->is_required( $user ) ) return $items;
+    /**
+     * The code screen.
+     */
+    public function challenge_screen() {
 
-       // Set new.
-       $new_items = [];
+        $pending = $this->auth->get_pending();
+        if( ! $pending ) {
+            wp_safe_redirect( add_query_arg( 'kit_2fa', 'expired', wp_login_url() ) );
+            exit;
+        }
 
-       // Loop through items.
-       foreach( $items as $key => $item ) {
+        $user    = $pending['user'];
+        $data    = $pending['data'];
+        $token   = $pending['token'];
+        $methods = $this->auth->methods( $user );
+        $method  = isset( $methods[ $data['method'] ] ) ? $data['method'] : (string) key( $methods );
+        $error   = '';
+        $notice  = '';
+        if( isset( $_GET['kit_sent'] ) && $method === 'email' ) {
+            $notice = $_GET['kit_sent'] === 'limit' ? 'A code was sent a moment ago. Use that one, or ask for a new one in a few minutes.' : 'We couldn\'t send the email. Try "Send a new code", or use another way to sign in.';
+        }
 
-            // Add item.
-            $new_items[$key] = $item;
+        // Switch method.
+        if( isset( $_GET['method'] ) && isset( $methods[ sanitize_key( $_GET['method'] ) ] ) ) {
+            $new = sanitize_key( $_GET['method'] );
+            if( $new !== $method ) {
+                $method = $new;
+                $data['method'] = $method;
+                $this->auth->update_pending( $token, $data );
+                if( $method === 'email' ) {
+                    $sent = $this->auth->send_code( $user );
+                    if( is_wp_error( $sent ) ) $notice = $sent->get_error_message();
+                    elseif( ! $sent ) $notice = 'We couldn\'t send the email. Try again, or use another way to sign in.';
+                }
+            }
+        }
 
-            // Check if edit account.
-            if( $key == 'edit-account' ) {
+        if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 
-                // Add 2FA.
-                $new_items['security'] = 'Two-Factor Authentication';
-
+            if( ! isset( $_POST['_kit_2fa'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_kit_2fa'] ) ), 'kit_2fa_' . substr( $token, 0, 16 ) ) ) {
+                $error = 'This page expired. Enter the newest code you have.';
+            } elseif( isset( $_POST['kit_resend'] ) && $method === 'email' ) {
+                $sent   = $this->auth->send_code( $user );
+                $notice = is_wp_error( $sent ) ? $sent->get_error_message() : ( $sent ? 'A new code is on its way.' : 'We couldn\'t send the email. Try again, or use another way to sign in.' );
+            } else {
+                $code   = isset( $_POST['kit_code'] ) ? sanitize_text_field( wp_unslash( $_POST['kit_code'] ) ) : '';
+                $result = $this->auth->verify( $user, $method, $code );
+                if( $result === true ) {
+                    $this->complete( $user, $data, $method, ! empty( $_POST['kit_trust'] ) );
+                }
+                $error = $result->get_error_message();
             }
 
         }
 
-       // Return.
-       return $new_items;
+        $this->render_challenge( $user, $methods, $method, $error, $notice, $token );
+        exit;
 
     }
 
     /**
-     * Security endpoint.
-     *
-     * Add 2FA to WooCommerce account security endpoint.
-     *
-     * @since   2.0.0
+     * Sign the person in.
      */
-    public function security_endpoint() {
+    private function complete( $user, array $data, string $method, bool $trust ): void {
 
-        // Get current user.
-        $user = get_user_by( 'ID', get_current_user_id() );
+        $this->auth->end_pending( $this->auth->get_pending()['token'] ?? '' );
+        if( $trust ) $this->auth->trust_device( $user );
 
-        // Header. ?>
-        <h2>Two-Factor Authentication</h2>
-        <p>For account security, we recommend two-factor authentication.</p>
-        <p>Email Status: <span style="color:white;display:inline-block;background:green;line-height:1;padding:5px 10px;border-radius:6px;">Active</span></p>
-        <p>App Status: <?php
+        $labels = [ 'app' => 'Authenticator app', 'email' => 'Email code', 'backup' => 'Backup code', 'passkey' => 'Passkey' ];
+        $this->method_used = $labels[ $method ] ?? ucfirst( $method );
+        $this->completing  = true;
 
-            // Check if setup.
-            if( $this->auth->is_enabled( $user ) && ! isset( $_GET['setup'] ) ) {
+        wp_set_auth_cookie( $user->ID, ! empty( $data['remember'] ) );
+        wp_set_current_user( $user->ID );
+        do_action( 'wp_login', $user->user_login, $user );
 
-                // Active.
-                echo '<span style="color:white;display:inline-block;background:green;line-height:1;padding:5px 10px;border-radius:6px;">Active</span>';
+        if( ! empty( $data['interim'] ) ) {
+            global $interim_login;
+            $interim_login = 'success';
+            login_header( '', '<p class="message">' . esc_html__( 'You have logged in successfully.' ) . '</p>' );
+            echo '</div>';
+            do_action( 'login_footer' );
+            echo '</body></html>';
+            exit;
+        }
 
-            } else {
+        $redirect = $data['redirect'] ?: admin_url();
+        $redirect = apply_filters( 'login_redirect', $redirect, $data['redirect'], $user );
+        if( ( empty( $redirect ) || $redirect === 'wp-admin/' || $redirect === admin_url() ) && ! $user->has_cap( 'edit_posts' ) ) {
+            $redirect = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/' );
+        }
+        wp_safe_redirect( $redirect );
+        exit;
 
-                // Inactive.
-                echo '<span style="color:white;display:inline-block;background:red;line-height:1;padding:5px 10px;border-radius:6px;">Inactive</span>';
+    }
 
-            } ?>
+    /**
+     * Code screen markup.
+     */
+    private function render_challenge( $user, array $methods, string $method, string $error, string $notice, string $token ): void {
 
-        </p><?php
+        $site   = get_bloginfo( 'name' );
+        $masked = preg_replace_callback( '/^(.)(.*)(@.*)$/', function( $m ) { return $m[1] . str_repeat( '•', min( 6, strlen( $m[2] ) ) ) . $m[3]; }, $user->user_email );
+        $copy   = [
+            'app'     => [ 'Open your authenticator app', sprintf( 'Enter the 6-digit code shown for %s.', $site ), 6 ],
+            'email'   => [ 'Check your email', sprintf( 'We sent an 8-digit code to %s. It expires in 5 minutes.', $masked ), 8 ],
+            'backup'  => [ 'Use a backup code', 'Enter one of the codes you saved when you set up two-factor. Each works once.', 0 ],
+            'passkey' => [ 'Use your passkey', 'Confirm with Face ID, Touch ID, Windows Hello or your security key.', -1 ],
+        ];
+        [ $title, $sub, $len ] = $copy[ $method ] ?? [ 'Enter your code', '', 0 ];
+        $action = add_query_arg( array_filter( [ 'action' => 'kit_2fa', 'interim-login' => empty( $_REQUEST['interim-login'] ) ? null : '1' ] ), wp_login_url() );
 
-        // Check for setup.
-        if( $this->auth->is_enabled( $user ) && ! isset( $_GET['setup'] ) ) {
+        login_header( 'Two-factor sign-in' );
 
-            // Reset button. ?>
-            <a href="<?php echo esc_url( wc_get_account_endpoint_url( 'security' ) . '?setup=reset' ); ?>" class="button">Reset</a><?php
+        echo '<form name="kit2fa" id="loginform" class="bmk-2fa" method="post" action="' . esc_url( $action ) . '" autocomplete="off">';
+        echo '<div class="bmk-2fa-head"><h1>' . esc_html( $title ) . '</h1><p>' . esc_html( $sub ) . '</p></div>';
 
-        } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'true' ) {
+        if( $notice ) echo '<p class="bmk-2fa-note" role="status">' . esc_html( $notice ) . '</p>';
 
-            // Send email.
-            $this->auth->send_setup( $user );
+        wp_nonce_field( 'kit_2fa_' . substr( $token, 0, 16 ), '_kit_2fa' );
 
-            // Output. ?>
-            <p>A setup email has been sent to your email address.</p><?php
-
-        } elseif( isset( $_GET['setup'] ) && $_GET['setup'] == 'reset' ) {
-
-            // Reset.
-            $this->auth->disable( $user );
-
-            // Output. ?>
-            <p>Two-Factor Authentication has been reset.</p><?php
-
-            // Button. ?>
-            <a href="<?php echo esc_url( wc_get_account_endpoint_url( 'security' ) . '?setup=true' ); ?>" class="button">Setup App</a><?php
-
+        if( $len === -1 ) {
+            /**
+             * Render a custom method's controls (passkeys).
+             *
+             * @since 6.0.0
+             */
+            do_action( 'kit_2fa_render_' . $method, $user );
+        } elseif( $len > 0 ) {
+            echo '<label class="screen-reader-text" for="kit-code">' . esc_html( sprintf( '%d-digit code', $len ) ) . '</label>';
+            echo '<div class="bmk-otp" data-len="' . (int) $len . '"><input type="text" id="kit-code" name="kit_code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="' . (int) ( $len + 1 ) . '" required autofocus' . ( $error ? ' aria-invalid="true" aria-describedby="kit-code-err"' : '' ) . '></div>';
         } else {
-
-            // Button. ?>
-            <a href="<?php echo esc_url( wc_get_account_endpoint_url( 'security' ) . '?setup=true' ); ?>" class="button">Setup App</a><?php
-
+            echo '<label class="screen-reader-text" for="kit-code">Backup code</label>';
+            echo '<input type="text" class="input bmk-backup-input" id="kit-code" name="kit_code" placeholder="xxxx-xxxx" autocomplete="one-time-code" spellcheck="false" autocapitalize="off" required autofocus' . ( $error ? ' aria-invalid="true" aria-describedby="kit-code-err"' : '' ) . '>';
         }
+
+        if( $error ) echo '<p class="bmk-2fa-err" id="kit-code-err" role="alert">' . esc_html( $error ) . '</p>';
+
+        if( $len !== -1 ) {
+            echo '<p class="bmk-2fa-trust"><label><input type="checkbox" name="kit_trust" value="1"> Trust this browser for 30 days</label></p>';
+            echo '<p class="submit"><button type="submit" class="button button-primary button-large bmk-2fa-submit">Verify and sign in</button></p>';
+        }
+
+        if( $method === 'email' ) {
+            echo '<p class="bmk-2fa-resend"><span>Didn\'t get it?</span><button type="submit" name="kit_resend" value="1" class="bmk-linkbtn" formnovalidate>Send a new code</button></p>';
+        }
+
+        $others = array_diff_key( $methods, [ $method => true ] );
+        if( $others ) {
+            $labels = [ 'app' => 'Use my authenticator app instead', 'email' => 'Email me a code instead', 'backup' => 'Use a backup code', 'passkey' => 'Use a passkey' ];
+            echo '<div class="bmk-2fa-methods">';
+            foreach( $others as $key => $label ) {
+                echo '<a href="' . esc_url( add_query_arg( array_filter( [ 'action' => 'kit_2fa', 'method' => $key, 'interim-login' => empty( $_REQUEST['interim-login'] ) ? null : '1' ] ), wp_login_url() ) ) . '">' . esc_html( $labels[ $key ] ?? 'Use ' . strtolower( $label ) ) . '</a>';
+            }
+            echo '</div>';
+        }
+
+        echo '<p class="bmk-2fa-secured">Protected by Built Mighty Kit</p>';
+        echo '</form>';
+        echo '<p id="backtoblog" class="bmk-2fa-cancel"><a href="' . esc_url( wp_login_url() ) . '">Sign in as someone else</a></p>';
+
+        login_footer();
 
     }
 
     /**
-     * Load security endpoint.
-     *
-     * Load security endpoint.
-     *
-     * @since   2.0.0
+     * Styles and script for Kit's login screens.
      */
-    public function security_rewrite() {
+    public function login_assets() {
+        $action = isset( $_REQUEST['action'] ) ? sanitize_key( $_REQUEST['action'] ) : '';
+        if( ! in_array( $action, [ 'kit_2fa', 'kit_2fa_setup' ], true ) && empty( $_GET['kit_2fa'] ) ) return;
+        wp_enqueue_style( 'bmk-login', KIT_URI . 'public/css/kit-login.css', [ 'login' ], KIT_VERSION );
+        wp_enqueue_script( 'bmk-login', KIT_URI . 'public/js/kit-login.js', [], KIT_VERSION, true );
+    }
 
-        // Add.
+    // ------------------------------------------------------------------
+    // Authenticator setup
+    // ------------------------------------------------------------------
+
+    /**
+     * Three-step setup: scan, confirm, save backup codes.
+     *
+     * Opened from the profile (signed in) or from an emailed link (?key=).
+     */
+    public function setup_screen() {
+
+        $user = null;
+        $via  = '';
+        if( isset( $_REQUEST['key'] ) ) {
+            $user = $this->auth->user_for_key( sanitize_text_field( wp_unslash( $_REQUEST['key'] ) ) );
+            $via  = 'key';
+        } elseif( is_user_logged_in() ) {
+            $user = wp_get_current_user();
+            $via  = 'session';
+            if( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ), 'kit_2fa_setup' ) ) $user = null;
+        }
+
+        if( ! $user ) {
+            login_header( 'Two-factor setup', '', new \WP_Error( 'kit_setup', 'This setup link expired or was already used. Ask an administrator to send a new one, or start again from your profile.' ) );
+            login_footer();
+            exit;
+        }
+
+        $error = '';
+        $codes = null;
+
+        if( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['kit_setup_code'] ) ) {
+            if( ! isset( $_POST['_kit_setup'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_kit_setup'] ) ), 'kit_2fa_setup_confirm_' . $user->ID ) ) {
+                $error = 'This page expired. Reload it and enter the newest code.';
+            } else {
+                $codes = $this->auth->confirm_app( $user, sanitize_text_field( wp_unslash( $_POST['kit_setup_code'] ) ) );
+                if( $codes === false ) $error = 'That code didn\'t match. Use the code your app shows right now; it changes every 30 seconds.';
+            }
+        }
+
+        $secret = $codes ? '' : $this->auth->pending_secret( $user );
+        $qr     = $codes ? '' : $this->qr_svg( $this->auth->otpauth_uri( $user, $secret ) );
+        $finish = $via === 'session' ? ( $user->has_cap( 'edit_posts' ) ? admin_url( 'profile.php#kit-2fa' ) : ( function_exists( 'wc_get_account_endpoint_url' ) ? wc_get_account_endpoint_url( 'security' ) : home_url( '/' ) ) ) : wp_login_url();
+
+        // Required setup (signed in without two-factor): explain why, and return them where they were going.
+        $forced = $via === 'session' && ( $this->auth->needs_enrollment( $user ) || is_array( $codes ) && get_user_meta( $user->ID, 'kit_2fa_return', true ) );
+        if( $forced ) {
+            $return = (string) get_user_meta( $user->ID, 'kit_2fa_return', true );
+            $finish = $return ?: ( $user->has_cap( 'edit_posts' ) ? admin_url() : home_url( '/' ) );
+            if( is_array( $codes ) ) {
+                delete_user_meta( $user->ID, 'kit_2fa_return' );
+                delete_user_meta( $user->ID, 'kit_2fa_enroll_logged' );
+            }
+        }
+        $logout = wp_logout_url( wp_login_url() );
+
+        login_header( 'Two-factor setup' );
+        include KIT_PATH . 'public/views/two-factor/setup.php';
+        login_footer();
+        exit;
+
+    }
+
+    /**
+     * QR code as an inline SVG data URI.
+     */
+    private function qr_svg( string $data ): string {
+        if( ! class_exists( '\BaconQrCode\Writer' ) ) require_once KIT_PATH . 'vendor/autoload.php';
+        $renderer = new \BaconQrCode\Renderer\ImageRenderer( new \BaconQrCode\Renderer\RendererStyle\RendererStyle( 220, 1 ), new \BaconQrCode\Renderer\Image\SvgImageBackEnd() );
+        $svg = ( new \BaconQrCode\Writer( $renderer ) )->writeString( $data );
+        return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+    }
+
+    /**
+     * Link to start setup for the signed-in user.
+     */
+    public static function setup_url(): string {
+        // Raw URL (wp_nonce_url() HTML-escapes the &, which breaks redirects).
+        return add_query_arg( [ 'action' => 'kit_2fa_setup', '_wpnonce' => wp_create_nonce( 'kit_2fa_setup' ) ], wp_login_url() );
+    }
+
+    // ------------------------------------------------------------------
+    // Profile
+    // ------------------------------------------------------------------
+
+    /**
+     * Two-factor card on the profile screen.
+     *
+     * Each action is a submit button inside the profile form, so changes save
+     * through WordPress's own profile update (and its nonce), plus ours.
+     */
+    public function profile( $user ) {
+
+        $own   = (int) $user->ID === get_current_user_id();
+        $admin = current_user_can( 'edit_users' );
+        if( ! $own && ! $admin ) return;
+
+        $ui       = '\BuiltMightyKit\Admin\ui';
+        $on       = settings::is_on( 'kit_enable_2fa' );
+        $required = $this->auth->is_required( $user );
+        $app      = $this->auth->is_enabled( $user );
+        $backups  = $this->auth->get_backup_code_count( $user->ID );
+        $devices  = $this->auth->devices( $user->ID );
+        $name     = $own ? 'you' : $user->display_name;
+
+        if( ! $on ) {
+            [ $pill, $summary ] = [ $ui::pill( 'Off for this site', 'off' ), 'Two-factor sign-in is turned off in Kit.' ];
+        } elseif( $required ) {
+            if( $app ) {
+                $summary = 'Sign-in codes come from an authenticator app.';
+            } elseif( $this->auth->is_enrolled( $user ) ) {
+                $summary = 'Sign-in is confirmed with a passkey.';
+            } elseif( settings::get( 'kit_2fa_unenrolled' ) === 'enroll' ) {
+                $summary = ( $own ? 'You need' : 'This person needs' ) . ' to set up an authenticator app or passkey. Until then, every page leads to setup.';
+            } else {
+                $summary = 'Sign-in codes are emailed to ' . $user->user_email . ' until an authenticator app is set up.';
+            }
+            $pill = $ui::pill( 'Required', 'ok' );
+        } else {
+            [ $pill, $summary ] = [ $ui::pill( 'Optional', 'off' ), 'Not required for ' . ( $own ? 'your' : 'this' ) . ' role, but you can still add an app or passkey.' ];
+        }
+
+        echo $ui::sprite(); // phpcs:ignore
+        wp_nonce_field( 'kit_2fa_profile_' . $user->ID, '_kit_2fa_profile' );
+        // Enter in a profile field submits with the first submit button in the form. Make that a plain profile save.
+        echo '<button type="submit" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;padding:0;border:0"></button>';
+        echo '<section class="bmk-wp bmk-pcard" id="kit-2fa" aria-labelledby="kit-2fa-title">';
+        echo '<header class="bmk-pcard-head"><div><h2 id="kit-2fa-title">Two-factor sign-in</h2><p>' . esc_html( $summary ) . '</p></div>' . $pill . '</header>'; // phpcs:ignore
+
+        // New backup codes, shown once.
+        if( ! empty( $_GET['kit_codes'] ) && $own ) {
+            $codes = get_transient( 'kit_backup_codes_' . $user->ID );
+            delete_transient( 'kit_backup_codes_' . $user->ID );
+            if( is_array( $codes ) ) {
+                echo '<div class="bmk-pcard-codes" role="status"><b>Save these backup codes now</b><p>Each works once, and they won\'t be shown again.</p><ol class="bmk-pcodes" id="kit-new-codes">';
+                foreach( $codes as $c ) echo '<li>' . esc_html( $c ) . '</li>';
+                echo '</ol><button type="button" class="bmk-btn bmk-btn-secondary bmk-btn-sm" data-bmk-copy-list="#kit-new-codes">Copy codes</button></div>';
+            }
+        }
+
+        // Authenticator app.
+        echo $this->profile_row( 'phone', 'Authenticator app',
+            $app ? 'Set up ' . human_time_diff( (int) get_user_meta( $user->ID, 'authentication_confirmed', true ) ) . ' ago.' : 'Codes from 1Password, Google Authenticator, Microsoft Authenticator or Authy.',
+            $app ? $ui::pill( 'On', 'ok' ) : ( $own
+                ? '<a class="bmk-btn bmk-btn-primary bmk-btn-sm" href="' . esc_url( self::setup_url() ) . '">Set up</a>'
+                : '<button type="submit" class="bmk-btn bmk-btn-secondary bmk-btn-sm" name="kit_2fa_action" value="send_setup">Email a setup link</button>' )
+        ); // phpcs:ignore
+
+        // Backup codes.
+        if( $app || $backups ) {
+            echo $this->profile_row( 'key', 'Backup codes',
+                sprintf( _n( '%d unused code left. Each signs in once if a phone is lost.', '%d unused codes left. Each signs in once if a phone is lost.', $backups, 'builtmighty-kit' ), $backups ),
+                $own ? '<button type="submit" class="bmk-btn bmk-btn-secondary bmk-btn-sm" name="kit_2fa_action" value="new_codes" data-bmk-confirm="Make 10 new backup codes? The old ones stop working.">Make new codes</button>' : ( $backups < 3 ? $ui::pill( 'Running low', 'warn' ) : '' )
+            ); // phpcs:ignore
+        }
+
+        /**
+         * Extra rows (passkeys).
+         *
+         * @since 6.0.0
+         */
+        do_action( 'kit_2fa_profile_rows', $user, $own );
+
+        // Trusted browsers.
+        $list = '';
+        foreach( $devices as $hash => $d ) {
+            $list .= '<li><span>' . esc_html( $d['label'] ) . '<small>' . esc_html( $d['ip'] . ', trusted until ' . wp_date( 'M j', (int) $d['expires'] ) ) . '</small></span><button type="submit" class="bmk-btn bmk-btn-ghost bmk-btn-sm" name="kit_2fa_action" value="' . esc_attr( 'revoke:' . $hash ) . '">Forget</button></li>';
+        }
+        echo $this->profile_row( 'shield', 'Trusted browsers',
+            $devices ? sprintf( _n( '%d browser skips codes for 30 days.', '%d browsers skip codes for 30 days.', count( $devices ), 'builtmighty-kit' ), count( $devices ) ) : 'None. Tick "Trust this browser" when signing in to skip codes there for 30 days.',
+            $devices ? '<button type="submit" class="bmk-btn bmk-btn-ghost bmk-btn-sm" name="kit_2fa_action" value="revoke:all">Forget all</button>' : '',
+            $list ? '<ul class="bmk-plist2">' . $list . '</ul>' : ''
+        ); // phpcs:ignore
+
+        // Reset.
+        if( $app || $backups || $devices ) {
+            echo '<footer class="bmk-pcard-foot"><span>' . esc_html( $own ? 'Lost your phone? Reset to go back to emailed codes.' : 'If ' . $user->display_name . ' lost their phone, reset to go back to emailed codes.' ) . '</span><button type="submit" class="bmk-btn bmk-btn-danger-soft bmk-btn-sm" name="kit_2fa_action" value="reset" data-bmk-confirm="' . esc_attr( 'Reset two-factor for ' . $name . '? The authenticator app, backup codes and trusted browsers are removed.' ) . '">Reset two-factor</button></footer>';
+        }
+
+        echo '</section>';
+
+    }
+
+    /**
+     * One row of the profile card.
+     */
+    public function profile_row( string $icon, string $title, string $desc, string $action = '', string $extra = '' ): string {
+        $ui = '\BuiltMightyKit\Admin\ui';
+        return '<div class="bmk-prow"><span class="bmk-pic">' . $ui::icon( $icon ) . '</span><div class="bmk-prow-text"><b>' . esc_html( $title ) . '</b><small>' . esc_html( $desc ) . '</small></div><div class="bmk-prow-act">' . $action . '</div>' . ( $extra ? '<div class="bmk-prow-extra">' . $extra . '</div>' : '' ) . '</div>';
+    }
+
+    /**
+     * Save profile actions (WordPress has already checked the profile nonce).
+     */
+    public function profile_save( $user_id ) {
+
+        if( empty( $_POST['kit_2fa_action'] ) ) return;
+        if( ! isset( $_POST['_kit_2fa_profile'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_kit_2fa_profile'] ) ), 'kit_2fa_profile_' . $user_id ) ) return;
+        $own = (int) $user_id === get_current_user_id();
+        if( ! $own && ! current_user_can( 'edit_user', $user_id ) ) return;
+        $user   = get_userdata( $user_id );
+        $action = sanitize_text_field( wp_unslash( $_POST['kit_2fa_action'] ) );
+
+        if( $action === 'reset' ) {
+            $this->auth->disable( $user );
+        } elseif( $action === 'send_setup' && ! $own ) {
+            $this->auth->send_setup( $user );
+        } elseif( $action === 'new_codes' && $own ) {
+            set_transient( 'kit_backup_codes_' . $user_id, $this->auth->generate_backup_codes( $user_id ), 10 * MINUTE_IN_SECONDS );
+            add_filter( 'wp_redirect', function( $location ) { return add_query_arg( 'kit_codes', '1', $location ) . '#kit-2fa'; } );
+            return;
+        } elseif( $action === 'revoke:all' ) {
+            $this->auth->revoke_devices( $user_id );
+        } elseif( strpos( $action, 'revoke:' ) === 0 ) {
+            $this->auth->revoke_devices( $user_id, preg_replace( '/[^a-f0-9]/', '', substr( $action, 7 ) ) );
+        }
+
+        add_filter( 'wp_redirect', function( $location ) { return $location . '#kit-2fa'; } );
+
+    }
+
+    /**
+     * A new password ends trust in every remembered browser.
+     */
+    public function forget_devices_on_password( $user ) {
+        $this->auth->revoke_devices( $user->ID );
+    }
+
+    /**
+     * Same, when the password changes from the profile.
+     */
+    public function forget_devices_on_profile( $user_id, $old ) {
+        $new = get_userdata( $user_id );
+        if( $new && $old && $new->user_pass !== $old->user_pass ) $this->auth->revoke_devices( $user_id );
+    }
+
+    // ------------------------------------------------------------------
+    // WooCommerce My Account
+    // ------------------------------------------------------------------
+
+    /**
+     * Endpoint.
+     */
+    public function account_endpoint() {
         add_rewrite_endpoint( 'security', EP_ROOT | EP_PAGES );
+    }
+
+    /**
+     * Menu item after Account details, for people who need two-factor.
+     */
+    public function account_menu( $items ) {
+        if( ! $this->auth->is_required( wp_get_current_user() ) ) return $items;
+        $out = [];
+        foreach( $items as $key => $label ) {
+            $out[ $key ] = $label;
+            if( $key === 'edit-account' ) $out['security'] = 'Two-factor sign-in';
+        }
+        if( ! isset( $out['security'] ) ) $out['security'] = 'Two-factor sign-in';
+        return $out;
+    }
+
+    /**
+     * My Account page.
+     */
+    public function account_page() {
+
+        $user = wp_get_current_user();
+        if( ! $this->auth->is_required( $user ) ) {
+            echo '<p>Two-factor sign-in isn\'t required for your account.</p>';
+            return;
+        }
+
+        $app     = $this->auth->is_enabled( $user );
+        $backups = $this->auth->get_backup_code_count( $user->ID );
+        $devices = count( $this->auth->devices( $user->ID ) );
+
+        echo '<h2>Two-factor sign-in</h2>';
+        echo '<p>' . esc_html( $app ? 'You sign in with a code from your authenticator app.' : 'You get a code by email each time you sign in. Set up an authenticator app to skip the wait.' ) . '</p>';
+        echo '<ul><li>' . esc_html( sprintf( _n( '%d unused backup code', '%d unused backup codes', $backups, 'builtmighty-kit' ), $backups ) ) . '</li><li>' . esc_html( sprintf( _n( '%d trusted browser', '%d trusted browsers', $devices, 'builtmighty-kit' ), $devices ) ) . '</li></ul>';
+
+        if( ! $app ) {
+            echo '<p><a class="button" href="' . esc_url( self::setup_url() ) . '">Set up an authenticator app</a></p>';
+        } else {
+            echo '<form method="post"><input type="hidden" name="kit_account_action" value="reset">';
+            wp_nonce_field( 'kit_account_2fa', '_kit_account' );
+            echo '<p><button type="submit" class="button" onclick="return confirm(\'Remove your authenticator app? You will get codes by email until you set it up again.\')">Remove authenticator app</button></p></form>';
+        }
 
     }
 
     /**
-     * Enqueue.
-     *
-     * @since   1.0.0
+     * My Account actions (POST with a nonce; GET no longer changes anything).
      */
-    public function enqueue() {
-
-        // Set request URI.
-        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
-
-        // CSS.
-        wp_enqueue_style( 'built-login-security', KIT_URI . 'public/css/login-security.css', [], KIT_VERSION );
-
-        // If security page.
-        if( $request_uri == '/security/' ) {
-
-            // Load.
-            wp_enqueue_style( 'built-security', KIT_URI . 'public/css/security.css', [], KIT_VERSION );
-
+    public function account_actions() {
+        if( empty( $_POST['kit_account_action'] ) || ! is_user_logged_in() ) return;
+        if( ! isset( $_POST['_kit_account'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_kit_account'] ) ), 'kit_account_2fa' ) ) return;
+        $user = wp_get_current_user();
+        if( $_POST['kit_account_action'] === 'reset' ) {
+            $this->auth->disable( $user );
+            if( function_exists( 'wc_add_notice' ) ) wc_add_notice( 'Your authenticator app was removed. You\'ll get codes by email until you set one up again.' );
         }
-
-        // JS.
-        wp_enqueue_script( 'built-login-security', KIT_URI . 'public/js/login-security.js', [ 'jquery' ], KIT_VERSION, true );
-
-        // Localize.
-        wp_localize_script( 'built-login-security', 'builttwofactor', [
-            'ajaxurl'   => admin_url( 'admin-ajax.php' ),
-            'nonce'     => wp_create_nonce( 'built-twofactor' )
-        ] );
-
+        wp_safe_redirect( wc_get_account_endpoint_url( 'security' ) );
+        exit;
     }
 
 }

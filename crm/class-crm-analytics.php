@@ -70,10 +70,11 @@ class crm_analytics {
         add_action( 'init', [ $this, 'schedule_cron' ] );
         add_action( self::CRON_HOOK, [ $this, 'send_daily_report' ] );
         add_action( self::CRON_HOOK, [ $this, 'send_inventory' ] );
-        add_action( 'admin_init', [ $this, 'register_settings' ] );
+        // Settings live on Kit's Monitoring page (6.0); no legacy settings section.
         add_action( 'wp_ajax_kit_crm_register', [ $this, 'ajax_register' ] );
         add_action( 'wp_ajax_kit_crm_test_connection', [ $this, 'ajax_test_connection' ] );
         add_action( 'wp_ajax_kit_crm_run_backfill', [ $this, 'ajax_run_backfill' ] );
+        add_action( 'kit_crm_backfill_chunk', [ $this, 'run_backfill_chunk' ] );
         add_action( 'wp_ajax_kit_crm_send_report_now', [ $this, 'ajax_send_report_now' ] );
         add_filter( 'pre_update_option_kit_crm_api_key', [ $this, 'preserve_api_key' ], 10, 2 );
     }
@@ -103,7 +104,8 @@ class crm_analytics {
         }
 
         if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-            $time = strtotime( 'tomorrow 12:30 AM' );
+            // 12:30 AM in the site's time zone, not UTC.
+            $time = ( new \DateTime( 'tomorrow 00:30', wp_timezone() ) )->getTimestamp();
             wp_schedule_event( $time, 'daily', self::CRON_HOOK );
         }
     }
@@ -115,7 +117,9 @@ class crm_analytics {
      * @return bool
      */
     public function is_enabled(): bool {
-        return get_option( 'kit_crm_enabled', '' ) === 'enable'
+        // Live store only: a staging copy carries the same API key and would report test orders.
+        return ! \BuiltMightyKit\is_kit_mode()
+            && get_option( 'kit_crm_enabled', '' ) === 'enable'
             && $this->api->is_configured();
     }
 
@@ -127,6 +131,11 @@ class crm_analytics {
     public function send_daily_report(): void {
         if ( ! $this->is_enabled() ) {
             return;
+        }
+
+        // Yesterday's real-visitor page speed, if collected.
+        if ( crm_rum::get_instance()->is_enabled() ) {
+            crm_rum::get_instance()->send_yesterday( $this->api );
         }
 
         // Collect WooCommerce data if available, otherwise send basic report
@@ -194,239 +203,6 @@ class crm_analytics {
             ],
             'is_woocommerce' => false,
         ];
-    }
-
-    /**
-     * Register settings with the Built Mighty settings framework.
-     *
-     * @since 5.0.0
-     */
-    public function register_settings(): void {
-        if ( ! class_exists( '\BuiltMighty\GlobalSettings\settings' ) ) {
-            return;
-        }
-
-        $settings = \BuiltMighty\GlobalSettings\settings::get_instance();
-
-        $settings->add_settings_section(
-            'builtmighty_crm',
-            'Performance Monitoring',
-            function() {
-                echo '<p>Track site performance metrics including Google Analytics traffic, Core Web Vitals, and WooCommerce sales (if active).</p>';
-            }
-        );
-
-        $settings->radio_field(
-            'kit_crm_enabled',
-            'Performance Monitoring',
-            'builtmighty_crm',
-            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
-            'Enable performance monitoring and analytics reporting.',
-            true
-        );
-
-        if ( empty( get_option( 'kit_crm_api_key' ) ) ) {
-            $this->render_register_button( $settings );
-        } else {
-            $this->render_connection_status( $settings );
-        }
-
-        $this->render_api_key_field( $settings );
-
-        $settings->text_field(
-            'kit_crm_ga_property',
-            'Google Analytics Property ID',
-            'builtmighty_crm',
-            'Optional: Enter your GA4 property ID (e.g., 523123687). Grant Viewer access to developers@builtmighty.com in your GA property settings.',
-            true
-        );
-
-        $settings->radio_field(
-            'kit_crm_rum_enabled',
-            'Real User Monitoring',
-            'builtmighty_crm',
-            [ 'enable' => 'Enable', 'disable' => 'Disable' ],
-            'Capture Core Web Vitals from real user visits.',
-            true
-        );
-    }
-
-    /**
-     * Render the register button.
-     *
-     * @since 5.0.0
-     * @param object $settings Settings instance.
-     */
-    private function render_register_button( $settings ): void {
-        $settings->add_settings_field( 'kit_crm_register', '', function() {
-            $nonce = wp_create_nonce( 'kit_crm_register' );
-            ?>
-            <div class="builtmighty-field">
-                <span class="builtmighty-field-label">Register Site</span>
-                <div class="builtmighty-field_inner">
-                    <button type="button" id="kit-crm-register" class="button button-primary" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                        Connect Site
-                    </button>
-                    <span id="kit-crm-register-status" style="margin-left: 10px;"></span>
-                </div>
-                <p class="description">Click to connect this site for performance monitoring.</p>
-            </div>
-            <script>
-            jQuery(document).ready(function($) {
-                $('#kit-crm-register').on('click', function() {
-                    var $btn = $(this);
-                    var $status = $('#kit-crm-register-status');
-                    $btn.prop('disabled', true).text('Connecting...');
-                    $status.text('');
-
-                    $.post(ajaxurl, {
-                        action: 'kit_crm_register',
-                        nonce: $btn.data('nonce')
-                    }, function(response) {
-                        if (response.success) {
-                            $status.html('<span style="color:green;">✓ Connected! Reloading...</span>');
-                            setTimeout(function() { location.reload(); }, 1500);
-                        } else {
-                            $status.html('<span style="color:red;">✗ ' + response.data + '</span>');
-                            $btn.prop('disabled', false).text('Connect Site');
-                        }
-                    }).fail(function() {
-                        $status.html('<span style="color:red;">✗ Request failed</span>');
-                        $btn.prop('disabled', false).text('Connect Site');
-                    });
-                });
-            });
-            </script>
-            <?php
-        }, 'builtmighty_crm' );
-    }
-
-    /**
-     * Render the manual API key field. Used when reconnecting a site after
-     * Built Mighty resets its key in the CRM. Renders blank on purpose —
-     * blank submissions keep the current key (see preserve_api_key()).
-     *
-     * @since 5.1.0
-     * @param object $settings Settings instance.
-     */
-    private function render_api_key_field( $settings ): void {
-        $settings->add_settings_field( 'kit_crm_api_key', '', function() {
-            $has_key = ! empty( get_option( 'kit_crm_api_key' ) );
-            ?>
-            <div class="builtmighty-field builtmighty-text-field">
-                <span class="builtmighty-field-label">API Key</span>
-                <div class="builtmighty-field_inner">
-                    <input type="password" name="kit_crm_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo esc_attr( $has_key ? 'Leave blank to keep the current key' : 'Paste the API key from the CRM' ); ?>" />
-                </div>
-                <p class="description">Only needed when connecting manually or after Built Mighty resets this site's key in the CRM. Leave blank to keep the current key.</p>
-            </div>
-            <?php
-        }, 'builtmighty_crm' );
-    }
-
-    /**
-     * Render connection status and controls.
-     *
-     * @since 5.0.0
-     * @param object $settings Settings instance.
-     */
-    private function render_connection_status( $settings ): void {
-        $settings->add_settings_field( 'kit_crm_status', '', function() {
-            $api_key = get_option( 'kit_crm_api_key' );
-            $last_report = get_option( 'kit_crm_last_report', 'Never' );
-            $nonce = wp_create_nonce( 'kit_crm_actions' );
-            $has_woo = $this->woo->is_woocommerce_active();
-            ?>
-            <div class="builtmighty-field">
-                <span class="builtmighty-field-label">Connection Status</span>
-                <div class="builtmighty-field_inner" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div>
-                        <strong>API Key:</strong>
-                        <code><?php echo esc_html( substr( $api_key, 0, 8 ) . '...' . substr( $api_key, -4 ) ); ?></code>
-                        <span id="kit-crm-connection-status" style="margin-left: 10px;"></span>
-                    </div>
-                    <div>
-                        <strong>Last Report:</strong> <?php echo esc_html( $last_report ); ?>
-                    </div>
-                    <?php if ( ! $has_woo ) : ?>
-                    <div>
-                        <em>WooCommerce not detected - only Google Analytics and Core Web Vitals will be tracked.</em>
-                    </div>
-                    <?php endif; ?>
-                    <div style="display: flex; gap: 10px; margin-top: 5px;">
-                        <button type="button" id="kit-crm-test" class="button" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                            Test Connection
-                        </button>
-                        <button type="button" id="kit-crm-send-now" class="button" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                            Send Report Now
-                        </button>
-                        <?php if ( $has_woo ) : ?>
-                        <button type="button" id="kit-crm-backfill" class="button" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                            Run Historical Backfill
-                        </button>
-                        <?php endif; ?>
-                    </div>
-                    <div id="kit-crm-action-status"></div>
-                </div>
-            </div>
-            <script>
-            jQuery(document).ready(function($) {
-                var $status = $('#kit-crm-action-status');
-
-                $('#kit-crm-test').on('click', function() {
-                    var $btn = $(this);
-                    $btn.prop('disabled', true);
-                    $status.html('<em>Testing connection...</em>');
-
-                    $.post(ajaxurl, {
-                        action: 'kit_crm_test_connection',
-                        nonce: $btn.data('nonce')
-                    }, function(response) {
-                        $status.html(response.success
-                            ? '<span style="color:green;">✓ Connection successful!</span>'
-                            : '<span style="color:red;">✗ ' + response.data + '</span>');
-                        $btn.prop('disabled', false);
-                    });
-                });
-
-                $('#kit-crm-send-now').on('click', function() {
-                    var $btn = $(this);
-                    $btn.prop('disabled', true);
-                    $status.html('<em>Sending report...</em>');
-
-                    $.post(ajaxurl, {
-                        action: 'kit_crm_send_report_now',
-                        nonce: $btn.data('nonce')
-                    }, function(response) {
-                        $status.html(response.success
-                            ? '<span style="color:green;">✓ Report sent!</span>'
-                            : '<span style="color:red;">✗ ' + response.data + '</span>');
-                        $btn.prop('disabled', false);
-                    });
-                });
-
-                $('#kit-crm-backfill').on('click', function() {
-                    if (!confirm('This will send historical order data (up to 2 years) for analysis. Continue?')) {
-                        return;
-                    }
-                    var $btn = $(this);
-                    $btn.prop('disabled', true);
-                    $status.html('<em>Starting backfill... This may take a while.</em>');
-
-                    $.post(ajaxurl, {
-                        action: 'kit_crm_run_backfill',
-                        nonce: $btn.data('nonce')
-                    }, function(response) {
-                        $status.html(response.success
-                            ? '<span style="color:green;">✓ ' + response.data + '</span>'
-                            : '<span style="color:red;">✗ ' + response.data + '</span>');
-                        $btn.prop('disabled', false);
-                    });
-                });
-            });
-            </script>
-            <?php
-        }, 'builtmighty_crm' );
     }
 
     /**
@@ -518,29 +294,58 @@ class crm_analytics {
             wp_send_json_error( 'WooCommerce not active' );
         }
 
-        $start_date = gmdate( 'Y-m-d', strtotime( '-2 years' ) );
-        $end_date   = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+        // Queue 30-day chunks in the background instead of 730 days in one request.
+        $end   = wp_date( 'Y-m-d', time() - DAY_IN_SECONDS );
+        $start = wp_date( 'Y-m-d', strtotime( '-2 years' ) );
+        $total = (int) ceil( ( strtotime( $end ) - strtotime( $start ) ) / ( 30 * DAY_IN_SECONDS ) );
 
-        $data = $this->woo->get_historical_data( $start_date, $end_date );
+        update_option( 'kit_crm_backfill', [ 'start' => $start, 'end' => $end, 'chunk' => 0, 'total' => $total, 'sent' => 0 ], false );
+        $this->schedule_backfill_chunk();
 
-        $chunks = array_chunk( $data, 30, true );
-        $total_chunks = count( $chunks );
-        $success_count = 0;
+        wp_send_json_success( sprintf( 'Sending %d months of sales in the background. This takes a few minutes.', $total ) );
+    }
 
-        foreach ( $chunks as $index => $chunk ) {
-            $result = $this->api->send_backfill( $chunk, $index + 1, $total_chunks );
-            if ( $result['success'] ) {
-                $success_count++;
-            }
-            usleep( 500000 );
-        }
-
-        if ( $success_count === $total_chunks ) {
-            update_option( 'kit_crm_backfill_completed', current_time( 'mysql' ) );
-            wp_send_json_success( "Backfill complete! Sent {$total_chunks} chunks of data." );
+    /**
+     * Schedule the next backfill chunk.
+     *
+     * @since 6.0.0
+     */
+    private function schedule_backfill_chunk(): void {
+        if ( function_exists( 'as_enqueue_async_action' ) ) {
+            as_enqueue_async_action( 'kit_crm_backfill_chunk', [], 'builtmighty-kit' );
         } else {
-            wp_send_json_error( "Partial success: {$success_count}/{$total_chunks} chunks sent." );
+            wp_schedule_single_event( time() + 5, 'kit_crm_backfill_chunk' );
         }
+    }
+
+    /**
+     * Send one 30-day chunk, then queue the next.
+     *
+     * @since 6.0.0
+     */
+    public function run_backfill_chunk(): void {
+
+        $state = get_option( 'kit_crm_backfill' );
+        if ( ! is_array( $state ) || $state['chunk'] >= $state['total'] ) return;
+
+        // Pure calendar math on Y-m-d strings: strtotime() reads them as UTC midnight, so format with gmdate()
+        // (wp_date() would shift them by the site's offset and skip a day per chunk west of UTC).
+        $from = gmdate( 'Y-m-d', strtotime( $state['start'] . ' UTC' ) + $state['chunk'] * 30 * DAY_IN_SECONDS );
+        $to   = gmdate( 'Y-m-d', min( strtotime( $state['end'] . ' UTC' ), strtotime( $from . ' UTC' ) + 29 * DAY_IN_SECONDS ) );
+
+        $data   = $this->woo->get_historical_data( $from, $to );
+        $result = $this->api->send_backfill( $data, $state['chunk'] + 1, $state['total'] );
+        if ( ! empty( $result['success'] ) ) $state['sent']++;
+
+        $state['chunk']++;
+        update_option( 'kit_crm_backfill', $state, false );
+
+        if ( $state['chunk'] < $state['total'] ) {
+            $this->schedule_backfill_chunk();
+        } else {
+            update_option( 'kit_crm_backfill_completed', current_time( 'mysql' ) );
+        }
+
     }
 
     /**

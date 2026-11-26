@@ -34,7 +34,41 @@ This plugin is the all-around kit for Built Mighty client sites. From defining a
 It is highly recommended that, no matter the site, the `WP_ENVIRONMENT_TYPE` variable should be set within `wp-config.php`. The plugin will automatically detect a development site via the URL, but sites can also be placed into development mode using the environment variable. Set the variable to: `local`, `development`, or `staging`, to set the plugin in development mode. Set the environment variable to `production` to set the plugin to production mode.
 
 ## Settings
-To edit the settings of the plugin, once logged in, go to `/wp-admin/admin.php?page=builtmighty`.
+Open **Built Mighty** in wp-admin (`/wp-admin/admin.php?page=builtmighty`). Any administrator can change settings. Press Ctrl K to search them.
+
+## Tests
+Unit tests for Kit's pure logic run without WordPress:
+
+```
+composer install -d tests
+tests/vendor/bin/phpunit -c tests/phpunit.xml
+```
+
+## 6.0.0
+* New Kit admin: grouped pages with search (Ctrl K), switches named for what they do, related fields that open in place, a save bar with Discard and Undo, and an environment layer (striped copies, solid live store) on every screen.
+* New Overview: what this copy is protected from, or, on the live store, a hardening checklist; recent activity and weekly totals.
+* New Activity page: sign-ins, two-factor events, REST API changes, spam, admin changes, held webhooks and blocked requests in one searchable log, with CSV export. Stored in its own table instead of options.
+* New Health page and Site Health checks: debug output, HTTPS and HSTS, two-factor coverage, an "admin" username, open registration, default salts, PHP version, outdated and inactive plugins, file editing and more.
+* New safeguards for copies: payments forced to test mode (Stripe, WooPayments, PayPal; other card gateways hidden), WooCommerce Subscriptions renewals held, WooCommerce webhooks paused, and search engines kept out. All work through read-time filters; no store settings are changed.
+* New: every redirected email is logged and can be previewed from Activity.
+* New: passkeys (Face ID, Touch ID, Windows Hello, security keys) as a second factor.
+* New: "Trust this browser for 30 days" at sign-in, with a list of trusted browsers to revoke in the profile.
+* New: admin bar environment chip with a safeguards menu, striped banner on copies, and a redesigned dashboard widget.
+* Rebuilt two-factor sign-in: the code step now comes after the password, so nobody can trigger code emails or lockouts without it. Authenticator codes can't be reused, email codes are stored hashed, secrets use libsodium with a dedicated key, and backup codes are shown after setup.
+* Fixed: copies without WP_ENVIRONMENT_TYPE were treated as production. Kit now never treats an unidentified site as live and never writes during detection. Upgrading sites keep their current answer and are asked to confirm the live URL.
+* Fixed: email and outside-request blocking were off by default on copies, and the email check read the wrong setting. Cc and Bcc are now removed from redirected email.
+* Fixed: pausing Action Scheduler crashed wp-admin pages with a 503.
+* Fixed: allowed outside hosts now include their subdomains (api.github.com, hooks.slack.com).
+* Fixed: the REST API "require sign-in" check could be bypassed with a crafted URL.
+* Fixed: the custom login address turned every 404 into a 200, broke password reset links and revealed itself through wp-admin redirects.
+* Fixed: Slack received WooCommerce settings values (including gateway secrets); the daily summary log was publicly readable; disconnecting Slack and the dashboard message form had no CSRF protection.
+* Fixed: My Account two-factor reset and setup could be triggered by a link.
+* Fixed: session limits kept one session fewer than configured; idle timeout wrote to the database on every request and was kept alive by open tabs.
+* Fixed: spam IP blocking ignored its threshold, and spam checks rejected admin replies and REST comments.
+* Fixed: WP-CLI renewal processing could loop forever, remove-customers never worked, order commands didn't support HPOS, and tfa setup always failed.
+* Performance: features load only where they're needed; asset detection no longer writes on every visit; bundles rebuild in the background and JavaScript is no longer run through a regex minifier; real-visitor speed data is sampled and stored as fixed-size histograms, and now sent with the daily report; plugin freshness lookups cache misses; the CRM report reads WooCommerce analytics tables instead of loading every order; the 2-year backfill runs in the background.
+* Settings now live in one autoloaded option (kit_settings). Old option names still read and write through it.
+* Removed: dark mode and the per-user color option, and empty front-end assets that loaded on every page.
 
 ## 5.2.0
 * ✨ Added Delete Users Search, replacing the unbounded "Attribute all content to" drop-down with a capped list plus an AJAX paginated search.

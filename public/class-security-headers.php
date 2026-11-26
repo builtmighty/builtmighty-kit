@@ -80,9 +80,10 @@ class security_headers {
             }
         }
 
-        // X-XSS-Protection - Legacy XSS protection (for older browsers).
-        if ( get_option( 'kit_header_x_xss', 'enable' ) === 'enable' ) {
-            header( 'X-XSS-Protection: 1; mode=block' );
+        // X-XSS-Protection: "0" turns off the outdated filter in old browsers, which
+        // could itself be abused. Current guidance is to send 0 or nothing.
+        if ( get_option( 'kit_header_x_xss', 'disable' ) === 'enable' ) {
+            header( 'X-XSS-Protection: 0' );
         }
 
         // Strict-Transport-Security (HSTS) - Force HTTPS.

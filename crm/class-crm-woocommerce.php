@@ -57,7 +57,7 @@ class crm_woocommerce {
         }
 
         if ( empty( $date ) ) {
-            $date = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+            $date = wp_date( 'Y-m-d', time() - DAY_IN_SECONDS ); // Yesterday in the site's time zone.
         }
 
         return [
@@ -76,6 +76,12 @@ class crm_woocommerce {
     public function get_sales_data( string $date ): array {
         $start = $date . ' 00:00:00';
         $end   = $date . ' 23:59:59';
+
+        // Fast path: WooCommerce's analytics tables answer this in two queries.
+        $fast = $this->get_sales_data_from_lookup( $start, $end );
+        if ( $fast !== null ) {
+            return $fast;
+        }
 
         $orders = wc_get_orders( [
             'date_created' => $start . '...' . $end,
@@ -152,6 +158,80 @@ class crm_woocommerce {
             'returning_customers' => $return_customers,
             'top_products'        => array_values( $top_products ),
         ];
+    }
+
+    /**
+     * Sales data from wc_order_stats and wc_order_product_lookup.
+     *
+     * Returns null when the tables are missing or not caught up (for example,
+     * on a copy where scheduled actions are paused), so the caller can fall
+     * back to loading orders.
+     *
+     * @since 6.0.0
+     */
+    private function get_sales_data_from_lookup( string $start, string $end ): ?array {
+
+        global $wpdb;
+        $stats   = $wpdb->prefix . 'wc_order_stats';
+        $lookup  = $wpdb->prefix . 'wc_order_product_lookup';
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $stats ) ) !== $stats ) {
+            return null;
+        }
+
+        // Order dates in wc_order_stats are site-local, like wc_get_orders' date_created strings.
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT order_id, total_sales, returning_customer FROM {$stats}
+             WHERE parent_id = 0 AND status IN ('wc-completed','wc-processing') AND date_created BETWEEN %s AND %s",
+            $start, $end
+        ) ); // phpcs:ignore
+
+        // Make sure the analytics import is caught up for this day.
+        $expected = wc_get_orders( [ 'date_created' => $start . '...' . $end, 'status' => [ 'completed', 'processing' ], 'limit' => 1, 'paginate' => true, 'return' => 'ids' ] );
+        if ( (int) $expected->total !== count( $rows ) ) {
+            return null;
+        }
+
+        $revenue = 0; $new = 0; $returning = 0; $ids = [];
+        foreach ( $rows as $row ) {
+            $revenue += (float) $row->total_sales;
+            (int) $row->returning_customer ? $returning++ : $new++;
+            $ids[] = (int) $row->order_id;
+        }
+
+        $top_products = [];
+        if ( $ids ) {
+            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+            $products = $wpdb->get_results( $wpdb->prepare(
+                "SELECT product_id, SUM(product_qty) AS qty, SUM(product_net_revenue) AS revenue FROM {$lookup}
+                 WHERE order_id IN ({$placeholders}) GROUP BY product_id ORDER BY revenue DESC LIMIT 10",
+                $ids
+            ) ); // phpcs:ignore
+            foreach ( $products as $p ) {
+                $top_products[] = [ 'name' => get_the_title( (int) $p->product_id ), 'quantity' => (int) $p->qty, 'revenue' => round( (float) $p->revenue, 2 ) ];
+            }
+        }
+
+        $refund_amount = (float) $wpdb->get_var( $wpdb->prepare(
+            "SELECT ABS(SUM(total_sales)) FROM {$stats} WHERE parent_id > 0 AND total_sales < 0 AND date_created BETWEEN %s AND %s",
+            $start, $end
+        ) ); // phpcs:ignore
+        $refund_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$stats} WHERE parent_id > 0 AND total_sales < 0 AND date_created BETWEEN %s AND %s",
+            $start, $end
+        ) ); // phpcs:ignore
+
+        $count = count( $rows );
+        return [
+            'revenue'             => round( $revenue, 2 ),
+            'order_count'         => $count,
+            'average_order_value' => $count > 0 ? round( $revenue / $count, 2 ) : 0,
+            'refund_amount'       => round( $refund_amount, 2 ),
+            'refund_count'        => $refund_count,
+            'new_customers'       => $new,
+            'returning_customers' => $returning,
+            'top_products'        => $top_products,
+        ];
+
     }
 
     /**

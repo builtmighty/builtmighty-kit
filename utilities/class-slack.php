@@ -43,10 +43,29 @@ class slack {
      * 
      * @since   1.0.0
      */
-    public function get_channels() {
+    public function get_channels( $refresh = false ) {
 
         // Check.
-        if( ! $this->get_args() ) return;
+        if( ! $this->get_args() ) return [];
+
+        // Cached for 12 hours; the list rarely changes.
+        if( ! $refresh ) {
+            $cached = get_transient( 'kit_slack_channels' );
+            if( is_array( $cached ) ) return $cached;
+        }
+
+        $channels = $this->fetch_channels();
+        if( is_array( $channels ) ) set_transient( 'kit_slack_channels', $channels, 12 * HOUR_IN_SECONDS );
+        return is_array( $channels ) ? $channels : [];
+
+    }
+
+    /**
+     * Fetch channels from Slack.
+     *
+     * @since   6.0.0
+     */
+    private function fetch_channels() {
 
         // Get args.
         $args = $this->get_args();
@@ -382,36 +401,41 @@ class slack {
      */
     public function authorize( $request ) {
 
-        // Get param key.
-        $key = $request->get_param( 'key' );
+        // Check the one-time key.
+        if( ! $this->authorize_key( (string) $request->get_param( 'key' ) ) ) {
+            return new \WP_Error( 'kit_slack_key', 'Invalid key.', [ 'status' => 403 ] );
+        }
 
-        // Check.
-        if( ! $this->authorize_key( $key ) ) return;
+        // Slack bot tokens are xoxb-... strings.
+        $token = sanitize_text_field( (string) $request->get_param( 'token' ) );
+        if( ! preg_match( '/^xox[a-z]-[A-Za-z0-9-]+$/', $token ) ) {
+            return new \WP_Error( 'kit_slack_token', 'Invalid token.', [ 'status' => 400 ] );
+        }
 
-        // Get token.
-        $token = $request->get_param( 'token' );
+        // Save token, then retire the key.
+        update_option( 'built_slack_token', $token, false );
+        delete_option( 'built_api_key' );
+        delete_transient( 'kit_slack_channels' );
 
-        // Save token.
-        update_option( 'built_slack_token', $token );
+        return [ 'ok' => true ];
 
     }
 
     /**
      * Authorize key.
-     * 
+     *
+     * Only a correct key is consumed, so a stray request can't cancel a
+     * pending connection.
+     *
      * @since   1.0.0
+     * @version 6.0.0
      */
     public function authorize_key( $key ) {
 
-        // Set keys.
-        $saved_key  = get_option( 'built_api_key' );
-        $passed_key = base64_decode( $key );
+        $saved_key  = (string) get_option( 'built_api_key' );
+        $passed_key = (string) base64_decode( (string) $key, true );
 
-        // Delete.
-        delete_option( 'built_api_key' );
-
-        // Return.
-        return ( $passed_key === $saved_key ) ? true : false;
+        return $saved_key !== '' && $passed_key !== '' && hash_equals( $saved_key, $passed_key );
 
     }
 
@@ -429,11 +453,12 @@ class slack {
         if( ! $token ) return;
 
         // Return.
-        return [ 
+        return [
+            'timeout' => 8,
             'headers' => [
                 'Authorization'     => 'Bearer ' . $token,
                 'Content-Type'      => 'application/x-www-form-urlencoded',
-            ] 
+            ]
         ];
 
     }

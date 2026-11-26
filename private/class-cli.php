@@ -22,98 +22,50 @@ namespace BuiltMightyKit\Private;
 class CLI {
 
     /**
-     * Two-Factor Authentication.
-     * 
+     * Two-factor for a user.
+     *
+     * wp kit tfa --user_id=1 --type=email          Email the user a setup link.
+     * wp kit tfa --user_id=1 --type=cli            Show a setup key to add to an app here.
+     * wp kit tfa --user_id=1 --type=cli --code=123456   Confirm with the app's current code.
+     * wp kit tfa --user_id=1 --reset               Remove the app, backup codes and trusted browsers.
+     *
      * @since   1.0.0
-     * 
-     * wp kit tfa --user_id=1 --type=email,cli --code=123456 // Authentication code for CLI setup.
+     * @version 6.0.0
      */
     public function tfa( $args, $assoc_args ) {
 
-        // Get user.
-        if( ! isset( $assoc_args['user_id'] ) ) {
-            \WP_CLI::error( 'User ID is required. Use --user_id=' );
-        }
+        $user = isset( $assoc_args['user_id'] ) ? get_user_by( 'id', (int) $assoc_args['user_id'] ) : false;
+        if( ! $user ) \WP_CLI::error( 'Pass a valid --user_id=.' );
 
-        // Get type.
-        if( ! isset( $assoc_args['type'] ) ) {
-            \WP_CLI::error( 'Type is required. Use --type=email,cli. Email sends the user an email for setup. CLI allows you to setup here.' );
-        }
-
-        // Check type.
-        if( ! in_array( $assoc_args['type'], [ 'email', 'cli' ] ) ) {
-            \WP_CLI::error( 'Type must be email or cli.' );
-        }
-
-        // Get user.
-        $user = get_user_by( 'id', $assoc_args['user_id'] );
-
-        // Check user.
-        if( ! $user ) {
-            \WP_CLI::error( 'User not found.' );
-        }
-
-        // Get auth.
         $auth = new \BuiltMightyKit\Utility\authentication();
 
-        // Check if user has Two-Factor Authentication enabled.
-        if( $auth->is_enabled( $user ) ) {
-            \WP_CLI::log( 'Two-Factor Authentication is already enabled for ' . ucwords( $user->display_name ) . '.' );
-            \WP_CLI::confirm( 'Would you like to disable Two-Factor Authentication for ' . ucwords( $user->display_name ) . '?' );
+        if( isset( $assoc_args['reset'] ) ) {
+            \WP_CLI::confirm( 'Remove two-factor for ' . $user->display_name . '?' );
             $auth->disable( $user );
-            \WP_CLI::success( 'Two-Factor Authentication disabled for ' . ucwords( $user->display_name ) . '.' );
+            \WP_CLI::success( 'Two-factor reset for ' . $user->display_name . '. They will get emailed codes until they set up an app.' );
+            return;
         }
 
-        // Check type and confirm.
-        if( $assoc_args['type'] == 'email' ) {
+        $type = $assoc_args['type'] ?? '';
+        if( ! in_array( $type, [ 'email', 'cli' ], true ) ) \WP_CLI::error( 'Use --type=email or --type=cli, or --reset.' );
 
-            // Confirm.
-            \WP_CLI::confirm( 'Are you sure you want to send a Two-Factor Authentication setup email to ' . $user->user_email . '?' );
-
-            // Send setup.
-            $auth->send_setup( $user );
-
-            // Success.
-            \WP_CLI::success( 'Two-Factor Authentication setup email sent to ' . $user->user_email . '.' );
-
-        } else {
-
-            // Check if code is set.
-            if( ! isset( $assoc_args['code'] ) ) {
-
-                // Confirm.
-                \WP_CLI::confirm( 'Are you sure you want to setup Two-Factor Authentication for ' . ucwords( $user->display_name ) . ' now?' );
-
-                // Generate key.
-                $auth->generate_key( $user, true );
-
-                // Generate secret.
-                $secret = $auth->generate_secret( $user );
-
-                // Success.
-                \WP_CLI::success( 'The setup code for ' . ucwords( $user->display_name ) . ' is: ' . $secret );
-
-            } else {
-
-                // Get the user's key.
-                $key = get_user_meta( $user->ID, 'authentication_setup', true );
-                $key = base64_encode( $user->ID . ':' . $key );
-
-                // Confirm.
-                $confirm = $auth->confirm( $key, $assoc_args['code'] );
-
-                // Check confirm.
-                if( ! $confirm ) {
-                    $auth->disable( $user );
-                    \WP_CLI::error( 'Invalid code. Please restart and try again.' );
-                } else {
-                    // Success.
-                    \WP_CLI::success( 'Two-Factor Authentication setup completed for ' . ucwords( $user->display_name ) . '.' );
-                }
-
-            }
-
+        if( $type === 'email' ) {
+            $auth->send_setup( $user ) ? \WP_CLI::success( 'Setup link emailed to ' . $user->user_email . '.' ) : \WP_CLI::error( 'The email couldn\'t be sent.' );
+            return;
         }
+
+        if( ! isset( $assoc_args['code'] ) ) {
+            $secret = $auth->pending_secret( $user );
+            \WP_CLI::log( 'Add this key to an authenticator app (time-based, 6 digits):' );
+            \WP_CLI::log( trim( chunk_split( $secret, 4, ' ' ) ) );
+            \WP_CLI::log( 'Then run: wp kit tfa --user_id=' . $user->ID . ' --type=cli --code=<code>' );
+            return;
+        }
+
+        $codes = $auth->confirm_app( $user, (string) $assoc_args['code'] );
+        if( ! $codes ) \WP_CLI::error( 'That code didn\'t match. Use the code your app shows right now.' );
+        \WP_CLI::success( 'Authenticator app set up for ' . $user->display_name . '. Backup codes (shown once):' );
+        foreach( $codes as $code ) \WP_CLI::log( '  ' . $code );
 
     }
 
@@ -134,6 +86,9 @@ class CLI {
         // Global.
         global $wpdb;
 
+        // wp_delete_user() lives in an admin include WP-CLI doesn't always load.
+        require_once ABSPATH . 'wp-admin/includes/user.php';
+
         // Set total.
         $total = 1;
 
@@ -141,7 +96,8 @@ class CLI {
         if( isset( $assoc_args['user_id'] ) ) {
 
             // Get user.
-            $user = get_user_by( 'id', $assoc_args['user_id'] );
+            $user = get_user_by( 'id', absint( $assoc_args['user_id'] ) );
+            if( ! $user ) \WP_CLI::error( 'User #' . absint( $assoc_args['user_id'] ) . ' not found.' );
 
             // Confirm.
             \WP_CLI::confirm( 'Are you sure you want to remove ' . $user->display_name . '?' );
@@ -149,13 +105,14 @@ class CLI {
             // Remove user.
             wp_delete_user( $user->ID );
 
-            // Success.
+            // Success. Stop here so only this user is removed.
             \WP_CLI::success( 'User ' . $user->display_name . ' has been removed.' );
+            return;
 
         } else {
 
             // Get total users.
-            $total = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users} WHERE ID IN ( SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = 'wp_capabilities' AND ( meta_value LIKE '%subscriber%' OR meta_value LIKE '%customer%' ) )" );
+            $total = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users} WHERE ID IN ( SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$wpdb->prefix}capabilities' AND ( meta_value LIKE '%\"subscriber\"%' OR meta_value LIKE '%\"customer\"%' ) )" );
 
             // Confirm.
             \WP_CLI::confirm( 'Are you sure you want to remove ' . $total . ' customers?' );
@@ -170,7 +127,7 @@ class CLI {
 
             // Get customers.
             $users = $wpdb->get_col( $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->users} WHERE ID IN ( SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = 'wp_capabilities' AND ( meta_value LIKE '%subscriber%' OR meta_value LIKE '%customer%' ) ) LIMIT %s",
+                "SELECT ID FROM {$wpdb->users} WHERE ID IN ( SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$wpdb->prefix}capabilities' AND ( meta_value LIKE '%\"subscriber\"%' OR meta_value LIKE '%\"customer\"%' ) ) LIMIT %d",
                 100
             ) );
 
@@ -204,71 +161,38 @@ class CLI {
      */
     public function remove_orders( $args, $assoc_args ) {
 
-        // Check if WooCommerce is active.
         if( ! class_exists( 'WooCommerce' ) ) {
             \WP_CLI::error( 'WooCommerce is not active.' );
         }
 
-        // Global.
-        global $wpdb;
-
-        // Get total orders.
-        $total = 1;
-        
-        // If single or multi-user.
+        // Single order.
         if( isset( $assoc_args['order_id'] ) ) {
-
-            // Confirm.
-            \WP_CLI::confirm( 'Are you sure you want to remove order #' . $assoc_args['order_id'] . '?' );
-
-            // Delete order.
-            wp_delete_post( $assoc_args['order_id'], true );
-
-            // Success.
-            \WP_CLI::success( 'Order #' . $assoc_args['order_id'] . ' has been removed.' );
-
-        } else {
-
-            // Set total query.
-            $query = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'shop_order'" . $this->order_settings( $assoc_args );
-
-            // Get total.
-            $total = $wpdb->get_var( $query );
-
-            // Confirm.
-            \WP_CLI::confirm( 'Are you sure you want to remove ' . $total . ' orders?' );
-
+            $order = wc_get_order( absint( $assoc_args['order_id'] ) );
+            if( ! $order ) \WP_CLI::error( 'Order #' . absint( $assoc_args['order_id'] ) . ' not found.' );
+            \WP_CLI::confirm( 'Are you sure you want to remove order #' . $order->get_id() . '?' );
+            $order->delete( true );
+            \WP_CLI::success( 'Order #' . $order->get_id() . ' has been removed.' );
+            return;
         }
 
-        // Set progress.
-        $progress = \WP_CLI\Utils\make_progress_bar( 'Removing Orders', $total );
-
-        // Loop.
-        while( true ) {
-
-            // Get orders.
-            $orders = $wpdb->get_col( $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'shop_order'" . $this->order_settings( $assoc_args ) . " LIMIT %s",
-                100
-            ) );
-
-            // Stop if we don't have any more orders.
-            if( empty( $orders ) ) break;
-
-            // Loop through orders.
-            foreach( $orders as $order_id ) {
-
-                // Delete order.
-                wp_delete_post( $order_id, true );
-
-                // Tick.
-                $progress->tick();
-
-            }
-
+        $query = $this->order_query( $assoc_args );
+        $total = (int) wc_get_orders( $query + [ 'limit' => 1, 'paginate' => true, 'return' => 'ids' ] )->total;
+        if( ! $total ) {
+            \WP_CLI::success( 'No orders match.' );
+            return;
         }
+        \WP_CLI::confirm( 'Are you sure you want to remove ' . $total . ' orders?' );
 
-        // Success.
+        // Collect IDs first, so an order that can't be deleted is never selected again (no endless loop).
+        $all      = wc_get_orders( $query + [ 'limit' => -1, 'return' => 'ids' ] );
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Removing Orders', count( $all ) );
+        foreach( $all as $id ) {
+            $order = wc_get_order( $id );
+            if( $order ) $order->delete( true );
+            $progress->tick();
+        }
+        $progress->finish();
+
         \WP_CLI::success( 'All ' . $total . ' orders have been removed.' );
 
     }
@@ -297,59 +221,25 @@ class CLI {
         // Global.
         global $wpdb;
 
-        // Get total of pending renewal orders.
-        $total = ( ! isset( $assoc_args['order_id'] ) ) ? $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'shop_order' AND post_status = 'wc-pending'" ) : 1;
-
-        // Confirm.
-        if( ! isset( $assoc_args['order_id'] ) ) {
-            \WP_CLI::confirm( 'Are you sure you want to process ' . $total . ' renewals?' );
-        } else {
-            \WP_CLI::confirm( 'Are you sure you want to process renewal for order #' . $assoc_args['order_id'] . '?' );
+        // Single order.
+        if( isset( $assoc_args['order_id'] ) ) {
+            \WP_CLI::confirm( 'Are you sure you want to process renewal for order #' . absint( $assoc_args['order_id'] ) . '?' );
+            $payment = $this->payment( absint( $assoc_args['order_id'] ) );
+            $payment['success'] ? \WP_CLI::success( $payment['message'] ) : \WP_CLI::error( $payment['message'] );
+            return;
         }
 
-        // Set progress.
-        $progress = \WP_CLI\Utils\make_progress_bar( 'Processing Renewals', $total );
+        $query = [ 'status' => [ 'pending' ], 'type' => 'shop_order', 'return' => 'ids', 'orderby' => 'ID', 'order' => 'ASC' ];
+        $total = (int) wc_get_orders( $query + [ 'limit' => 1, 'paginate' => true ] )->total;
+        \WP_CLI::confirm( 'Are you sure you want to check ' . $total . ' pending orders and charge the renewals among them?' );
 
-        // Loop.
-        while( true ) {
-
-            // Check if single order.
-            if( ! isset( $assoc_args['order_id'] ) ) {
-
-                // Query for pending renewal orders.
-                $query = $wpdb->prepare(
-                    "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'shop_order' AND post_status = 'wc-pending' LIMIT %s",
-                    50
-                );
-
-                // Get orders.
-                $orders = $wpdb->get_col( $query );
-
-            } else {
-
-                // Get single order.
-                $orders = [ $assoc_args['order_id'] ];
-
-            }
-
-            // Stop if we don't have orders.
-            if( empty( $orders ) ) break;
-
-            // Loop through orders.
-            foreach( $orders as $order_id ) {
-
-                // Payment.
-                $payment = $this->payment( $order_id );
-
-                // Log.
-                \WP_CLI::log( $payment['message'] );
-                $progress->tick();
-
-            }
-
-            // Stop.
-            if( isset( $assoc_args['order_id'] ) ) break;
-
+        // Collect IDs first: charged orders leave the pending set, so paging the live query would skip orders.
+        $all      = wc_get_orders( $query + [ 'limit' => -1 ] );
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Processing Renewals', count( $all ) );
+        foreach( $all as $order_id ) {
+            $payment = $this->payment( $order_id );
+            \WP_CLI::log( '#' . $order_id . ': ' . $payment['message'] );
+            $progress->tick();
         }
 
         // Finish progress.
@@ -371,14 +261,12 @@ class CLI {
      */
     public function get_login( $args, $assoc_args ) {
 
-        // Check if custom login is active.
-        if( empty( get_option( 'kit_enable_login' ) ) ) \WP_CLI::success( 'Login: ' . site_url( '/wp-login.php' ) );
-
-        // Check if custom login URL is set.
-        if( empty( get_option( 'kit_login_url' ) ) ) \WP_CLI::success( 'Login: ' . site_url( '/wp-login.php' ) );
-
-        // Get login URL.
-        \WP_CLI::success( 'Login: ' . site_url( '/' . get_option( 'kit_login_url' ) ) );
+        $slug = trim( (string) \BuiltMightyKit\Utility\settings::get( 'kit_login_url' ), '/' );
+        if( ! \BuiltMightyKit\Utility\settings::is_on( 'kit_enable_login' ) || $slug === '' ) {
+            \WP_CLI::success( 'Login: ' . site_url( '/wp-login.php' ) );
+            return;
+        }
+        \WP_CLI::success( 'Login: ' . home_url( '/' . $slug . '/' ) );
 
     }
 
@@ -408,10 +296,11 @@ class CLI {
         }
 
         // Remove manual payment flag.
-        delete_post_meta( $order_id, '_requires_manual_renewal' );
+        $order->delete_meta_data( '_requires_manual_renewal' );
+        $order->save();
 
         // Get subscription.
-        $subscription = wcs_get_subscription( get_post_meta( $order_id, '_subscription_renewal', true ) );
+        $subscription = wcs_get_subscription( $order->get_meta( '_subscription_renewal', true ) );
 
         // Check subscription.
         if( ! $subscription ) {
@@ -447,43 +336,23 @@ class CLI {
     }
 
     /**
-     * Order settings.
-     * 
-     * @since   1.0.0
+     * Order query arguments from --status, --start and --end.
+     *
+     * @since   6.0.0
      */
-    public function order_settings( $args ) {
-
-        // Query.
-        $query = "";
-
-        // Check if status is set.
-        if( isset( $args['status'] ) ) {
-
-            // Check if status is an array.
-            if( strpos( $args['status'], ',' ) !== false ) {
-                $args['status'] = explode( ',', $args['status'] );
-                $args['status'] = array_map( 'trim', $args['status'] );
-                $args['status'] = implode( "','", $args['status'] );
-            }
-
-            // Add status to query.
-            $query .= " AND post_status IN ('" . $args['status'] . "')";
-
+    private function order_query( $args ) {
+        $query = [ 'type' => 'shop_order' ];
+        if( ! empty( $args['status'] ) ) {
+            $query['status'] = array_map( function( $s ) { return preg_replace( '/^wc-/', '', sanitize_key( trim( $s ) ) ); }, explode( ',', (string) $args['status'] ) );
+        } else {
+            $query['status'] = array_keys( wc_get_order_statuses() );
         }
-
-        // Check if start date is set.
-        if( isset( $args['start'] ) ) {
-            $query .= " AND post_date >= '" . $args['start'] . "'";
-        }
-
-        // Check if end date is set.
-        if( isset( $args['end'] ) ) {
-            $query .= " AND post_date <= '" . $args['end'] . "'";
-        }
-
-        // Return.
+        $start = ! empty( $args['start'] ) ? strtotime( (string) $args['start'] ) : false;
+        $end   = ! empty( $args['end'] ) ? strtotime( (string) $args['end'] . ' 23:59:59' ) : false;
+        if( $start && $end ) $query['date_created'] = $start . '...' . $end;
+        elseif( $start ) $query['date_created'] = '>=' . $start;
+        elseif( $end ) $query['date_created'] = '<=' . $end;
         return $query;
-
     }
 
 }

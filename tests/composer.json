@@ -1,0 +1,8 @@
+{
+    "name": "builtmighty/builtmighty-kit-tests",
+    "description": "Unit tests for Built Mighty Kit's pure logic. Kept apart from the runtime vendor folder.",
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "config": { "sort-packages": true }
+}

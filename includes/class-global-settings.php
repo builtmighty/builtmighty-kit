@@ -8,7 +8,7 @@
  * @since   1.0.0
  * @version 1.0.0
  */
-namespace BuiltMighty\GlobalSettings;;
+namespace BuiltMighty\GlobalSettings;
 
 // Check for class.
 if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
@@ -129,16 +129,21 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
          * 
          * @since   1.0.0
          */
-        public function enqueue() {
+        public function enqueue( $hook = '' ) {
+
+            // Only on the Built Mighty settings screen.
+            if( $hook !== 'toplevel_page_builtmighty' ) return;
+            if( defined( 'KIT_VERSION' ) && version_compare( KIT_VERSION, '6.0.0', '>=' ) && ( $_GET['view'] ?? '' ) !== 'plugins' ) return;
+            $version = defined( 'KIT_VERSION' ) ? KIT_VERSION : '1';
 
             // CSS.
-            wp_enqueue_style( 'builtmighty-admin', KIT_URI . 'includes/builtmighty-settings.css', [], date( 'YmdHis' ) );
+            wp_enqueue_style( 'builtmighty-admin', KIT_URI . 'includes/builtmighty-settings.css', [], $version );
             wp_enqueue_media();
             wp_enqueue_style( 'wp-color-picker' );
 
             // JS.
             wp_enqueue_script( 'wp-color-picker' );
-            wp_enqueue_script( 'builtmighty-admin', KIT_URI . 'includes/builtmighty-settings.js', [ 'jquery', 'wp-color-picker' ], date( 'YmdHis' ), true );
+            wp_enqueue_script( 'builtmighty-admin', KIT_URI . 'includes/builtmighty-settings.js', [ 'jquery', 'wp-color-picker' ], $version, true );
 
         }
 
@@ -329,7 +334,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -363,7 +368,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -396,7 +401,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -434,7 +439,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -468,7 +473,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -502,7 +507,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -536,7 +541,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -620,7 +625,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -653,7 +658,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -686,7 +691,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -719,7 +724,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -752,7 +757,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -787,7 +792,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -820,7 +825,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php
@@ -853,7 +858,7 @@ if( ! class_exists( 'BuiltMighty\GlobalSettings\settings' ) ) {
                     // Check if description is set.
                     if( ! empty( $desc ) ) { ?>
 
-                        <p class="description"><?php echo $desc; ?></p><?php
+                        <p class="description"><?php echo wp_kses_post( $desc ); ?></p><?php
 
                     } ?>
                 </div><?php

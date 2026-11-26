@@ -73,26 +73,20 @@ class performance {
      */
     public function __construct() {
 
-        // Set upload paths.
-        $upload = wp_upload_dir();
-        $this->upload_dir = trailingslashit( $upload['basedir'] ) . 'builtmighty-kit/';
-        $this->upload_url = trailingslashit( $upload['baseurl'] ) . 'builtmighty-kit/';
-
-        // Always register AJAX handlers and admin bar (even when bundling is off).
+        // Rebuild triggers (AJAX from Kit, the admin bar link, background cron).
         add_action( 'wp_ajax_kit_rebuild_bundle', [ $this, 'ajax_rebuild' ] );
-        add_action( 'init', [ $this, 'maybe_rebuild_from_querystring' ] );
-
-        // Register checkbox options so WordPress saves them on form submit.
-        add_action( 'admin_init', [ $this, 'register_settings' ] );
-
-        // Detection always runs on frontend to keep the asset list fresh.
-        if ( ! is_admin() ) {
-            add_action( 'wp_enqueue_scripts', [ $this, 'detect_assets' ], 99999 );
-        }
+        add_action( 'kit_bundle_rebuild', [ $this, 'rebuild_bundles' ] );
 
         // Everything below requires bundling to be enabled.
-        if ( get_option( 'kit_bundle_enabled' ) !== 'enable' ) {
+        if ( ! \BuiltMightyKit\Utility\settings::is_on( 'kit_bundle_enabled' ) ) {
             return;
+        }
+
+        add_action( 'init', [ $this, 'maybe_rebuild_from_querystring' ] );
+
+        // Detect assets on the front end for logged-out visitors.
+        if ( ! is_admin() ) {
+            add_action( 'wp_enqueue_scripts', [ $this, 'detect_assets' ], 99999 );
         }
 
         // Admin bar rebuild button.
@@ -104,6 +98,19 @@ class performance {
             add_filter( 'script_loader_tag', [ $this, 'add_defer_attribute' ], 10, 3 );
         }
 
+    }
+
+    /**
+     * Upload folder for bundles, resolved only when needed.
+     *
+     * @since 6.0.0
+     */
+    private function paths() {
+        if ( $this->upload_dir === null || $this->upload_dir === '' ) {
+            $upload = wp_upload_dir( null, false );
+            $this->upload_dir = trailingslashit( $upload['basedir'] ) . 'builtmighty-kit/';
+            $this->upload_url = trailingslashit( $upload['baseurl'] ) . 'builtmighty-kit/';
+        }
     }
 
     // =========================================================================
@@ -130,7 +137,7 @@ class performance {
             'js'  => [],
             'css' => [],
         ];
-        $assets['updated'] = time();
+        $before = md5( wp_json_encode( [ $assets['js'], $assets['css'] ] ) );
 
         // Detect JS — only scripts actually enqueued on this page.
         if ( isset( $wp_scripts ) && is_object( $wp_scripts ) ) {
@@ -178,9 +185,11 @@ class performance {
             }
         }
 
-        // Only update if we have anything.
-        if ( ! empty( $assets['js'] ) || ! empty( $assets['css'] ) ) {
-            set_transient( 'kit_detected_assets', $assets, 7 * DAY_IN_SECONDS );
+        // Write only when the detected set changed (not on every page view).
+        $after = md5( wp_json_encode( [ $assets['js'], $assets['css'] ] ) );
+        if ( ( ! empty( $assets['js'] ) || ! empty( $assets['css'] ) ) && ( $before !== $after || ! is_array( $existing ) ) ) {
+            $assets['updated'] = time();
+            set_transient( 'kit_detected_assets', $assets, 30 * DAY_IN_SECONDS );
         }
 
     }
@@ -226,9 +235,12 @@ class performance {
             return;
         }
 
-        // Auto-rebuild if the 24-hour freshness transient expired.
-        if ( false === get_transient( 'kit_bundle_fresh' ) ) {
-            $this->rebuild_bundles();
+        $this->paths();
+
+        // Stale bundles rebuild in the background, never during a visit.
+        // A failed build waits an hour before trying again, so it never loops.
+        if ( false === get_transient( 'kit_bundle_fresh' ) && ! get_transient( 'kit_bundle_failed' ) && ! wp_next_scheduled( 'kit_bundle_rebuild' ) ) {
+            wp_schedule_single_event( time() + 30, 'kit_bundle_rebuild' );
         }
 
         // Serve JS bundle.
@@ -283,15 +295,22 @@ class performance {
      */
     public function rebuild_bundles() {
 
-        // Ensure upload directory exists.
-        wp_mkdir_p( $this->upload_dir );
+        // One rebuild at a time.
+        if ( get_transient( 'kit_bundle_lock' ) ) return false;
+        set_transient( 'kit_bundle_lock', 1, 2 * MINUTE_IN_SECONDS );
 
-        // Clean old bundles.
-        $this->clean_old_bundles();
+        $this->paths();
+        wp_mkdir_p( $this->upload_dir );
 
         // Get detected assets.
         $detected = get_transient( 'kit_detected_assets' );
-        if ( ! $detected ) return false;
+        if ( ! $detected ) {
+            set_transient( 'kit_bundle_failed', time(), HOUR_IN_SECONDS );
+            delete_transient( 'kit_bundle_lock' );
+            return false;
+        }
+
+        $previous = [ get_option( 'kit_bundle_js_file', '' ), get_option( 'kit_bundle_css_file', '' ) ];
 
         $js_handles  = get_option( 'kit_bundled_js_handles', [] );
         $css_handles = get_option( 'kit_bundled_css_handles', [] );
@@ -306,10 +325,11 @@ class performance {
                 $path = $detected['js'][ $handle ]['path'];
                 if ( ! file_exists( $path ) ) continue;
                 $content = file_get_contents( $path );
-                $combined .= "/* {$handle} */\n" . $content . ";\n\n";
+                // Concatenate as-is; most files ship minified and regex minifiers break JavaScript.
+                $combined .= "/* {$handle} */\n" . rtrim( $content ) . "\n;\n";
             }
             if ( $combined ) {
-                $minified = $this->minify_js( $combined );
+                $minified = $combined;
                 $hash     = substr( md5( $minified ), 0, 12 );
                 $filename = "bundle-{$hash}.min.js";
                 if ( file_put_contents( $this->upload_dir . $filename, $minified ) !== false ) {
@@ -331,7 +351,7 @@ class performance {
                 // Rewrite relative URLs in CSS to absolute.
                 $css_dir = trailingslashit( dirname( $detected['css'][ $handle ]['src'] ) );
                 $content = preg_replace_callback(
-                    '/url\(\s*[\'"]?(?!data:|https?:|\/\/)([^\'")]+)[\'"]?\s*\)/',
+                    '/url\(\s*[\'"]?(?!data:|https?:|\/|#)([^\'")]+)[\'"]?\s*\)/',
                     function( $matches ) use ( $css_dir ) {
                         return 'url(' . $css_dir . $matches[1] . ')';
                     },
@@ -351,10 +371,17 @@ class performance {
             }
         }
 
-        if ( $built ) {
+        if ( ! $built ) {
+            set_transient( 'kit_bundle_failed', time(), HOUR_IN_SECONDS );
+        } else {
+            delete_transient( 'kit_bundle_failed' );
             update_option( 'kit_bundle_version', time() );
             set_transient( 'kit_bundle_fresh', time(), 24 * HOUR_IN_SECONDS );
+            // Keep the new files and the previous ones (pages in a full-page cache may still use them).
+            $this->clean_old_bundles( array_filter( array_merge( $previous, [ get_option( 'kit_bundle_js_file', '' ), get_option( 'kit_bundle_css_file', '' ) ] ) ) );
         }
+
+        delete_transient( 'kit_bundle_lock' );
 
         return $built;
 
@@ -365,7 +392,7 @@ class performance {
      *
      * @since 5.0.0
      */
-    private function clean_old_bundles() {
+    private function clean_old_bundles( $keep = [] ) {
 
         if ( ! is_dir( $this->upload_dir ) ) return;
 
@@ -373,6 +400,7 @@ class performance {
         if ( ! $files ) return;
 
         foreach ( $files as $file ) {
+            if ( in_array( basename( $file ), (array) $keep, true ) ) continue;
             @unlink( $file );
         }
 
@@ -418,8 +446,9 @@ class performance {
         // Collapse whitespace.
         $css = preg_replace( '/\s+/', ' ', $css );
 
-        // Remove spaces around punctuation.
-        $css = preg_replace( '/\s*([{}:;,>+~])\s*/', '$1', $css );
+        // Remove spaces around structural punctuation only. Spaces around + are required
+        // inside calc(), and a space before : changes a selector ("a :hover" is not "a:hover").
+        $css = preg_replace( '/\s*([{};,>])\s*/', '$1', $css );
 
         // Remove trailing semicolons before closing braces.
         $css = str_replace( ';}', '}', $css );
@@ -443,8 +472,8 @@ class performance {
 
         $wp_admin_bar->add_node( [
             'id'    => 'kit-rebuild-bundle',
-            'title' => '⚡ Rebuild Bundles',
-            'href'  => wp_nonce_url( admin_url( 'admin.php?page=builtmighty&kit_rebuild_bundle=1' ), 'kit_rebuild_bundle' ),
+            'title' => 'Rebuild bundles',
+            'href'  => wp_nonce_url( add_query_arg( 'kit_rebuild_bundle', '1' ), 'kit_rebuild_bundle' ),
             'meta'  => [
                 'title' => 'Rebuild CSS/JS bundles',
             ],

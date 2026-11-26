@@ -57,11 +57,11 @@ class active_site_logger {
      */
     public function __construct() {
 
-        // Register cron event.
-        add_action( 'init', [ $this, 'schedule_cron' ] );
+        // Only live stores report in; copies would double-count.
+        if ( \BuiltMightyKit\is_kit_mode() ) return;
 
-        // Clear cron event on deactivation.
-        register_deactivation_hook( KIT_PATH . KIT_FILE, [ $this, 'deactivate' ] );
+        // Register cron event (deactivation is handled in the main plugin file).
+        add_action( 'init', [ $this, 'schedule_cron' ] );
 
         // Add cron callback.
         add_action( self::CRON_HOOK, [ $this, 'send_ping' ] );

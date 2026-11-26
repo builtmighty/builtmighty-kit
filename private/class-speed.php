@@ -126,6 +126,11 @@ class speed {
      */
     public function post_revisions( $num, $post ) {
 
+        // Respect WP_POST_REVISIONS and revisions turned off for a post type.
+        // WordPress defines WP_POST_REVISIONS as true (unlimited) by default; only cap that default.
+        if ( defined( 'WP_POST_REVISIONS' ) && WP_POST_REVISIONS !== true ) return $num;
+        if ( (int) $num === 0 ) return $num;
+
         // Return.
         return apply_filters( 'builtmighty_revisions', 3 );
 
@@ -581,7 +586,7 @@ class speed {
 
         // Add custom domains.
         if ( ! empty( $custom_domains ) ) {
-            $custom = array_map( 'trim', explode( "\n", $custom_domains ) );
+            $custom = array_map( 'trim', preg_split( '/[\s,]+/', (string) $custom_domains ) );
             foreach ( $custom as $domain ) {
                 if ( ! empty( $domain ) ) {
                     // Ensure it starts with //.

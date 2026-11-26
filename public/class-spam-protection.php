@@ -9,6 +9,12 @@
  */
 namespace BuiltMightyKit\Public;
 
+use BuiltMightyKit\Utility\settings;
+use BuiltMightyKit\Utility\activity;
+use BuiltMightyKit\Utility\request;
+
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
 class spam_protection {
 
     /**
@@ -33,7 +39,7 @@ class spam_protection {
     public function __construct() {
 
         // Check if enabled.
-        if ( get_option( 'kit_spam_protection' ) !== 'enable' ) {
+        if ( ! settings::is_on( 'kit_spam_protection' ) ) {
             return;
         }
 
@@ -41,25 +47,25 @@ class spam_protection {
         $this->honeypot_field = 'contact_' . substr( md5( get_option( 'siteurl' ) ), 0, 8 );
 
         // Disable comments globally.
-        if ( get_option( 'kit_disable_comments' ) === 'enable' ) {
+        if ( settings::is_on( 'kit_disable_comments' ) ) {
             $this->disable_comments();
         }
 
         // Add honeypot to comment form.
-        if ( get_option( 'kit_comment_honeypot' ) === 'enable' ) {
+        if ( settings::is_on( 'kit_comment_honeypot' ) ) {
             add_action( 'comment_form_after_fields', [ $this, 'add_honeypot_field' ] );
             add_action( 'comment_form_logged_in_after', [ $this, 'add_honeypot_field' ] );
             add_filter( 'preprocess_comment', [ $this, 'check_honeypot' ] );
         }
 
         // Block known spam IPs.
-        if ( get_option( 'kit_block_spam_ips' ) === 'enable' ) {
+        if ( settings::is_on( 'kit_block_spam_ips' ) ) {
             add_filter( 'preprocess_comment', [ $this, 'check_blocked_ip' ], 1 );
             add_action( 'comment_post', [ $this, 'record_spam_ip' ], 10, 2 );
         }
 
         // Time-based spam check.
-        if ( get_option( 'kit_comment_time_check' ) === 'enable' ) {
+        if ( settings::is_on( 'kit_comment_time_check' ) ) {
             add_action( 'comment_form_after_fields', [ $this, 'add_timestamp_field' ] );
             add_action( 'comment_form_logged_in_after', [ $this, 'add_timestamp_field' ] );
             add_filter( 'preprocess_comment', [ $this, 'check_timestamp' ] );
@@ -69,7 +75,7 @@ class spam_protection {
         add_filter( 'preprocess_comment', [ $this, 'check_link_count' ] );
 
         // Disable pingbacks/trackbacks.
-        if ( get_option( 'kit_disable_pingbacks' ) === 'enable' ) {
+        if ( settings::is_on( 'kit_disable_pingbacks' ) ) {
             $this->disable_pingbacks();
         }
 
@@ -148,6 +154,10 @@ class spam_protection {
      */
     public function check_honeypot( $commentdata ) {
 
+        if ( ! $this->applies() ) {
+            return $commentdata;
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( ! empty( $_POST[ $this->honeypot_field ] ) ) {
             $this->block_spam( __( 'Spam detected.', 'builtmighty-kit' ) );
@@ -182,6 +192,10 @@ class spam_protection {
      */
     public function check_timestamp( $commentdata ) {
 
+        if ( ! $this->applies() ) {
+            return $commentdata;
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $timestamp = isset( $_POST['kit_comment_time'] ) ? intval( $_POST['kit_comment_time'] ) : 0;
 
@@ -190,15 +204,10 @@ class spam_protection {
         }
 
         // Minimum time to fill out form (3 seconds).
-        $min_time = (int) get_option( 'kit_comment_min_time', 3 );
+        $min_time = (int) settings::get( 'kit_comment_min_time' );
 
         if ( ( time() - $timestamp ) < $min_time ) {
             $this->block_spam( __( 'Please slow down. Form submitted too quickly.', 'builtmighty-kit' ) );
-        }
-
-        // Maximum time (prevent token reuse, 1 hour).
-        if ( ( time() - $timestamp ) > HOUR_IN_SECONDS ) {
-            $this->block_spam( __( 'Form expired. Please refresh and try again.', 'builtmighty-kit' ) );
         }
 
         return $commentdata;
@@ -216,14 +225,18 @@ class spam_protection {
      */
     public function check_blocked_ip( $commentdata ) {
 
-        $ip = $this->get_client_ip();
+        if ( ! $this->applies() ) {
+            return $commentdata;
+        }
+
+        $ip = request::client_ip();
         $blocked_ips = get_option( self::BLOCKED_IPS_OPTION, [] );
 
         if ( ! is_array( $blocked_ips ) ) {
             $blocked_ips = [];
         }
 
-        if ( isset( $blocked_ips[ $ip ] ) ) {
+        if ( ! empty( $blocked_ips[ $ip ]['blocked'] ) ) {
             $this->block_spam( __( 'Your IP has been blocked due to spam.', 'builtmighty-kit' ) );
         }
 
@@ -246,12 +259,10 @@ class spam_protection {
             return;
         }
 
-        $comment = get_comment( $comment_id );
-        if ( ! $comment || empty( $comment->comment_author_IP ) ) {
+        $ip = request::client_ip();
+        if ( $ip === '' ) {
             return;
         }
-
-        $ip = $comment->comment_author_IP;
         $blocked_ips = get_option( self::BLOCKED_IPS_OPTION, [] );
 
         if ( ! is_array( $blocked_ips ) ) {
@@ -270,20 +281,22 @@ class spam_protection {
         $blocked_ips[ $ip ]['last_seen'] = time();
 
         // Block after threshold (default 3 spam comments).
-        $threshold = (int) get_option( 'kit_spam_block_threshold', 3 );
-        if ( $blocked_ips[ $ip ]['count'] >= $threshold ) {
+        $threshold = (int) settings::get( 'kit_spam_block_threshold' );
+        if ( $blocked_ips[ $ip ]['count'] >= $threshold && empty( $blocked_ips[ $ip ]['blocked'] ) ) {
             $blocked_ips[ $ip ]['blocked'] = true;
+            activity::log( 'spam', 'ip_blocked', 'Blocked ' . $ip . ' after ' . $blocked_ips[ $ip ]['count'] . ' spam comments', [ 'level' => 'warning', 'user_id' => 0, 'ip' => $ip ] );
         }
 
         // Clean up old entries (older than 30 days).
         $cutoff = time() - ( 30 * DAY_IN_SECONDS );
         foreach ( $blocked_ips as $blocked_ip => $data ) {
-            if ( isset( $data['last_seen'] ) && $data['last_seen'] < $cutoff ) {
+            // Blocks an administrator added by hand stay until they're removed by hand.
+            if ( empty( $data['manual'] ) && isset( $data['last_seen'] ) && $data['last_seen'] < $cutoff ) {
                 unset( $blocked_ips[ $blocked_ip ] );
             }
         }
 
-        update_option( self::BLOCKED_IPS_OPTION, $blocked_ips );
+        update_option( self::BLOCKED_IPS_OPTION, $blocked_ips, false );
 
     }
 
@@ -298,7 +311,11 @@ class spam_protection {
      */
     public function check_link_count( $commentdata ) {
 
-        $max_links = (int) get_option( 'kit_comment_max_links', 2 );
+        if ( ! $this->applies() ) {
+            return $commentdata;
+        }
+
+        $max_links = (int) settings::get( 'kit_comment_max_links' );
 
         if ( $max_links <= 0 ) {
             return $commentdata;
@@ -306,9 +323,9 @@ class spam_protection {
 
         $content = $commentdata['comment_content'];
 
-        // Count links.
-        $link_count = preg_match_all( '/<a\s/i', $content, $matches );
-        $link_count += preg_match_all( '/https?:\/\//i', $content, $matches );
+        // Count distinct URLs (an <a href="https://..."> is one link, not two).
+        preg_match_all( '#(?:https?:)?//[^\s"\'<>]+|www\.[^\s"\'<>]+#i', $content, $matches );
+        $link_count = count( array_unique( array_map( 'strtolower', $matches[0] ) ) );
 
         if ( $link_count > $max_links ) {
             $this->block_spam(
@@ -357,6 +374,24 @@ class spam_protection {
     }
 
     /**
+     * Should spam checks run for this comment?
+     *
+     * Signed-in people, replies from wp-admin and comments created through
+     * the REST API are trusted.
+     *
+     * @return  bool
+     */
+    private function applies() {
+        if ( is_user_logged_in() ) {
+            return false;
+        }
+        if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Block spam submission.
      *
      * @param   string $message  Error message.
@@ -364,6 +399,7 @@ class spam_protection {
      * @since   5.0.0
      */
     private function block_spam( $message ) {
+        activity::log( 'spam', 'comment_blocked', 'Blocked a comment: ' . $message, [ 'level' => 'info', 'user_id' => 0 ] );
         wp_die(
             esc_html( $message ),
             esc_html__( 'Comment Blocked', 'builtmighty-kit' ),
@@ -405,7 +441,7 @@ class spam_protection {
 
         if ( isset( $blocked_ips[ $ip ] ) ) {
             unset( $blocked_ips[ $ip ] );
-            update_option( self::BLOCKED_IPS_OPTION, $blocked_ips );
+            update_option( self::BLOCKED_IPS_OPTION, $blocked_ips, false );
         }
 
     }
@@ -437,38 +473,11 @@ class spam_protection {
             'manual'     => true,
         ];
 
-        update_option( self::BLOCKED_IPS_OPTION, $blocked_ips );
+        update_option( self::BLOCKED_IPS_OPTION, $blocked_ips, false );
 
         return true;
 
     }
 
-    /**
-     * Get client IP.
-     *
-     * @return  string  Client IP.
-     *
-     * @since   5.0.0
-     */
-    private function get_client_ip() {
-
-        $ip = '';
-
-        if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-            $ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
-            $ip  = trim( $ips[0] );
-        } elseif ( ! empty( $_SERVER['HTTP_X_REAL_IP'] ) ) {
-            $ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REAL_IP'] ) );
-        } elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-            $ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-        }
-
-        if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-            return $ip;
-        }
-
-        return '0.0.0.0';
-
-    }
 
 }

@@ -32,27 +32,21 @@ class plugins {
      */
     public function __construct() {
 
-        // Get user.
-        $user = wp_get_current_user();
-        
-        // Check settings.
-        if( empty( get_option( 'kit_stale_plugins' ) ) || get_option( 'kit_stale_plugins' ) == 'developers' ) {
+        // Decide after authentication plugins have run.
+        add_action( 'admin_init', [ $this, 'boot' ] );
 
-            // Check for user email.
-            if( empty( $user->user_email ) ) return;
+    }
 
-            // Get email.
-            $host = explode( '@', $user->user_email )[1];
+    /**
+     * Hook up for the people who should see plugin freshness.
+     *
+     * @since   6.0.0
+     */
+    public function boot() {
 
-            // Check array.
-            if( ! in_array( $host, [ 'builtmighty.com', 'littlerhino.io'] ) ) return;
-
-        } elseif( get_option( 'kit_stale_plugins' ) == 'disable' ) {
-
-            // Stop.
-            return;
-
-        }
+        $who = (string) \BuiltMightyKit\Utility\settings::get( 'kit_stale_plugins' );
+        if( $who === 'disable' ) return;
+        if( $who === 'developers' && ! \BuiltMightyKit\is_builtmighty_user() ) return;
 
         // Actions.
         add_action( 'after_plugin_row', [ $this, 'view' ], 10, 3 );
@@ -61,7 +55,7 @@ class plugins {
         add_action( 'admin_head', [ $this, 'styles' ] );
 
         // Filters.
-        add_filter( 'http_request_timeout', [ $this, 'timeout' ] );
+        add_filter( 'http_request_args', [ $this, 'timeout' ], 10, 2 );
 
     }
 
@@ -97,44 +91,39 @@ class plugins {
         // [php] => 7.4
         // [wc] =>
 
-        // Output buffering.
-        ob_start(); ?>
+        // Labels and status words.
+        $labels = [
+            'ts'  => function( $v ) { return 'Updated ' . $v; },
+            'wp'  => function( $v ) { return 'Tested with WordPress ' . $v; },
+            'php' => function( $v ) { return 'PHP ' . $v . '+'; },
+            'wc'  => function( $v ) { return 'WooCommerce ' . $v; },
+        ];
+        $brand  = [ 'wp' => 'bmk-f-wp', 'php' => 'bmk-f-php', 'wc' => 'bmk-f-wc' ];
+        $tones  = [ 'recent' => [ 'ok', 'Up to date' ], 'stale' => [ 'warn', 'Getting old' ], 'outdated' => [ 'danger', 'Out of date' ] ];
 
-        <tr>
-            <td colspan="4" style="background:#f1f1f1;color:#000;"><?php
+        $pills = '';
+        foreach( (array) ( $store[ $plugin_file ] ?? [] ) as $key => $data ) {
+            if( empty( $data ) || $key === 'version' || ! isset( $labels[ $key ] ) ) continue;
+            $compare = $this->compare( $key, $data );
+            $tone    = $tones[ $compare['status'] ?? '' ] ?? [ 'off', '' ];
+            $pills  .= '<span class="bmk-fpill bmk-fpill-' . esc_attr( $tone[0] ) . '" title="' . esc_attr( $tone[1] ) . '"><span class="bmk-fdot" aria-hidden="true"></span>';
+            if( isset( $brand[ $key ] ) ) {
+                $text = call_user_func( $labels[ $key ], $compare['value'] );
+                $name = [ 'wp' => 'WordPress', 'php' => 'PHP', 'wc' => 'WooCommerce' ][ $key ];
+                $pills .= str_replace( esc_html( $name ), '<b class="' . esc_attr( $brand[ $key ] ) . '">' . esc_html( $name ) . '</b>', esc_html( $text ) );
+            } else {
+                $pills .= esc_html( call_user_func( $labels[ $key ], $compare['value'] ) );
+            }
+            $pills .= '<span class="screen-reader-text">, ' . esc_html( strtolower( $tone[1] ) ) . '</span></span>';
+        }
+        if( $pills === '' ) return;
 
-                // Loop.
-                foreach( $store[$plugin_file] as $key => $data ) {
+        // A native plugin row, so it sits under its plugin like WordPress's own update notices.
+        global $wp_list_table;
+        $columns = ( $wp_list_table && method_exists( $wp_list_table, 'get_column_count' ) ) ? (int) $wp_list_table->get_column_count() : 4;
+        $active  = is_multisite() && is_network_admin() ? is_plugin_active_for_network( $plugin_file ) : is_plugin_active( $plugin_file );
 
-                    // Check.
-                    if( empty( $data ) ) continue;
-
-                    // Skip version.
-                    if( $key == 'version' ) continue;
-
-                    // Comparison.
-                    $compare = $this->compare( $key, $data );
-
-                    // Output.
-                    ?><span class="kit-update kit-update-<?php echo $key; ?> kit-update-<?php echo $compare['status']; ?>"><?php
-
-                        // Icon.
-                        if( ! empty( $compare['icon'] ) ) {
-                            echo '<span class="kit-update-icon">' . $compare['icon'] . '</span> ';
-                        }
-                        
-                        // Value.
-                        echo esc_html( $compare['value'] ); ?>
-
-                    </span><?php
-
-                } ?>
-
-            </td>
-        </tr><?php
-
-        // Get output.
-        echo ob_get_clean();
+        echo '<tr class="plugin-update-tr bmk-fresh-tr' . ( $active ? ' active' : ' inactive' ) . '"><td colspan="' . esc_attr( $columns ) . '" class="plugin-update colspanchange bmk-fresh"><div class="bmk-fresh-row"><span class="bmk-fresh-label">Freshness</span>' . $pills . '</div></td></tr>'; // phpcs:ignore
 
     }
 
@@ -143,18 +132,17 @@ class plugins {
      * 
      * @since   4.3.0
      */
-    public function timeout( $seconds ) {
+    public function timeout( $args, $url = '' ) {
 
         // Get screen.
         $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
-        // Shorter timeout on plugins screen.
-        if( is_admin() && $screen && 'plugins' === $screen->id ) {
-            return min( 3, (int) $seconds );
+        // Shorter timeout for WordPress.org lookups on the Plugins screen.
+        if( is_admin() && $screen && in_array( $screen->id, [ 'plugins', 'plugins-network' ], true ) && strpos( (string) $url, 'api.wordpress.org' ) !== false ) {
+            $args['timeout'] = min( 3, (int) ( $args['timeout'] ?? 3 ) );
         }
 
-        // Return default.
-        return $seconds;
+        return $args;
 
     }
 
@@ -284,55 +272,7 @@ class plugins {
      * @since   4.3.0
      */
     public function styles() {
-
-        // Check if current page is plugins.php.
-        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-
-        // Check screen.
-        if( ! is_admin() || ! $screen || 'plugins' !== $screen->id ) return;
-
-        // Output. ?>
-        <style>
-            span.kit-update {
-                background: #ffffff;
-                border-radius: 6px;
-                padding: 2.5px 5px;
-                margin-right: 5px;
-                border: 2px solid rgb(0 0 0 / 10%);
-                box-shadow: 0px 2px 8px -4px rgb(0 0 0 / 20%);
-            }
-
-            span.kit-update.kit-update-wp {
-                background: #3858e9;
-                color: #fff;
-            }
-
-            span.kit-update.kit-update-php {
-                background: #4f5b93;
-                color: #fff;
-            }
-
-            span.kit-update.kit-update-wc {
-                background: #720eec;
-                color: #fff;
-            }
-
-            span.kit-update-icon svg {
-                max-height: 15px;
-                width: auto;
-                display: inline-block;
-                vertical-align: text-bottom;
-            }
-
-            span.kit-update.kit-update-stale {
-                border-color: rgb(255 129 0);
-            }
-
-            span.kit-update.kit-update-outdated {
-                border-color: #ff0000;
-            }
-        </style><?php
-
+        // Styles moved to public/css/kit-wp.css (6.0), which loads on every wp-admin screen.
     }
 
     /**
@@ -441,7 +381,12 @@ class plugins {
         
         // Get cache.
         $cached = get_transient( $key );
+        if( $cached === 'none' ) return false;
         if( false !== $cached ) return $cached;
+
+        // At most a few live lookups per page load; the rest fill in on later visits.
+        static $lookups = 0;
+        if( ++$lookups > 5 ) return false;
 
         // Load plugins API if needed.
         if( ! function_exists( 'plugins_api' ) ) require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
@@ -465,14 +410,14 @@ class plugins {
         // Check if error.
         if( is_wp_error( $response ) ) {
 
-            // Set transient and stop.
-            set_transient( $key, false, self::CACHE_TTL );
+            // Remember the miss (plugins not on WordPress.org) so we don't ask again on every load.
+            set_transient( $key, 'none', self::CACHE_TTL + wp_rand( 0, HOUR_IN_SECONDS * 6 ) );
             return false;
 
         }
 
         // Set transient and return.
-        set_transient( $key, $response, self::CACHE_TTL );
+        set_transient( $key, $response, self::CACHE_TTL + wp_rand( 0, HOUR_IN_SECONDS * 6 ) );
         return $response;
 
     }
@@ -526,11 +471,11 @@ class plugins {
                 ];
 
                 // If current WP version is within 4 minor versions.
-                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 4 ) {
+                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 4 ) {
                     // Add.
                     $response['status'] = 'recent';
                     return $response;
-                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 8 ) {
+                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 8 ) {
                     // Add.
                     $response['status'] = 'stale';
                     return $response;
@@ -555,11 +500,11 @@ class plugins {
                 ];
 
                 // If current WP version is within 4 minor versions.
-                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 4 ) {
+                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 4 ) {
                     // Add.
                     $response['status'] = 'recent';
                     return $response;
-                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 8 ) {
+                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 8 ) {
                     // Add.
                     $response['status'] = 'stale';
                     return $response;
@@ -584,11 +529,11 @@ class plugins {
                 ];
 
                 // If current WP version is within 4 minor versions.
-                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 4 ) {
+                if( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 4 ) {
                     // Add.
                     $response['status'] = 'recent';
                     return $response;
-                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)$stable[1] - (int)$version[1] ) <= 8 ) {
+                } elseif( ( (int)$stable[0] === (int)$version[0] ) && ( (int)( $stable[1] ?? 0 ) - (int)( $version[1] ?? 0 ) ) <= 8 ) {
                     // Add.
                     $response['status'] = 'stale';
                     return $response;
@@ -619,7 +564,7 @@ class plugins {
         $version = get_bloginfo( 'version' );
 
         // Get most recent WordPress version from API.
-        $response = wp_remote_get( 'https://api.wordpress.org/core/version-check/1.7/' );
+        $response = wp_remote_get( 'https://api.wordpress.org/core/version-check/1.7/', [ 'timeout' => 4 ] );
 
         // Check for response.
         if( ! is_wp_error( $response ) && is_array( $response ) ) {
@@ -639,6 +584,9 @@ class plugins {
 
             }
 
+        } else {
+            // Cache the local version briefly so a failing API isn't called once per plugin row.
+            set_transient( self::OPTION_KEY . 'wp_version', $version, HOUR_IN_SECONDS );
         }
 
         // Return.
@@ -708,7 +656,7 @@ class plugins {
         }
 
         // Get stable WooCommerce version from API.
-        $response = wp_remote_get( 'https://api.wordpress.org/plugins/info/1.0/?action=plugin_information&request[slug]=woocommerce&request[fields][versions]=true' );
+        $response = wp_remote_get( 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=woocommerce&request[fields][sections]=0&request[fields][versions]=0', [ 'timeout' => 4 ] );
         if( ! is_wp_error( $response ) && is_array( $response ) ) {
 
             // Decode.
@@ -726,6 +674,8 @@ class plugins {
 
             }
 
+        } elseif( $version ) {
+            set_transient( self::OPTION_KEY . 'wc_version', $version, HOUR_IN_SECONDS );
         }
 
         // Return.

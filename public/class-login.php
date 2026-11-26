@@ -1,188 +1,149 @@
 <?php
 /**
- * Login.
+ * Custom login address.
  *
- * WordPress login methods.
+ * Serves the WordPress login screen at a custom address and hides
+ * wp-login.php from signed-out visitors. Every login, lost-password, reset,
+ * register and logout link WordPress generates is rewritten to the custom
+ * address, so password resets and the admin re-login popup keep working.
  *
  * @package Built Mighty Kit
  * @since   1.0.0
- * @version 1.0.0
+ * @version 6.0.0
  */
 namespace BuiltMightyKit\Public;
+
+use BuiltMightyKit\Utility\settings;
+
+if( ! defined( 'ABSPATH' ) ) { exit; }
+
 class login {
 
     /**
-     * Login URL.
-     * 
-     * @since   1.0.0
+     * Custom slug, like "team-entry".
+     *
+     * @var string
      */
-    public $url;
+    private $slug = '';
+
+    /**
+     * Is this request for the custom login address?
+     *
+     * @var bool
+     */
+    private $is_custom = false;
 
     /**
      * Construct.
-     * 
-     * @since   1.0.0
      */
     public function __construct() {
 
-        // Check if standard permalinks are set.
+        // Pretty permalinks are required for a custom path.
         if( empty( get_option( 'permalink_structure' ) ) ) return;
+        if( ! settings::is_on( 'kit_enable_login' ) ) return;
 
-        // Check if enabled.
-        if( get_option( 'kit_enable_login' ) !== 'enable' ) return;
+        $this->slug = trim( (string) settings::get( 'kit_login_url' ), '/' );
+        if( $this->slug === '' ) return;
 
-        // Check for login URL.
-        if( empty( get_option( 'kit_login_url' ) ) ) return;
+        $this->detect();
 
-        // Set login URL.
-        $this->url = ( defined( 'BUILT_ENDPOINT' ) ) ? '/' . ltrim( BUILT_ENDPOINT, '/' ) . '/' : '/' . ltrim( (string)get_option( 'kit_login_url' ), '/' ) . '/';
-
-        // Actions.
-        add_action( 'init', [ $this, 'redirect' ] );
-        add_action( 'template_redirect', [ $this, 'login' ] );
-        add_action( 'login_form', [ $this, 'login_form' ] );
-        add_action( 'wp_login_failed', [ $this, 'login_failed' ] );
-
-    }
-
-    /**
-     * Redirect.
-     * 
-     * Redirect the user to the endpoint if they try to access wp-login.php.
-     * 
-     * @since   1.0.0
-     */
-    public function redirect() {
-
-        // If user is logged in, peace out.
-        if( is_user_logged_in() ) return;
-
-        // If user is trying to login, buh-bye.
-        if( isset( $_POST['builtmighty_login'] ) ) return;
-
-        // Check if password protected page.
-        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
-
-        // If user is trying to access wp-login.php, turn them right around and send them home.
-        if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) {
-
-            // Redirect to home page.
-            wp_redirect( home_url( '/' ) );
-            exit;
-
-        }
+        add_action( 'wp_loaded', [ $this, 'route' ], 1 );
+        add_filter( 'site_url', [ $this, 'filter_url' ], 10, 2 );
+        add_filter( 'network_site_url', [ $this, 'filter_url' ], 10, 2 );
+        add_filter( 'wp_redirect', [ $this, 'filter_redirect' ], 10, 1 );
+        add_filter( 'login_url', [ $this, 'filter_redirect' ], 10, 1 );
+        add_filter( 'lostpassword_url', [ $this, 'filter_redirect' ], 10, 1 );
+        add_filter( 'register_url', [ $this, 'filter_redirect' ], 10, 1 );
 
     }
 
     /**
-     * Login.
-     * 
-     * Load the login page at the endpoint.
-     * 
-     * @since   1.0.0
+     * The custom login URL.
      */
-    public function login() {
-
-        // Set request URI.
-        $request_uri = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
-
-        // If user is logged in, adios.
-        if( is_user_logged_in() && $request_uri == $this->url ) {
-
-            // Redirect to home page.
-            wp_redirect( home_url( '/' ) );
-            exit;
-
-        }
-
-        // Set headers to 200.
-        status_header( 200 );
-
-        // Check request.
-        if( $request_uri == $this->url ) {
-
-            // Set the necessary variables.
-            $user_login = isset( $user_login ) ? $user_login : '';
-            $error      = isset( $error ) ? $error : '';
-
-            // Include the necessary WordPress files.
-            require_once ABSPATH . WPINC . '/load.php';
-            require_once ABSPATH . WPINC . '/default-constants.php';
-            require_once ABSPATH . WPINC . '/version.php';
-            require_once ABSPATH . WPINC . '/functions.php';
-            require_once ABSPATH . WPINC . '/plugin.php';
-            require_once ABSPATH . WPINC . '/user.php';
-            require_once ABSPATH . WPINC . '/class-wpdb.php';
-            require_once ABSPATH . WPINC . '/meta.php';
-            require_once ABSPATH . WPINC . '/capabilities.php';
-            require_once ABSPATH . WPINC . '/formatting.php';
-            require_once ABSPATH . WPINC . '/capabilities.php';
-            require_once ABSPATH . WPINC . '/pluggable.php';
-
-            // Set the necessary global variables.
-            global $pagenow, $wp, $wp_query, $wp_the_query, $wp_rewrite, $wp_did_header;
-            $wp_did_header = true;
-
-            // Load wp-login.php to handle the login functionality.
-            include ABSPATH . 'wp-login.php';
-            exit;
-
-        }
-
+    public function url( string $query = '' ): string {
+        $url = home_url( '/' . $this->slug . '/' );
+        return $query !== '' ? $url . '?' . $query : $url;
     }
 
     /**
-     * Add a custom field to login form to ensure validation.
-     * 
-     * @since   1.0.0
+     * Work out what this request is.
      */
-    public function login_form() {
-
-        // If user is logged in, so long.
-        if( is_user_logged_in() ) return;
-
-        // If user is trying to login, time to bounce.
-        if( isset( $_POST['builtmighty_login'] ) ) return;
-
-        // If user is trying to access wp-login.php, ta-ta.
-        if( strpos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) !== false ) return;
-
-        // Check if password protected page.
-        if( ! empty( $_GET['action'] ) && $_GET['action'] === 'postpass' ) return;
-
-        // Add custom field.
-        echo '<input type="hidden" name="builtmighty_login" value="true" />';
-
+    private function detect(): void {
+        $path = trim( (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+        $home = trim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+        if( $home !== '' && strpos( $path, $home ) === 0 ) $path = trim( substr( $path, strlen( $home ) ), '/' );
+        $this->is_custom = ( $path === $this->slug );
     }
 
     /**
-     * On failed login.
-     * 
-     * Redirect the user back to the login page with an error message.
-     * 
-     * @since   1.2.0
+     * Route the request.
      */
-    public function login_failed( $username ) {
+    public function route() {
 
-        // If user is logged in, so long.
-        if( is_user_logged_in() ) return;
+        global $pagenow;
 
-        // Check if WooCommerce login.
-        if( isset( $_POST['_wp_http_referer'] ) && wc_get_page_permalink( 'myaccount' ) === home_url( $_POST['_wp_http_referer'] ) ) {
+        // The custom address: show the login screen.
+        if( $this->is_custom ) {
 
-            // Redirect to My Account page with error message.
-            wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) . '?login=failed' );
+            if( is_user_logged_in() && empty( $_REQUEST['action'] ) && empty( $_REQUEST['interim-login'] ) ) {
+                wp_safe_redirect( admin_url() );
+                exit;
+            }
+
+            $pagenow = 'wp-login.php';
+            $_SERVER['PHP_SELF'] = '/wp-login.php';
+
+            // wp-login.php expects these globals.
+            global $error, $interim_login, $action, $user_login, $user, $redirect_to;
+            require_once ABSPATH . 'wp-login.php';
             exit;
 
         }
 
-        // Set the necessary variables.
-        $error = isset( $error ) ? $error : '';
+        // Signed-out visits to wp-admin would redirect to the login address and reveal it.
+        $script = basename( (string) ( $_SERVER['SCRIPT_NAME'] ?? '' ) );
+        if( is_admin() && ! is_user_logged_in() && ! wp_doing_ajax() && ! in_array( $script, [ 'admin-post.php', 'admin-ajax.php' ], true ) ) {
+            wp_safe_redirect( home_url( '/' ) );
+            exit;
+        }
 
-        // Redirect to login page with error message.
-        wp_redirect( home_url( $this->url . '?login=failed' ) );
+        // Direct requests to wp-login.php.
+        if( $script !== 'wp-login.php' && $pagenow !== 'wp-login.php' ) return;
+
+        // Actions that must keep working at wp-login.php.
+        $action  = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+        $allowed = (array) apply_filters( 'kit_login_allowed_actions', [ 'postpass', 'logout', 'confirmaction', 'confirm_admin_email' ] );
+        if( in_array( $action, $allowed, true ) ) return;
+        if( is_user_logged_in() && ( $action !== '' || ! empty( $_REQUEST['interim-login'] ) ) ) return;
+
+        wp_safe_redirect( home_url( '/' ) );
         exit;
 
+    }
+
+    /**
+     * Replace wp-login.php in generated URLs.
+     */
+    public function filter_url( $url, $path = '' ) {
+        return $this->replace( (string) $url );
+    }
+
+    /**
+     * Replace wp-login.php in redirects and login links.
+     */
+    public function filter_redirect( $location ) {
+        return $this->replace( (string) $location );
+    }
+
+    /**
+     * Rewrite a URL that points at wp-login.php.
+     */
+    private function replace( string $url ): string {
+        if( strpos( $url, 'wp-login.php' ) === false ) return $url;
+        // Keep postpass on wp-login.php; WordPress posts the password form there.
+        if( strpos( $url, 'action=postpass' ) !== false ) return $url;
+        $parts = explode( '?', $url, 2 );
+        return $this->url( $parts[1] ?? '' );
     }
 
 }

@@ -114,7 +114,7 @@ class crm_api extends API {
     public function send_daily_report( array $data ): array {
         $body = array_merge( $data, [
             'domain'       => $this->get_domain(),
-            'report_date'  => current_time( 'Y-m-d' ),
+            'report_date'  => wp_date( 'Y-m-d', time() - DAY_IN_SECONDS ), // The day the numbers describe.
             'site_info'    => $this->get_site_info(),
             'ga_property'  => get_option( 'kit_crm_ga_property', '' ),
             'is_woocommerce' => isset( $data['is_woocommerce'] ) ? $data['is_woocommerce'] : class_exists( 'WooCommerce' ),

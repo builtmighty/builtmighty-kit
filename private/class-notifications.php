@@ -9,6 +9,11 @@
  * @version 1.0.0
  */
 namespace BuiltMightyKit\Private;
+
+use BuiltMightyKit\Utility\settings;
+use BuiltMightyKit\Utility\request;
+
+if( ! defined( 'ABSPATH' ) ) { exit; }
 class notifications {
 
     /**
@@ -19,6 +24,20 @@ class notifications {
     private $slack;
 
     /**
+     * Messages waiting to be sent at the end of the request.
+     *
+     * @var array
+     */
+    private $queue = [];
+
+    /**
+     * Only one instance hooks (the old settings screen created a second one).
+     *
+     * @var bool
+     */
+    private static $hooked = false;
+
+    /**
      * Construct.
      * 
      * @since   1.0.0
@@ -26,7 +45,11 @@ class notifications {
     public function __construct() {
 
         // Check if Slack is connected.
-        if( empty( get_option( 'slack-channel' ) ) ) return;
+        if( empty( get_option( 'slack-channel' ) ) || empty( get_option( 'built_slack_token' ) ) ) return;
+
+        // Hook once.
+        if( self::$hooked ) return;
+        self::$hooked = true;
 
         // Initiate Slack.
         $this->slack = new \BuiltMightyKit\Utility\slack();
@@ -44,11 +67,17 @@ class notifications {
         add_action( 'admin_init', [ $this, 'file_editor' ] );
 
         // Check if daily summary is enabled.
-        if( get_option( 'slack-summary' ) == 'enable' ) {
+        if( settings::is_on( 'slack-summary' ) ) {
 
             // Schedule.
             add_action( 'wp_loaded', [ $this, 'schedule' ] );
             add_action( 'builtmighty_slack_summary', [ $this, 'sync' ] );
+
+        } elseif( is_admin() || wp_doing_cron() ) {
+
+            // Summary turned off: stop its hourly event.
+            add_action( 'admin_init', function() { if( wp_next_scheduled( 'builtmighty_slack_summary' ) ) wp_clear_scheduled_hook( 'builtmighty_slack_summary' ); } );
+            add_action( 'builtmighty_slack_summary', function() { wp_clear_scheduled_hook( 'builtmighty_slack_summary' ); } );
 
         }
 
@@ -66,26 +95,31 @@ class notifications {
      */
     public function woocommerce( $name, $old, $new ) {
 
-        // Check if name contains woocommerce or wc.
-        if( strpos( $name, 'woocommerce' ) === false && strpos( $name, 'wc' ) === false ) return;
+        // Only settings an administrator saves in wp-admin, not background updates.
+        if( ! is_admin() || wp_doing_ajax() || wp_doing_cron() ) return;
+        if( ! current_user_can( 'manage_woocommerce' ) ) return;
+        if( strpos( $name, 'woocommerce_' ) !== 0 ) return;
+        foreach( [ 'transient', 'queue', 'version', '_meta', 'session', 'cache', 'admin_notice', 'onboarding', 'task_list', 'tracker', 'schema' ] as $skip ) {
+            if( strpos( $name, $skip ) !== false ) return;
+        }
 
-        // Check if name contains transient.
-        if( strpos( $name, 'transient' ) !== false ) return;
-
-        // Check if name contains queue.
-        if( strpos( $name, 'queue' ) !== false ) return;
-
-        // Set message.
-        $message = "🛒 WooCommerce settings were just updated.\n\n>*Name*: `" . $name . "`\n>*Settings*: ```\n" . print_r( $new, true ) . "\n```";
-
-        // Check if daily summary.
-        if( $this->is_summary( 'woocommerce' ) ) $this->log( $message );
+        // Name the changed keys. Never send values: they include gateway secrets.
+        $changed = [];
+        if( is_array( $old ) && is_array( $new ) ) {
+            foreach( array_unique( array_merge( array_keys( $old ), array_keys( $new ) ) ) as $key ) {
+                if( ( $old[ $key ] ?? null ) !== ( $new[ $key ] ?? null ) ) $changed[] = $key;
+            }
+        }
+        $user = wp_get_current_user();
+        $message = "🛒 WooCommerce settings were just updated.\n\n>*Setting*: `" . $name . "`"
+            . ( $changed ? "\n>*Changed*: `" . implode( '`, `', array_slice( $changed, 0, 15 ) ) . "`" : '' )
+            . "\n>*User*: `" . $user->user_login . "`";
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'woocommerce' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -149,13 +183,12 @@ class notifications {
         $message = "🔄 WordPress core was just updated to version `" . $post['version'] . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
         
         // Check if summary.
-        if( $this->is_summary( 'core-update' ) ) $this->log( $message );
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'core-update' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -186,13 +219,12 @@ class notifications {
                 $message = "🔄 A plugin was just updated: `" . $plugin . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
                 // Check if summary.
-                if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
 
                 // Check if setting is enabled.
                 if( ! $this->is_enabled( 'plugin-update' ) ) return;
 
                 // Send.
-                $this->slack->message( $message );
+                $this->send( $message );
 
             }
 
@@ -202,13 +234,12 @@ class notifications {
             $message = "🔄 A plugin was just updated: `" . $data['plugin'] . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Check if summary.
-            if( $this->is_summary( 'plugin-update' ) ) $this->log( $message );
 
             // Check if setting is enabled.
             if( ! $this->is_enabled( 'plugin-update' ) ) return;
 
             // Send.
-            $this->slack->message( $message );
+            $this->send( $message );
 
         }
 
@@ -235,13 +266,12 @@ class notifications {
         $message = "📦 A plugin was just installed: `" . $post['slug'] . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
         // Check if summary.
-        if( $this->is_summary( 'plugin-install' ) ) $this->log( $message );
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'plugin-install' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -270,13 +300,12 @@ class notifications {
         $message = "📦 A plugin was just manually installed.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
         // Check if summary.
-        if( $this->is_summary( 'plugin-install' ) ) $this->log( $message );
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'plugin-install' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -310,13 +339,12 @@ class notifications {
                 $message = "🔄 A theme was just updated: `" . $theme . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
                 // Check if summary.
-                if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
 
                 // Check if setting is enabled.
                 if( ! $this->is_enabled( 'theme-update' ) ) return;
 
                 // Send.
-                $this->slack->message( $message );
+                $this->send( $message );
 
             }
 
@@ -326,13 +354,12 @@ class notifications {
             $message = "🔄 A theme was just updated: `" . $data['theme'] . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Check if summary.
-            if( $this->is_summary( 'theme-update' ) ) $this->log( $message );
 
             // Check if setting is enabled.
             if( ! $this->is_enabled( 'theme-update' ) ) return;
 
             // Send.
-            $this->slack->message( $message );
+            $this->send( $message );
 
         }
 
@@ -359,13 +386,12 @@ class notifications {
         $message = "📦 A theme was just installed: `" . $post['slug'] . "`.\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
         // Check if summary.
-        if( $this->is_summary( 'theme-install' ) ) $this->log( $message );
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'theme-install' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -389,7 +415,7 @@ class notifications {
         if( ! $this->is_enabled( 'plugin-activate' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -413,7 +439,7 @@ class notifications {
         if( ! $this->is_enabled( 'plugin-deactivate' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -437,7 +463,7 @@ class notifications {
         if( ! $this->is_enabled( 'theme-change' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -452,7 +478,7 @@ class notifications {
     public function admin_create( $user_id, $data ) {
 
         // Check role.
-        if( $data['role'] !== 'administrator' ) return;
+        if( ( $data['role'] ?? '' ) !== 'administrator' ) return;
 
         // Set message.
         $message = "👨‍💻 An admin user was just created.\n\n>*User*: `" . $data['user_login'] . "`\n>*Email*: `" . $data['user_email'] . "`\n>*IP*: `" . $this->get_ip() . "`";
@@ -461,7 +487,7 @@ class notifications {
         if( ! $this->is_enabled( 'admin-create' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -488,7 +514,7 @@ class notifications {
         if( ! $this->is_enabled( 'admin-delete' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -502,6 +528,12 @@ class notifications {
      */
     public function admin_update( $user_id, $old_data, $data ) {
 
+        // Current role after the update ($data['role'] is only set when the role field was submitted).
+        $updated = get_userdata( $user_id );
+        $data['role'] = ( $updated && in_array( 'administrator', (array) $updated->roles, true ) ) ? 'administrator' : ( $data['role'] ?? '' );
+        $data['user_login'] = $data['user_login'] ?? ( $updated ? $updated->user_login : '' );
+        $data['user_email'] = $data['user_email'] ?? ( $updated ? $updated->user_email : '' );
+
         // Check role.
         if( ! in_array( 'administrator', (array)$old_data->roles ) && $data['role'] !== 'administrator' ) return;
 
@@ -512,7 +544,7 @@ class notifications {
             $message = "👨‍💻 An admin user was just demoted.\n\n>*User*: `" . $data['user_login'] . "`\n>*Email*: `" . $data['user_email'] . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'admin-role' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-role' ) ) $this->send( $message );
 
         }
 
@@ -523,7 +555,7 @@ class notifications {
             $message = "👨‍💻 A user was just promoted to admin.\n\n>*User*: `" . $data['user_login'] . "`\n>*Email*: `" . $data['user_email'] . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'admin-role' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-role' ) ) $this->send( $message );
 
         }
 
@@ -534,18 +566,18 @@ class notifications {
             $message = "👨‍💻 An admin user just changed their email.\n\n>*User*: `" . $data['user_login'] . "`\n>*Old Email*: `" . $old_data->user_email . "`\n>*New Email*: `" . $data['user_email'] . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'admin-email' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-email' ) ) $this->send( $message );
 
         }
 
         // Check if the password was changed.
-        if( $old_data->data->user_pass !== $data['user_pass'] ) {
+        if( isset( $data['user_pass'] ) && $old_data->data->user_pass !== $data['user_pass'] ) {
 
             // Set message.
             $message = "👨‍💻 An admin user just changed their password.\n\n>*User*: `" . $data['user_login'] . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'admin-password' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'admin-password' ) ) $this->send( $message );
 
         }
 
@@ -577,16 +609,13 @@ class notifications {
         if( ! in_array( 'administrator', $user->roles ) ) return;
 
         // Set message.
-        $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>*User*: `" . $user_login . "`\n>*IP*: `" . $this->get_ip() . "`\n>*User Agent*: `" . $_SERVER['HTTP_USER_AGENT'] . "`";
-
-        // Check if daily summary.
-        if( $this->is_summary( 'admin-login' ) ) $this->log( $message );
+        $message = "👨‍💻 An admin user just logged into the site at " . site_url() . ".\n\n>*User*: `" . $user_login . "`\n>*IP*: `" . $this->get_ip() . "`\n>*User Agent*: `" . sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? 'unknown' ) ) . "`";
 
         // Check if setting is enabled.
         if( ! $this->is_enabled( 'admin-login' ) ) return;
 
         // Send.
-        $this->slack->message( $message );
+        $this->send( $message );
 
     }
 
@@ -616,7 +645,7 @@ class notifications {
             $message = "📝 A theme file was edited.\n\n>*File*: `" . $_POST['file'] . "`\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'theme-editor' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'theme-editor' ) ) $this->send( $message );
 
         } elseif( isset( $_POST['plugin'] ) ) {
 
@@ -624,7 +653,7 @@ class notifications {
             $message = "📝 A plugin file was edited.\n\n>*File*: `" . $_POST['file'] . "`\n>*User*: `" . $user->user_login . "`\n>*IP*: `" . $this->get_ip() . "`";
 
             // Send.
-            if( $this->is_enabled( 'plugin-editor' ) ) $this->slack->message( $message );
+            if( $this->is_enabled( 'plugin-editor' ) ) $this->send( $message );
 
         }
 
@@ -652,11 +681,8 @@ class notifications {
      */
     public function is_summary( $setting ) {
 
-        // Get notification settings.
-        $notifications = unserialize( get_option( 'slack-summary-notifications' ) );
-
-        // Check if setting is enabled.
-        return ( ! in_array( $setting, (array)$notifications ) ) ? false : true;
+        // The daily summary collects the same notifications instead of sending each one.
+        return settings::is_on( 'slack-summary' ) && $this->is_enabled( $setting );
 
     }
 
@@ -666,23 +692,7 @@ class notifications {
      * @since   2.2.0
      */
     public function get_ip() {
-
-        // Check if WooCommerce is installed.
-        if( class_exists( '\WC_Geolocation' ) ) {
-
-            // Get IP.
-            $ip = \WC_Geolocation::get_ip_address();
-
-        } else {
-
-            // Get IP, check for Cloudflare headers.
-            $ip = ( isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) ? $_SERVER['HTTP_CF_CONNECTING_IP'] : $_SERVER['REMOTE_ADDR'];
-
-        }
-
-        // Return.
-        return $ip;
-
+        return request::client_ip();
     }
 
     /**
@@ -709,61 +719,64 @@ class notifications {
      */
     public function sync() {
 
-        // Check if we should sync.
-        if( get_option( 'builtmighty_slack_summary' ) && get_option( 'builtmighty_slack_summary' ) == date( 'Y-m-d' ) ) return;
+        // Once a day.
+        $today = wp_date( 'Y-m-d' );
+        if( get_option( 'builtmighty_slack_summary' ) === $today ) return;
 
-        // Get set time.
-        $time = get_option( 'slack-summary-time' );
+        // At or after the chosen time, in the site's time zone.
+        $time = (string) settings::get( 'slack-summary-time' );
+        if( $time === '' || wp_date( 'H:i' ) < $time ) return;
 
-        // Check if time is set.
-        if( empty( $time ) ) return;
+        $log = (array) get_option( 'kit_slack_summary_log', [] );
+        update_option( 'builtmighty_slack_summary', $today, false );
+        if( ! $log ) return;
 
-        // Check if time is current hour or past hour.
-        if( date( 'H', current_time( 'timestamp' ) ) <= $time ) return;
-
-        // Get the log file.
-        $log = file_get_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log' );
-
-        // Check if log is empty.
-        if( empty( $log ) ) return;
-
-        // Send.
-        $this->slack->message( "📅 *Daily Summary for `" . site_url() . "`*\n" . $log );
-
-        // Empty log.
-        file_put_contents( WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log', "" );
+        $this->slack->message( "📅 *Daily summary for `" . site_url() . "`*\n\n" . implode( "\n\n", $log ) );
+        delete_option( 'kit_slack_summary_log' );
 
     }
 
     /**
-     * Create log.
-     * 
-     * 
+     * Add a message to the daily summary.
+     *
+     * Stored in a private option, not a public file.
+     *
+     * @since 6.0.0
      */
     public function log( $message ) {
+        $log   = (array) get_option( 'kit_slack_summary_log', [] );
+        $log[] = "`[" . wp_date( 'g:i A' ) . "]` " . $message;
+        update_option( 'kit_slack_summary_log', array_slice( $log, -100 ), false );
+    }
 
-        // Create log file in wp-content/uploads.
-        $file = WP_CONTENT_DIR . '/uploads/builtmighty-slack-summary.log';
-
-        // Set timezone.
-        date_default_timezone_set( get_option( 'timezone_string' ) );
-
-        // Add date/time to message.
-        $message = "`[" . date( 'Y-m-d g:i:s A' ) . "]`\n" . $message;
-
-        // Check if file exists.
-        if( ! file_exists( $file ) ) {
-
-            // Create file.
-            file_put_contents( $file, $message );
-
-        } else {
-
-            // Append to file.
-            file_put_contents( $file, "\n\n" . $message, FILE_APPEND );
-
+    /**
+     * Queue a Slack message. Sent after the response is flushed, so saving a
+     * setting or updating a plugin never waits on Slack.
+     *
+     * @since 6.0.0
+     */
+    public function send( $message ) {
+        // When the daily summary is on, collect the message for it instead of sending now.
+        if( settings::is_on( 'slack-summary' ) ) {
+            $this->log( $message );
+            return;
         }
+        if( ! $this->queue ) add_action( 'shutdown', [ $this, 'flush' ], 20 );
+        $this->queue[] = (string) $message;
+    }
 
+    /**
+     * Send queued messages.
+     *
+     * @since 6.0.0
+     */
+    public function flush() {
+        if( ! $this->queue ) return;
+        if( function_exists( 'fastcgi_finish_request' ) ) fastcgi_finish_request();
+        foreach( array_unique( $this->queue ) as $message ) {
+            $this->slack->message( $message );
+        }
+        $this->queue = [];
     }
 
     /**

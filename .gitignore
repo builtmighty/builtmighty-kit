@@ -2,3 +2,4 @@
 /public/css/*.map
 /public/js/*.map
 /build/
+/tests/vendor/

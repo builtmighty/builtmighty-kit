@@ -193,7 +193,9 @@ class user_delete {
 
         // Query. One extra row tells us whether there is another page without counting every match.
         $args = apply_filters( 'kit_user_delete_search_args', [
-            'search'      => '*' . $term . '*',
+            // Trailing wildcard only, so MySQL can use the index on large user tables.
+            'search'         => $term . '*',
+            'search_columns' => strpos( $term, '@' ) !== false ? [ 'user_email' ] : [ 'user_login', 'user_nicename', 'display_name', 'user_email' ],
             'exclude'     => $exclude,
             'number'      => $per_page + 1,
             'offset'      => ( $page - 1 ) * $per_page,

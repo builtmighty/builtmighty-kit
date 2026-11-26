@@ -65,12 +65,18 @@
     /**
      * Send metrics to the server
      */
+    var sent = false;
     function sendMetrics() {
+        // One beacon per page view.
+        if (sent) {
+            return;
+        }
         // Only send if we have at least one meaningful metric
         if (!metrics.lcp && !metrics.fid && !metrics.cls && !metrics.ttfb) {
             return;
         }
 
+        sent = true;
         var data = new FormData();
         data.append('action', 'kit_crm_rum_beacon');
         data.append('nonce', config.nonce);
@@ -256,6 +262,11 @@
                 sendMetrics();
             }
         }, 30000);
+    }
+
+    // Sample a share of page views (default 1 in 10).
+    if (Math.random() >= (typeof config.sample === 'number' ? config.sample : 0.1)) {
+        return;
     }
 
     // Start when DOM is ready

@@ -42,14 +42,14 @@ class updates {
         if( in_array( $screen->id, $this->get_screens()['updates'] ) ) {
 
             // Update content.
-            $title      = 'WARNING: Adding Plugins/Themes';
-            $content    = 'Adding new plugins/themes on a production site involves risks that may cause your site to crash or become inaccessible. Please proceed with caution. This action will add new uncommitted code to the server and interrupt the automated deployment system. A manual re-sync will be necessary before the system can run smoothly. Please only take this action if absolutely necessary, otherwise let us know and we can take care of it for you. If you have any questions, please reach out to <a href="mailto:' . antispambot( 'developers@builtmighty.com', true ) . '">Built Mighty</a>.';
+            $title      = 'You\'re about to update plugins on the live store';
+            $content    = 'An update can take checkout offline. It also puts code on the server that isn\'t in the site\'s repository, so the next deployment needs a manual re-sync. Built Mighty tests updates on staging first and ships them with your next release.';
 
         } elseif( in_array( $screen->id, $this->get_screens()['install'] ) ) {
 
             // Install content.
-            $title      = 'WARNING: Updating Plugins/Themes';
-            $content    = 'Updating plugins/themes on a production site involves risks that may cause your site to crash or become inaccessible. Please proceed with caution. This action will add new uncommitted code to the server and interrupt the automated deployment system. A manual re-sync will be necessary before the system can run smoothly. Please only update if absolutely necessary, otherwise let us know and we can take care of it for you. If you have any questions, please reach out to <a href="mailto:' . antispambot( 'developers@builtmighty.com', true ) . '">Built Mighty</a>.';
+            $title      = 'You\'re about to add plugins to the live store';
+            $content    = 'A new plugin or theme can conflict with the store and take checkout offline. It also puts code on the server that isn\'t in the site\'s repository. Ask Built Mighty and we\'ll add it safely.';
 
         } else {
 
@@ -59,18 +59,17 @@ class updates {
         }
 
         // Output. ?>
-        <div id="builtmighty-kit-modal" style="display:none">
-            <div class="builtmighty-kit-modal">
-                <div class="builtmighty-kit-modal-header">
-                    <span class="builtmighty-kit-modal-close"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg></span>
+        <div id="builtmighty-kit-modal" class="bmk-wp bmk-umodal" hidden>
+            <div class="bmk-umodal-box" role="alertdialog" aria-modal="true" aria-labelledby="bmk-umodal-t" aria-describedby="bmk-umodal-d">
+                <div class="bmk-umodal-head">
+                    <svg class="bmk-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.2 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4M12 17h.01"/></svg>
+                    <h2 id="bmk-umodal-t"><?php echo esc_html( $title ); ?></h2>
                 </div>
-                <div class="builtmighty-kit-modal-content">
-                    <h2><?php echo $title; ?></h2>
-                    <p><?php echo $content; ?></p>
-                </div>
-                <div class="builtmighty-kit-modal-footer">
-                    <button id="builtmighty-kit-modal-continue" class="button button-primary">Continue</button>
-                    <button id="builtmighty-kit-modal-leave" class="button button-secondary">Leave</button>
+                <p id="bmk-umodal-d"><?php echo esc_html( $content ); ?></p>
+                <p class="bmk-umodal-contact">Questions? Email <a href="mailto:<?php echo esc_attr( antispambot( 'developers@builtmighty.com' ) ); ?>"><?php echo esc_html( antispambot( 'developers@builtmighty.com' ) ); ?></a>.</p>
+                <div class="bmk-umodal-foot">
+                    <button type="button" id="builtmighty-kit-modal-leave" class="bmk-btn bmk-btn-primary">Go back to the dashboard</button>
+                    <button type="button" id="builtmighty-kit-modal-continue" class="bmk-btn bmk-btn-ghost">Continue anyway</button>
                 </div>
             </div>
         </div><?php
@@ -97,7 +96,7 @@ class updates {
         wp_enqueue_style( 'kit-updates', KIT_URI . 'public/css/updates.css', [], KIT_VERSION );
 
         // JS.
-        wp_enqueue_script( 'kit-updates', KIT_URI . 'public/js/updates.js', [ 'jquery' ], KIT_VERSION, true );
+        wp_enqueue_script( 'kit-updates', KIT_URI . 'public/js/updates.js', [], KIT_VERSION, true );
 
         // Localize.
         wp_localize_script( 'kit-updates', 'kit_updates', [
@@ -119,10 +118,15 @@ class updates {
                 'plugins',
                 'update-core',
                 'themes',
+                'plugins-network',
+                'update-core-network',
+                'themes-network',
             ],
             'install'   => [
                 'plugin-install',
                 'theme-install',
+                'plugin-install-network',
+                'theme-install-network',
             ]
         ];
 

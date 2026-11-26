@@ -1,68 +1,114 @@
 <?php
 /**
- * Block External.
+ * Outside services.
  *
- * Block external API requests.
+ * On copies of the store, outgoing HTTP requests are blocked except to hosts
+ * that are always safe (WordPress.org, GitHub, Slack, Built Mighty, this site)
+ * and hosts added in settings. Subdomains of an allowed host are allowed.
  *
  * @package Built Mighty Kit
  * @since   1.0.0
- * @version 1.0.0
+ * @version 6.0.0
  */
 namespace BuiltMightyKit\Public;
-use function BuiltMightyKit\is_kit_mode;
+
+use BuiltMightyKit\Utility\settings;
+use BuiltMightyKit\Utility\activity;
+
+if( ! defined( 'ABSPATH' ) ) { exit; }
+
 class block_external {
 
     /**
+     * Allowed hosts for this request, built once.
+     *
+     * @var array|null
+     */
+    private $allowed = null;
+
+    /**
      * Construct.
-     * 
-     * @since   1.0.0
      */
     public function __construct() {
 
-        // Check.
-        if( empty( get_option( 'kit_block_external' ) && is_kit_mode() ) || get_option( 'kit_block_external' ) == 'disable' ) return;
+        if( ! settings::is_on( 'kit_block_external' ) ) return;
 
-        // Filter.
         add_filter( 'pre_http_request', [ $this, 'block' ], 10, 3 );
 
     }
 
     /**
-     * Block.
-     * 
-     * @since   1.0.0
+     * Hosts that are always allowed.
      */
-    public function block( $pre, $args, $url ) {
-
-        // Get the host of the URL being requested.
-        $host = wp_parse_url( $url, PHP_URL_HOST );
-
-        // Get allowed.
-        $allowed = [
+    public static function always_allowed(): array {
+        $self = wp_parse_url( home_url(), PHP_URL_HOST );
+        $site = wp_parse_url( site_url(), PHP_URL_HOST );
+        return array_values( array_unique( array_filter( (array) apply_filters( 'kit_always_allowed_hosts', [
             'localhost',
-            'api.wordpress.org',
-            'downloads.wordpress.org',
+            '127.0.0.1',
+            $self,
+            $site,
+            'wordpress.org',
             'github.com',
             'github.dev',
             'github.io',
             'githubusercontent.com',
             'slack.com',
-            'builtmighty.com'
-        ];
+            'builtmighty.com',
+        ] ) ) ) );
+    }
 
-        // Check if kit_allowed_external is set.
-        if( ! empty( get_option( 'kit_allowed_external' ) ) ) {
+    /**
+     * All allowed hosts.
+     */
+    public function allowed(): array {
+        if( $this->allowed === null ) {
+            $extra = array_map( function( $host ) {
+                $host = strtolower( trim( (string) $host ) );
+                $host = preg_replace( '#^[a-z]+://#', '', $host );
+                $host = preg_replace( '#[/:].*$#', '', $host );
+                return ltrim( $host, '*.' );
+            }, (array) settings::get( 'kit_allowed_external' ) );
+            $this->allowed = array_values( array_unique( array_filter( array_merge( self::always_allowed(), $extra ) ) ) );
+        }
+        return $this->allowed;
+    }
 
-            // Get allowed.
-            $allowed = array_merge( $allowed, explode( ",", str_replace( ' ', '', get_option( 'kit_allowed_external' ) ) ) );
+    /**
+     * Is a host allowed? Matches the host itself and any subdomain.
+     */
+    public static function host_allowed( string $host, array $allowed ): bool {
+        $host = strtolower( rtrim( $host, '.' ) );
+        foreach( $allowed as $item ) {
+            $item = strtolower( (string) $item );
+            if( $host === $item ) return true;
+            if( substr( $host, -strlen( '.' . $item ) ) === '.' . $item ) return true;
+        }
+        return false;
+    }
 
+    /**
+     * Block.
+     */
+    public function block( $pre, $args, $url ) {
+
+        if( $pre !== false ) return $pre;
+
+        $host = (string) wp_parse_url( $url, PHP_URL_HOST );
+        if( $host === '' || self::host_allowed( $host, $this->allowed() ) ) return $pre;
+
+        // Log the first block per host per hour so the log stays readable.
+        $key = 'kit_blk_' . md5( $host );
+        if( ! get_transient( $key ) ) {
+            set_transient( $key, 1, HOUR_IN_SECONDS );
+            activity::log( 'safeguard', 'request_blocked', 'Blocked a request to ' . $host, [
+                'level'   => 'info',
+                'user_id' => 0,
+                'context' => [ 'host' => $host, 'method' => strtoupper( (string) ( $args['method'] ?? 'GET' ) ) ],
+            ] );
         }
 
-        // Check if not allowed.
-        if( ! in_array( $host, (array)$allowed ) ) return new \WP_Error( 'http_request_blocked', __( 'External HTTP requests are disabled via the Built Mighty Kit. Blocked: ' . $host ) );
-
-        // Return.
-        return $pre;
+        return new \WP_Error( 'http_request_blocked', sprintf( 'Built Mighty Kit blocked a request to %s because this is a copy of the store. Allow it in Kit, Safeguards.', $host ) );
 
     }
 
